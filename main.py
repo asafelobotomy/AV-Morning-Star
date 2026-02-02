@@ -82,26 +82,39 @@ class DownloadThread(QThread):
         
     def progress_hook(self, d):
         if d['status'] == 'downloading':
-            try:
-                # Try to get percentage from different possible keys
-                percent = 0
-                if '_percent_str' in d:
+            # Try to get percentage from different possible keys
+            percent = 0
+            
+            # Method 1: Check for _percent_str
+            if '_percent_str' in d:
+                try:
                     percent_str = d['_percent_str'].strip().replace('%', '')
                     percent = float(percent_str)
-                elif 'downloaded_bytes' in d and 'total_bytes' in d and d['total_bytes']:
+                except (ValueError, AttributeError):
+                    pass
+            
+            # Method 2: Calculate from downloaded/total bytes
+            if percent == 0 and 'downloaded_bytes' in d and 'total_bytes' in d and d['total_bytes']:
+                try:
                     percent = (d['downloaded_bytes'] / d['total_bytes']) * 100
-                elif 'downloaded_bytes' in d and 'total_bytes_estimate' in d and d['total_bytes_estimate']:
+                except (ZeroDivisionError, TypeError):
+                    pass
+            
+            # Method 3: Use estimated total bytes
+            if percent == 0 and 'downloaded_bytes' in d and 'total_bytes_estimate' in d and d['total_bytes_estimate']:
+                try:
                     percent = (d['downloaded_bytes'] / d['total_bytes_estimate']) * 100
-                
-                # Get filename
-                filename = d.get('filename', d.get('_filename', 'Downloading...'))
-                if filename and len(filename) > 50:
-                    filename = '...' + filename[-47:]
-                
-                self.progress.emit(filename, int(percent))
-            except Exception as e:
-                # If parsing fails, at least show we're downloading
-                self.progress.emit('Downloading...', 0)
+                except (ZeroDivisionError, TypeError):
+                    pass
+            
+            # Get filename
+            filename = d.get('filename', d.get('_filename', 'Downloading...'))
+            if filename and len(filename) > 50:
+                filename = '...' + filename[-47:]
+            
+            # Emit progress update
+            self.progress.emit(filename, max(0, min(100, int(percent))))
+            
         elif d['status'] == 'finished':
             self.progress.emit('Post-processing...', 100)
             
@@ -115,6 +128,9 @@ class DownloadThread(QThread):
                 ydl_opts = {
                     'outtmpl': os.path.join(self.output_path, '%(title)s.%(ext)s'),
                     'progress_hooks': [self.progress_hook],
+                    'noprogress': False,  # Ensure progress updates are sent
+                    'quiet': False,  # Allow progress output
+                    'no_warnings': False,
                     'retries': 3,
                     'fragment_retries': 3,
                     'socket_timeout': 30,
