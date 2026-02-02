@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=AV Morning Star
+Comment=Video and Audio Downloader
+Exec=AV-Morning-Star
+Icon=av-morning-star
+Categories=Network;AudioVideo;
+Terminal=false
