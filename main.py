@@ -83,19 +83,41 @@ class DownloadThread(QThread):
     def progress_hook(self, d):
         if d['status'] == 'downloading':
             try:
-                percent = d.get('_percent_str', '0%').strip('%')
-                self.progress.emit(d.get('filename', 'Downloading...'), int(float(percent)))
-            except:
-                pass
+                # Try to get percentage from different possible keys
+                percent = 0
+                if '_percent_str' in d:
+                    percent_str = d['_percent_str'].strip().replace('%', '')
+                    percent = float(percent_str)
+                elif 'downloaded_bytes' in d and 'total_bytes' in d and d['total_bytes']:
+                    percent = (d['downloaded_bytes'] / d['total_bytes']) * 100
+                elif 'downloaded_bytes' in d and 'total_bytes_estimate' in d and d['total_bytes_estimate']:
+                    percent = (d['downloaded_bytes'] / d['total_bytes_estimate']) * 100
+                
+                # Get filename
+                filename = d.get('filename', d.get('_filename', 'Downloading...'))
+                if filename and len(filename) > 50:
+                    filename = '...' + filename[-47:]
+                
+                self.progress.emit(filename, int(percent))
+            except Exception as e:
+                # If parsing fails, at least show we're downloading
+                self.progress.emit('Downloading...', 0)
         elif d['status'] == 'finished':
             self.progress.emit('Post-processing...', 100)
             
     def run(self):
-        try:
-            for url in self.urls:
+        successful = 0
+        failed = 0
+        failed_urls = []
+        
+        for idx, url in enumerate(self.urls, 1):
+            try:
                 ydl_opts = {
                     'outtmpl': os.path.join(self.output_path, '%(title)s.%(ext)s'),
                     'progress_hooks': [self.progress_hook],
+                    'retries': 3,
+                    'fragment_retries': 3,
+                    'socket_timeout': 30,
                 }
                 
                 if self.format_type == 'audio':
@@ -121,13 +143,33 @@ class DownloadThread(QThread):
                         
                     ydl_opts['merge_output_format'] = 'mp4'
                 
+                self.progress.emit(f'Downloading {idx}/{len(self.urls)}...', 0)
+                
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url])
                     
-            self.finished.emit("All downloads completed successfully!")
-            
-        except Exception as e:
-            self.error.emit(f"Download error: {str(e)}")
+                successful += 1
+                    
+            except Exception as e:
+                failed += 1
+                failed_urls.append((url, str(e)))
+                # Continue with next download instead of stopping
+                self.progress.emit(f'Failed {idx}/{len(self.urls)}, continuing...', 0)
+                continue
+        
+        # Generate summary message
+        if failed == 0:
+            self.finished.emit(f"All {successful} downloads completed successfully!")
+        elif successful == 0:
+            error_msg = f"All {failed} downloads failed.\n\nErrors:\n"
+            for url, err in failed_urls[:3]:  # Show first 3 errors
+                error_msg += f"- {err[:100]}...\n"
+            self.error.emit(error_msg)
+        else:
+            message = f"Completed with mixed results:\n✓ {successful} succeeded\n✗ {failed} failed"
+            if failed_urls:
+                message += f"\n\nFirst error: {failed_urls[0][1][:150]}"
+            self.finished.emit(message)
 
 
 class MediaDownloaderApp(QMainWindow):
@@ -141,6 +183,11 @@ class MediaDownloaderApp(QMainWindow):
     def init_ui(self):
         self.setWindowTitle("AV Morning Star - Media Downloader")
         self.setMinimumSize(800, 600)
+        
+        # Set window icon if available
+        icon_path = os.path.join(os.path.dirname(__file__), 'av-morning-star.png')
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
         
         # Central widget
         central_widget = QWidget()
@@ -164,6 +211,7 @@ class MediaDownloaderApp(QMainWindow):
         url_input_layout = QHBoxLayout()
         self.url_input = QLineEdit()
         self.url_input.setPlaceholderText("Enter video URL or channel/playlist URL...")
+        self.url_input.returnPressed.connect(self.fetch_videos)
         url_input_layout.addWidget(self.url_input)
         
         self.fetch_btn = QPushButton("Fetch")
@@ -282,8 +330,14 @@ class MediaDownloaderApp(QMainWindow):
         if not url:
             QMessageBox.warning(self, "Error", "Please enter a URL")
             return
+        
+        # Basic URL validation
+        if not url.startswith(('http://', 'https://')):
+            QMessageBox.warning(self, "Error", "Please enter a valid URL starting with http:// or https://")
+            return
             
-        self.status_label.setText("Fetching videos...")
+        self.status_label.setText("Fetching video information...")
+        self.statusBar().showMessage("Connecting to URL...")
         self.fetch_btn.setEnabled(False)
         self.download_btn.setEnabled(False)
         
@@ -311,6 +365,7 @@ class MediaDownloaderApp(QMainWindow):
         
         if not videos:
             self.status_label.setText("No videos found")
+            self.statusBar().showMessage("No videos found at the provided URL")
             return
             
         # Create checkboxes for each video
@@ -328,11 +383,13 @@ class MediaDownloaderApp(QMainWindow):
         self.select_none_btn.setEnabled(True)
         self.download_btn.setEnabled(True)
         self.status_label.setText(f"Found {len(videos)} video(s)")
+        self.statusBar().showMessage(f"Successfully loaded {len(videos)} video(s)")
         
     def on_fetch_error(self, error):
         """Handle fetch error"""
         self.fetch_btn.setEnabled(True)
         self.status_label.setText("Error fetching videos")
+        self.statusBar().showMessage("Failed to fetch videos")
         QMessageBox.critical(self, "Error", error)
         
     def select_all(self):
@@ -383,6 +440,7 @@ class MediaDownloaderApp(QMainWindow):
         self.fetch_btn.setEnabled(True)
         self.progress_bar.setValue(100)
         self.status_label.setText(message)
+        self.statusBar().showMessage("All downloads completed!")
         QMessageBox.information(self, "Success", message)
         
     def on_download_error(self, error):
@@ -391,6 +449,7 @@ class MediaDownloaderApp(QMainWindow):
         self.fetch_btn.setEnabled(True)
         self.progress_bar.setValue(0)
         self.status_label.setText("Download failed")
+        self.statusBar().showMessage("Download failed - check error message")
         QMessageBox.critical(self, "Error", error)
 
 

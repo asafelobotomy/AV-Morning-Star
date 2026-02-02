@@ -58,10 +58,15 @@ chmod +x "${APPDIR}/AppRun"
 cp av-morning-star.desktop "${APPDIR}/usr/share/applications/"
 cp av-morning-star.desktop "${APPDIR}/"
 
-# Create icon (or copy if you have one)
-cp av-morning-star.png "${APPDIR}/usr/share/icons/hicolor/256x256/apps/" 2>/dev/null || \
-    echo "Warning: Icon file not found, using placeholder"
-cp av-morning-star.png "${APPDIR}/" 2>/dev/null || true
+# Create icon if it doesn't exist
+if [ ! -f "av-morning-star.png" ]; then
+    echo "Creating application icon..."
+    python3 create_icon.py
+fi
+
+# Copy icon
+cp av-morning-star.png "${APPDIR}/usr/share/icons/hicolor/256x256/apps/"
+cp av-morning-star.png "${APPDIR}/"
 
 # Download appimagetool if not present
 if [ ! -f "appimagetool-x86_64.AppImage" ]; then

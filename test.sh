@@ -4,6 +4,12 @@
 echo "Testing AV Morning Star components..."
 echo ""
 
+# Activate virtual environment if it exists
+if [ -d ".venv" ]; then
+    echo "Using virtual environment..."
+    source .venv/bin/activate
+fi
+
 # Test 1: Check Python imports
 echo "Test 1: Checking Python imports..."
 python3 << 'PYEOF'
