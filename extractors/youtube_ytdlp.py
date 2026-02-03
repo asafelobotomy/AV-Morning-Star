@@ -12,9 +12,10 @@ generation. yt-dlp handles this automatically.
 """
 
 import yt_dlp
+from .base import BaseExtractor
 
 
-class YouTubeExtractor:
+class YouTubeExtractor(BaseExtractor):
     """YouTube video extractor using yt-dlp backend"""
     
     def __init__(self, url, cookies_from_browser=None):
@@ -25,7 +26,7 @@ class YouTubeExtractor:
             url: YouTube video/playlist/channel URL
             cookies_from_browser: Browser name to extract cookies from (e.g., 'firefox', 'chrome', 'brave')
         """
-        self.url = url
+        super().__init__(url)
         self.platform_name = "YouTube"
         self.cookies_from_browser = cookies_from_browser
         

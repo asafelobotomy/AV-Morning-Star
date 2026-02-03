@@ -1,236 +1,325 @@
-# AV Morning Star - Media Downloader
+# 🌟 AV Morning Star - Video & Audio Downloader
 
-**Version 0.3.0** | A powerful PyQt5 desktop application for downloading videos and audio from 1000+ websites.
+> A powerful, privacy-first desktop application for downloading videos and audio from 1000+ websites.
 
-## 🌟 Features
+**Version 0.3.0** | Built with PyQt5 & yt-dlp | [📖 Full Documentation](docs/README.md)
 
-### Core Functionality
-- 🎥 **Video Downloads**: Multiple quality options (Best, 4K, 1440p, 1080p, 720p, 480p, 360p)
-- 🎵 **Audio Extraction**: MP3, AAC, FLAC, Opus, M4A with quality selection
-- 📋 **Playlist Support**: Download entire playlists/channels with multi-selection
-- 🔐 **Smart Authentication**: Auto-detects browser cookies for YouTube access
-- 🎯 **Dual Mode**: Basic (auto-config) and Advanced (manual settings)
+---
 
-### Advanced Features
-- 🎚️ **Audio Processing**:
-  - EBU R128 loudness normalization
-  - Dynamic audio normalization
-  - FFT-based noise reduction
-  - Thumbnail embedding
-- 📝 **Filename Templates**: Customizable with drag-and-drop tags
-- 📑 **Subtitle Support**: Download and embed subtitles
-- ⚡ **Real-time Progress**: Live download tracking with status updates
-- 🔒 **Privacy First**: Cookieless-first strategy, prompts only when needed
+## ✨ Features
 
-### Smart Browser Detection (New in 0.3.0!)
-- 🤖 **Auto Mode**: Automatically finds the best browser with YouTube authentication
-- 🔍 **Browser Detection**: Scans Firefox, Chrome, Brave, Edge, Chromium, Opera, Vivaldi
-- 🛡️ **Secure**: Read-only access, memory-only cookies, OS keyring encryption
-- 💡 **User-Friendly**: Plain-English error messages with actionable recommendations
+### 🎯 Core Functionality
+- **🎥 Video Downloads** – Multiple quality options (Best, 4K, 1440p, 1080p, 720p, 480p, 360p)
+- **🎵 Audio Extraction** – MP3, AAC, FLAC, Opus, M4A with bitrate selection
+- **📋 Playlist Support** – Download entire playlists/channels with multi-selection
+- **🔐 Smart Authentication** – Auto-detects browser cookies for YouTube access
+- **🎯 Dual Mode** – Basic (auto-config) & Advanced (manual settings)
 
-## 🌐 Supported Sites
+### 🚀 Advanced Features
+- **🎚️ Audio Enhancement**
+  - EBU R128 broadcast-standard loudness normalization
+  - Dynamic normalization for varying volume levels
+  - FFT-based noise reduction (adaptive filtering)
+  - Thumbnail/album art embedding
+- **📝 Filename Customization** – Drag-and-drop template tags (title, uploader, date, duration, etc.)
+- **📑 Subtitle Handling** – Download and embed subtitles automatically
+- **⚡ Real-time Progress** – Live download tracking with filename and percentage
+- **🔒 Privacy-First** – Cookieless by default, authenticated only when needed
 
-Powered by `yt-dlp` (2026.1.31+), supports:
-- **YouTube** (with PO token support for 2026)
-- **Odysee** / LBRY
-- Vimeo, Twitter/X, Facebook, Instagram, TikTok
-- **1000+ other sites!**
+### 🧠 Smart Browser Detection (New in v0.3.0!)
+- **🤖 Auto Mode** – Intelligently finds the best browser with YouTube authentication
+- **🔍 Browser Support** – Firefox, Chrome, Brave, Edge, Chromium, Opera, Vivaldi
+- **🛡️ Secure by Design** – Read-only access, in-memory storage, OS keyring encryption
+- **💬 User-Friendly** – Plain-English errors with actionable solutions
+
+## 🌐 Supported Platforms
+
+Powered by **yt-dlp (2026.1.31+)** with support for:
+
+| Category | Platforms |
+|----------|-----------|
+| **Streaming** | YouTube, Vimeo, Twitch, DailyMotion |
+| **Social Media** | Twitter/X, Facebook, Instagram, TikTok, Snapchat |
+| **Alternatives** | Odysee/LBRY, Rumble, BitChute |
+| **Plus** | **1000+ additional sites** – See [yt-dlp docs](https://github.com/yt-dlp/yt-dlp#supported-sites) |
+
+📌 YouTube includes **PO token support** for 2026+ bot detection bypasses
 
 ## ⚙️ Requirements
 
-### Software
-- **Python 3.7+**
-- **FFmpeg** (for audio/video processing)
-- **Deno** or **Node.js 25+** (recommended for YouTube PO tokens)
+### 📦 System Dependencies
+| Requirement | Purpose | Status |
+|-------------|---------|--------|
+| **Python 3.7+** | Application runtime | Required |
+| **FFmpeg** | Audio/video processing | Required |
+| **Deno** or **Node.js 25+** | YouTube PO token generation | Recommended (YouTube downloads) |
 
-### Python Packages
-- PyQt5 >= 5.15.0
-- yt-dlp >= 2026.1.31
-- requests >= 2.28.0
-- beautifulsoup4 >= 4.11.0
-- Pillow >= 10.0.0
+### 🐍 Python Packages
+All automatically installed via `requirements.txt`:
+- `PyQt5 >= 5.15.0` – GUI framework
+- `yt-dlp >= 2026.1.31` – Video downloading
+- `requests >= 2.28.0` – HTTP client
+- `beautifulsoup4 >= 4.11.0` – HTML parsing
+- `Pillow >= 10.0.0` – Image handling
 
 ## 🚀 Installation
 
-### Quick Start (Recommended)
+### ⚡ Quick Start (Recommended)
 
 ```bash
 # Clone the repository
 git clone https://github.com/asafelobotomy/AV-Morning-Star.git
 cd AV-Morning-Star
 
-# Run the start script (handles everything automatically)
+# Run the auto-setup script
+chmod +x start.sh
 ./start.sh
 ```
 
-The start script will:
-1. Create a virtual environment
-2. Install Python dependencies
-3. Check for FFmpeg
-4. Detect/offer to install Deno (for YouTube)
-5. Launch the application
+**The `start.sh` script handles:**
+- ✅ Virtual environment creation
+- ✅ Python dependency installation
+- ✅ FFmpeg availability check
+- ✅ Deno installation (optional, for YouTube)
+- ✅ Application launch
 
-### Manual Installation
+### 📋 Manual Installation
 
-1. **Install system dependencies:**
+#### 1️⃣ Install System Dependencies
+
+**Ubuntu/Debian:**
 ```bash
-# Ubuntu/Debian
-sudo apt install ffmpeg python3-venv
-
-# Fedora
-sudo dnf install ffmpeg python3-virtualenv
-
-# Arch Linux
-sudo pacman -S ffmpeg python
+sudo apt update
+sudo apt install -y python3 python3-venv ffmpeg
 ```
 
-2. **Install Deno (for YouTube downloads):**
+**Fedora/RHEL:**
 ```bash
-curl -fsSL https://deno.land/install.sh | sh
-echo 'export DENO_INSTALL="$HOME/.deno"' >> ~/.bashrc
-echo 'export PATH="$DENO_INSTALL/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
+sudo dnf install -y python3 python3-venv ffmpeg
 ```
 
-3. **Set up Python environment:**
+**Arch Linux:**
 ```bash
+sudo pacman -S python ffmpeg
+```
+
+**macOS:**
+```bash
+brew install python@3.11 ffmpeg
+```
+
+#### 2️⃣ Setup Python Environment
+
+```bash
+# Create virtual environment
 python3 -m venv .venv
-source .venv/bin/activate
+
+# Activate it
+source .venv/bin/activate  # Linux/macOS
+# OR
+.venv\Scripts\activate  # Windows
+
+# Install Python packages
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-4. **Run the application:**
+#### 3️⃣ Install Deno (Optional, for YouTube)
+
+```bash
+# Install Deno
+curl -fsSL https://deno.land/install.sh | sh
+
+# Add to PATH
+echo 'export DENO_INSTALL="$HOME/.deno"' >> ~/.bashrc
+echo 'export PATH="$DENO_INSTALL/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Verify installation
+deno --version
+```
+
+**Alternatives to Deno:**
+- Node.js 25+ – See [nodejs.org](https://nodejs.org/)
+- Bun – See [bun.sh](https://bun.sh/)
+- QuickJS – `sudo apt install quickjs`
+
+#### 4️⃣ Launch Application
+
 ```bash
 python3 main.py
 ```
 
-### Build AppImage (Optional)
+### 📦 Build AppImage (Optional)
+
+Create a portable, standalone executable:
 
 ```bash
 chmod +x build-appimage.sh
 ./build-appimage.sh
 ```
 
-This creates a portable `AV-Morning-Star-0.3.0-x86_64.AppImage` file.
+Output: `AV-Morning-Star-0.3.0-x86_64.AppImage`
+
+Share this single file with others – no installation needed!
 
 ## 📖 Usage
 
-### Basic Workflow
+### 🎬 Basic Workflow
 
-1. **Launch Application**
-   ```bash
-   ./start.sh  # or: python3 main.py
-   ```
+```
+1. Launch App         → ./start.sh  or  python3 main.py
+2. Configure Auth     → Tools > Preferences (keep "Auto" default)
+3. Paste URL          → YouTube, Odysee, etc.
+4. Fetch Metadata     → Click "Fetch" button
+5. Select Videos      → Check desired videos from list
+6. Choose Settings    → Quality, format, mode
+7. Download           → Click "Download Selected"
+```
 
-2. **Set Up Authentication** (First Time)
-   - Go to **Tools > Preferences**
-   - Keep "Auto (Recommended)" selected
-   - Make sure you're logged into YouTube in your browser (Brave, Firefox, Chrome, etc.)
+### ⚙️ Mode Selection
 
-3. **Download a Video**
-   - Paste a YouTube URL (or any supported site)
-   - Click "Fetch" to retrieve video information
-   - Select the video(s) you want to download
-   - Choose format and quality
-   - Click "Download Selected"
+#### **Basic Mode** (Default - Recommended)
+- ✅ Auto-detects best quality
+- ✅ Auto-configures audio settings  
+- ✅ Perfect for 90% of users
+- ✅ No technical knowledge required
 
-### Mode Selection
+#### **Advanced Mode**
+- Manual video quality selection (4K down to 360p)
+- Audio codec choice (MP3, AAC, FLAC, Opus, M4A, WAV, ALAC)
+- Bitrate selection (96-320 kbps or lossless)
+- Audio enhancements:
+  - 🎚️ EBU R128 loudness normalization
+  - 🔊 Dynamic normalization
+  - 🔇 FFT-based noise reduction
+  - 🖼️ Thumbnail embedding
+- Video enhancements (for MP4/MKV/WebM):
+  - 🎬 Video denoising
+  - 🤳 Stabilization (reduce camera shake)
+  - ✨ Sharpening
+  - 🔊 Audio processing (normalization/denoising)
 
-**Basic Mode (Recommended)**
-- Auto-detects best quality
-- Auto-configures audio settings
-- Perfect for most users
-
-**Advanced Mode**
-- Manual quality selection
-- Audio codec choice (MP3, AAC, FLAC, Opus, M4A)
-- Bitrate selection (96-320 kbps)
-- Audio enhancement options:
-  - EBU R128 normalization
-  - Dynamic normalization
-  - Noise reduction
-  - Thumbnail embedding
-
-### Filename Templates
+### 📝 Filename Templates
 
 Customize output filenames with drag-and-drop tags:
-- **Title**: Video title
-- **Uploader**: Channel/creator name
-- **Quality**: Resolution (e.g., "1080p")
-- **Format**: Format ID
-- **Website**: Platform name
-- **ID**: Video ID
-- **Upload Date**: Original upload date
-- **Download Date**: Current date
-- **Duration**: Video length
-- **Extension**: File extension
 
-### YouTube Authentication
+| Tag | Example | Use Case |
+|-----|---------|----------|
+| **Title** | "Amazing Video" | Video name |
+| **Uploader** | "Channel Name" | Creator/channel |
+| **Quality** | "1080p" | Video resolution |
+| **Format** | "mp4" | File format |
+| **Website** | "YouTube" | Platform name |
+| **ID** | "dQw4w9WgXcQ" | Unique video ID |
+| **Upload Date** | "20260203" | Original upload date |
+| **Download Date** | "20260203" | When downloaded |
+| **Duration** | "03:45:20" | Video length |
+| **Extension** | "mp4" | Auto file extension |
 
-**How It Works:**
-1. App defaults to "Auto" mode
-2. Tries cookieless download first (for privacy)
-3. If YouTube blocks it, auto-detects your browser
-4. Prompts: "Retry with [Browser]?"
-5. Uses your browser's login session
+**Example:** Drag **Title**, **Uploader**, **Date** → `"Amazing Video - Channel Name - 20260203.mp4"`
 
-**Supported Browsers:**
-- Firefox (recommended)
-- Chrome / Chromium
-- Brave
-- Edge
-- Opera
-- Vivaldi
-- Safari (macOS)
+### 🔐 YouTube Authentication
 
-**Troubleshooting:**
-- Make sure you're logged into YouTube in your browser
-- Select "Auto (Recommended)" in Preferences
-- If specific browser fails, switch to "Auto" mode
+#### How It Works
+1. **Default "Auto" mode** – Intelligent browser selection
+2. **Tries cookieless first** – No authentication needed
+3. **YouTube blocks it?** – Auto-detects your browser
+4. **Prompts for confirmation** – "Retry with Firefox?"
+5. **Uses your login session** – You stay logged in
+
+#### Supported Browsers
+✅ Firefox (recommended)  
+✅ Chrome / Chromium  
+✅ Brave  
+✅ Edge  
+✅ Opera  
+✅ Vivaldi  
+✅ Safari (macOS)
+
+#### Troubleshooting YouTube Issues
+| Problem | Solution |
+|---------|----------|
+| "Sign in to confirm" error | Make sure you're logged into YouTube in your browser |
+| "Browser cookies not found" | Switch to "Auto" mode in Preferences |
+| Repeated "Bot detected" | Wait 15 minutes or try different video |
+| Specific browser fails | Use "Auto" mode to try another browser |
+
+⏱️ **Pro Tip:** Keep "Auto (Recommended)" selected – it finds the best browser automatically
 
 ## 🏗️ Architecture
 
-### Modular Extractor System
+### 🔧 Modular Extractor System
 
 ```
 extractors/
-├── __init__.py          # Factory function
+├── __init__.py          # Factory function (get_extractor)
 ├── base.py              # BaseExtractor (common interface)
 ├── youtube_ytdlp.py     # YouTube with PO token support
-├── odysee.py            # Odysee/LBRY platform
-└── generic.py           # Fallback for 1000+ sites
+├── odysee.py            # Odysee/LBRY platform  
+└── generic.py           # Fallback for 1000+ other sites
 ```
 
-**Key Components:**
-- `URLScraperThread`: Fetches video metadata using platform extractors
-- `DownloadThread`: Downloads videos/audio with progress tracking
-- `MediaDownloaderApp`: PyQt5 GUI with dual-mode interface
-- `browser_utils`: Browser detection and cookie management
+**How It Works:**
+1. User provides URL
+2. Factory function identifies platform
+3. Selects appropriate extractor class
+4. Extracts metadata via `extract_info()`
+5. Returns standardized format
 
-### Threading Model
+**Easy to Extend:** Add new platform? Create extractor, inherit from `BaseExtractor`, register in factory. ✨
 
-- **Main Thread**: GUI updates and user interaction
-- **Scraper Thread**: Video metadata extraction (non-blocking)
-- **Download Thread**: File downloads with progress hooks (non-blocking)
-- **Signals/Slots**: Thread-safe communication via PyQt
+### 🧵 Threading Model
+
+```
+┌─────────────────────────┐
+│   Main GUI Thread       │
+│  (PyQt5 Event Loop)     │
+└────────┬────────────────┘
+         │
+    ┌────┴─────┬──────────────┐
+    │           │              │
+    ▼           ▼              ▼
+┌────────┐ ┌──────────┐ ┌──────────┐
+│ Scraper│ │ Download │ │  UI      │
+│ Thread │ │  Thread  │ │ Updates  │
+│        │ │          │ │ (signals)│
+└────────┘ └──────────┘ └──────────┘
+```
+
+- **Main Thread** – GUI updates, user interaction
+- **Scraper Thread** – Metadata extraction (non-blocking)
+- **Download Thread** – File downloads with progress (non-blocking)
+- **Communication** – PyQt signals/slots (thread-safe)
 
 ## 🔒 Security & Privacy
 
-### Cookie Security
-✅ **Read-only access** to browser databases  
-✅ **Memory-only storage** (never saved to disk)  
-✅ **OS keyring encryption** for cookie database access  
-✅ **HTTPS-only** connections to video platforms  
-✅ **User consent** required before cookie usage  
-✅ **Automatic cleanup** when app closes
+### 🛡️ Cookie Security
 
-### Privacy Features
-- **Cookieless-first**: Tries unauthenticated access before using cookies
-- **Auto-detection**: Only scans when needed
-- **No tracking**: No analytics, no telemetry
-- **Local processing**: All operations happen on your machine
+| Feature | Status | Benefit |
+|---------|--------|---------|
+| **Read-only access** | ✅ | Cannot modify browser data |
+| **Memory-only storage** | ✅ | Cookies never written to disk |
+| **OS keyring encryption** | ✅ | Protected by system encryption |
+| **HTTPS-only** | ✅ | Encrypted connections only |
+| **User consent** | ✅ | Must approve before use |
+| **Auto cleanup** | ✅ | Destroyed when app closes |
 
-**Security Audit:** See [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) for comprehensive review.
+### 🔐 Privacy-First Approach
+
+- **Cookieless by Default** – Authenticates only when YouTube requires it
+- **Smart Detection** – Only scans browsers when needed (not on startup)
+- **No Tracking** – Zero analytics, no telemetry, no data collection
+- **Local Processing** – All operations happen on your computer
+- **Open Source** – Inspect the code yourself
+
+### 📋 For Technical Details
+
+See [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) for a comprehensive security review including:
+- Cookie handling mechanisms
+- Browser database encryption
+- Network security
+- Data flow analysis
 
 ## 📚 Documentation
 
@@ -253,30 +342,18 @@ Complete documentation is available in the [`docs/`](docs/) folder:
 - **[Documentation Index](docs/README.md)**: Full documentation guide
 - **[Archive](archive/)**: Historical development documentation
 
-## 🐛 Troubleshooting
+## ❓ Troubleshooting
 
-### YouTube "Sign in to confirm you're not a bot"
-**Solution:** Enable browser authentication
-1. Open YouTube in your browser and log in
-2. In AV Morning Star: Tools > Preferences
-3. Select "Auto (Recommended)"
-4. Retry download
+### YouTube Issues
 
-### "Firefox cookies not found" (or other browser)
-**Solution:** Switch to Auto mode
-1. Tools > Preferences
-2. Select "Auto (Recommended)"
-3. App will find available browser automatically
+#### "Sign in to confirm you're not a bot"
+**✓ Solution:**
+1. Open YouTube in your default browser and log in
+2. Tools > Preferences → Select "Auto (Recommended)"
+3. Retry the download
 
-### No JavaScript runtime found (YouTube)
-**Solution:** Install Deno
-```bash
-curl -fsSL https://deno.land/install.sh | sh
-source ~/.bashrc
-```
-
-### FFmpeg not found
-**Solution:** Install FFmpeg
+#### "FFmpeg not found"
+**✓ Solution:**
 ```bash
 # Ubuntu/Debian
 sudo apt install ffmpeg
@@ -286,79 +363,180 @@ sudo dnf install ffmpeg
 
 # Arch Linux
 sudo pacman -S ffmpeg
+
+# macOS
+brew install ffmpeg
 ```
+
+#### "No JavaScript runtime found"
+**✓ Solution:** Install Deno
+```bash
+curl -fsSL https://deno.land/install.sh | sh
+source ~/.bashrc
+```
+
+#### Repeated "Bot detected" errors
+**✓ Solution:**
+- Wait 15-30 minutes (YouTube rate limiting)
+- Try a different YouTube video
+- Ensure you're logged into YouTube in your browser
+
+### Browser Issues
+
+#### "Browser cookies not found" / "Permission denied"
+**✓ Solution:**
+1. Close your web browser (some lock cookie files)
+2. Switch to "Auto (Recommended)" mode
+3. Retry
+
+#### Specific browser authentication fails
+**✓ Solution:**
+- Make sure browser is installed and accessible
+- Sign into YouTube in that browser
+- Use "Auto" mode to switch browsers automatically
+
+### Installation Issues
+
+#### "Python 3 not found"
+**✓ Solution:**
+```bash
+# Ubuntu/Debian
+sudo apt install python3
+
+# macOS (requires Homebrew)
+brew install python@3.11
+```
+
+#### "PyQt5 installation fails"
+**✓ Solution:**
+```bash
+# Install system libraries first
+sudo apt install python3-dev  # Ubuntu/Debian
+
+# Then reinstall
+pip install --upgrade PyQt5
+```
+
+#### "pip command not found"
+**✓ Solution:**
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+### Download Issues
+
+#### Download stuck or very slow
+**✓ Solution:**
+- Check your internet connection
+- Try a different video
+- Increase quality setting might help
+- Restart the application
+
+#### "Requested format not available"
+**✓ Solution:**
+- Some videos have limited formats available
+- Try a different quality setting
+- Video might be private/restricted
+
+Need more help? Check [Full Documentation](docs/README.md)
 
 ## 🤝 Contributing
 
-Contributions are welcome! To add support for a new platform:
+Want to add support for a new platform? It's easy with our modular architecture!
 
-1. Create extractor in `extractors/yourplatform.py`
-2. Inherit from `BaseExtractor`
-3. Override `extract_info()` and `get_download_opts()`
-4. Register in `extractors/__init__.py`
+### 📋 Add New Platform in 4 Steps:
 
-See `ARCHITECTURE.md` for detailed guide.
+1. **Create extractor file** – `extractors/yourplatform.py`
+   ```python
+   from .base import BaseExtractor
+   
+   class YourPlatformExtractor(BaseExtractor):
+       def extract_info(self):
+           # Return list of videos with title, url, duration, uploader
+           pass
+       
+       def get_download_opts(self, ...):
+           # Return yt-dlp options for downloading
+           pass
+   ```
 
-## 📄 License
+2. **Inherit from BaseExtractor** – Get common functionality for free
 
-This project is open source. See LICENSE file for details.
+3. **Register in factory** – `extractors/__init__.py`
+   ```python
+   def get_extractor(url, cookies_from_browser=None):
+       if 'yourplatform.com' in url.lower():
+           return YourPlatformExtractor(url)
+       # ... rest of function
+   ```
 
-## 🙏 Acknowledgments
+4. **Test it** – No changes to main.py needed!
 
-- **yt-dlp**: Powerful video download engine
-- **PyQt5**: Excellent GUI framework
-- **FFmpeg**: Media processing capabilities
-- **Deno**: JavaScript runtime for YouTube PO tokens
+📖 **Full guide:** See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-## 📞 Support
+## 📚 Documentation
 
-- **Issues**: Report bugs on GitHub Issues
-- **Documentation**: Check [`docs/`](docs/) folder
-- **Security**: See [Security & Privacy Guide](docs/SECURITY_AND_PRIVACY.md)
+### 📖 User Guides
+- **[Getting Started](docs/GETTING_STARTED.md)** – Step-by-step tutorial
+- **[YouTube Authentication](docs/AUTHENTICATION_GUIDE.md)** – Cookie authentication explained
+- **[Security & Privacy](docs/SECURITY_AND_PRIVACY.md)** – User-friendly security guide
+- **[Smart Browser Detection](docs/SMART_BROWSER_DETECTION.md)** – Auto-detection feature
+
+### 🔧 Technical Documentation
+- **[Architecture](docs/ARCHITECTURE.md)** – Modular system design
+- **[Project Structure](docs/PROJECT_STRUCTURE.md)** – Complete file organization
+- **[Security Audit](docs/SECURITY_AUDIT.md)** – Technical security review
+- **[Code Review](CODE_REVIEW_REPORT.md)** – Code quality analysis
+
+### 📋 Project Resources
+- **[CHANGELOG.md](CHANGELOG.md)** – Version history and updates
+- **[Archive](archive/)** – Historical development notes
+- **[Full Documentation Index](docs/README.md)** – Everything in one place
+
+## 📄 License & Credits
+
+### License
+This project is **open source** and available for personal and educational use.  
+See [LICENSE](LICENSE) file for full details.
+
+### Built With ❤️ By
+- **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** – Powerful video downloading engine
+- **[PyQt5](https://www.riverbankcomputing.com/software/pyqt/)** – Excellent GUI framework
+- **[FFmpeg](https://ffmpeg.org/)** – Media processing capabilities
+- **[Deno](https://deno.land/)** – JavaScript runtime for YouTube PO tokens
+
+## ⚠️ Disclaimer
+
+This tool is for **personal use only**. Please respect:
+- ✅ Copyright laws in your jurisdiction
+- ✅ Website terms of service
+- ✅ Creator permissions and licenses
+
+The developers are **not responsible** for misuse of this software.
 
 ---
 
-**AV Morning Star v0.3.0** | Built with ❤️ for video archiving enthusiasts
+## 📞 Support
 
-The build process:
-1. Creates a Python virtual environment
-2. Installs all dependencies
-3. Uses PyInstaller to create a standalone executable
-4. Packages everything into an AppImage using appimagetool
-5. Produces a portable, single-file application
+### Getting Help
+- **📖 Documentation** – Check [docs/](docs/) folder first
+- **🐛 Report Issues** – Use GitHub Issues with details
+- **🔒 Security** – See [Security Guide](docs/SECURITY_AND_PRIVACY.md)
 
-## Troubleshooting
+### Quick Links
+- 🌐 Repository – [github.com/asafelobotomy/AV-Morning-Star](https://github.com/asafelobotomy/AV-Morning-Star)
+- 📜 Changelog – [CHANGELOG.md](CHANGELOG.md)
+- 🏗️ Architecture – [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-### FFmpeg Not Found
-If you get an error about FFmpeg:
-```bash
-# Install FFmpeg
-sudo apt install ffmpeg  # Ubuntu/Debian
-```
+---
 
-### PyQt5 Installation Issues
-If PyQt5 fails to install:
-```bash
-# Install system dependencies first
-sudo apt install python3-pyqt5  # Ubuntu/Debian
-```
+<div align="center">
 
-### Download Fails
-- Check your internet connection
-- Verify the URL is valid and accessible
-- Some sites may require authentication or have geographical restrictions
-- Try updating yt-dlp: `pip install --upgrade yt-dlp`
+**AV Morning Star v0.3.0**
 
-## License
+Built with 🎥 for video enthusiasts  
+Maintained with ❤️ by the community
 
-This project is open source and available for personal and educational use.
+*Privacy-first • Open-source • Easy-to-use*
 
-## Credits
-
-- Built with [PyQt5](https://www.riverbankcomputing.com/software/pyqt/)
-- Powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp)
-- Packaged with [AppImageKit](https://github.com/AppImage/AppImageKit)
-
-## Disclaimer
-
-This tool is for personal use only. Please respect copyright laws and terms of service of the websites you download from. The developers are not responsible for any misuse of this software.
+</div>

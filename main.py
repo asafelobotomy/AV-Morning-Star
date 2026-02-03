@@ -6,7 +6,6 @@ A PyQt5 application for downloading videos and audio from URLs
 
 import sys
 import os
-import json
 
 # Import application constants
 from constants import *
@@ -74,6 +73,37 @@ class FlowLayout(QVBoxLayout):
                         widget_item.widget().deleteLater()
                 item.layout().deleteLater()
         self.rows = []
+
+
+class VideoCheckbox(QWidget):
+    """Custom widget combining a checkbox with a word-wrapping label"""
+    def __init__(self, text, parent=None):
+        super().__init__(parent)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 5, 0, 5)
+        layout.setSpacing(8)
+        
+        # Checkbox (indicator only)
+        self.checkbox = QCheckBox()
+        self.checkbox.setChecked(True)
+        layout.addWidget(self.checkbox, 0, Qt.AlignTop)
+        
+        # Label with word wrap
+        self.label = QLabel(text)
+        self.label.setWordWrap(True)
+        self.label.setCursor(Qt.PointingHandCursor)
+        self.label.mousePressEvent = self._on_label_click
+        layout.addWidget(self.label, 1)  # Stretch factor 1 to take remaining space
+    
+    def _on_label_click(self, event):
+        """Toggle checkbox when label is clicked"""
+        self.checkbox.setChecked(not self.checkbox.isChecked())
+    
+    def isChecked(self):
+        return self.checkbox.isChecked()
+    
+    def setChecked(self, checked):
+        self.checkbox.setChecked(checked)
 
 
 def make_circular_pixmap(pixmap):
@@ -490,6 +520,7 @@ class MediaDownloaderApp(QMainWindow):
         scroll.setWidgetResizable(True)
         scroll.setMinimumHeight(120)
         scroll.setMaximumHeight(180)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Disable horizontal scroll
         
         self.videos_container = QWidget()
         self.videos_container_layout = QVBoxLayout(self.videos_container)
@@ -690,6 +721,7 @@ class MediaDownloaderApp(QMainWindow):
         audio_format_layout.addWidget(QLabel("Audio Codec:"), 0, 0)
         self.audio_codec_combo = QComboBox()
         self.audio_codec_combo.addItems(AUDIO_CODECS)
+        self.audio_codec_combo.currentTextChanged.connect(self.on_audio_codec_changed)
         audio_format_layout.addWidget(self.audio_codec_combo, 0, 1)
         
         audio_format_layout.addWidget(QLabel("Audio Quality:"), 0, 2)
@@ -1073,6 +1105,48 @@ class MediaDownloaderApp(QMainWindow):
                     f"Use MP4, MKV, MOV, or WebM for video enhancement."
                 )
 
+    def on_audio_codec_changed(self, text):
+        """Enable/disable audio options based on codec compatibility"""
+        # Codecs that support thumbnail embedding (have metadata containers)
+        # WAV is raw audio with no metadata support
+        # FLAC supports metadata but thumbnail embedding can be problematic
+        thumbnail_supported_codecs = ['MP3', 'AAC', 'M4A', 'Opus', 'OGG Vorbis', 'FLAC', 'ALAC']
+        codec_supports_thumbnail = text in thumbnail_supported_codecs
+        
+        # Handle thumbnail embedding
+        self.embed_thumbnail_checkbox.setEnabled(codec_supports_thumbnail)
+        if codec_supports_thumbnail:
+            self.embed_thumbnail_checkbox.setToolTip("Embed album art/thumbnail in audio file")
+        else:
+            self.embed_thumbnail_checkbox.setChecked(False)
+            self.embed_thumbnail_checkbox.setToolTip(
+                f"Not available for {text} format.\n\n"
+                f"{text} is a raw audio format without metadata support.\n"
+                f"Thumbnails cannot be embedded in this format.\n\n"
+                f"Use MP3, AAC, M4A, FLAC, or OGG for thumbnail embedding."
+            )
+        
+        # Lossless codecs should disable bitrate selection (use quality 0)
+        lossless_codecs = ['FLAC', 'WAV', 'ALAC']
+        is_lossless = text in lossless_codecs
+        
+        # When lossless codec is selected, show only Lossless quality option meaningfully
+        # Other codecs can use bitrate selection
+        if is_lossless:
+            # For lossless, bitrate doesn't apply - select Lossless if available
+            lossless_index = self.audio_quality_combo.findText("Lossless")
+            if lossless_index >= 0:
+                self.audio_quality_combo.setCurrentIndex(lossless_index)
+            self.audio_quality_combo.setToolTip(
+                f"{text} is a lossless codec.\n"
+                f"Quality setting doesn't affect file size or quality.\n"
+                f"Audio will be stored at full quality."
+            )
+        else:
+            self.audio_quality_combo.setToolTip(
+                "Select audio bitrate (higher = better quality, larger file)"
+            )
+
     def fetch_videos(self):
         """Fetch videos from URL"""
         url = self.url_input.text().strip()
@@ -1173,8 +1247,8 @@ class MediaDownloaderApp(QMainWindow):
             else:
                 duration_str = "N/A"
             
-            checkbox_text = f"{video['title']}\n   Uploader: {video.get('uploader', 'Unknown')} | Duration: {duration_str}"
-            checkbox = QCheckBox(checkbox_text)
+            checkbox_text = f"{video['title']}\nUploader: {video.get('uploader', 'Unknown')} | Duration: {duration_str}"
+            checkbox = VideoCheckbox(checkbox_text)
             checkbox.setChecked(True)
             self.videos_container_layout.addWidget(checkbox)
             self.checkboxes.append(checkbox)
