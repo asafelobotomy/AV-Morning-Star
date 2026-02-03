@@ -321,3 +321,111 @@ SYMBOL_SUCCESS = "✅"
 SYMBOL_ERROR = "❌"
 SYMBOL_QUESTION = "❓"
 SYMBOL_LIGHTBULB = "💡"
+# ===== FFMPEG FILTER CONFIGURATIONS =====
+# These are researched best-practice settings from FFmpeg wiki, community guides,
+# and professional workflows. See: https://trac.ffmpeg.org/wiki/DenoiseExamples
+
+# --- Video Denoising Filters ---
+# hqdn3d: High-quality 3D denoise - fast, good for light noise
+# Parameters: luma_spatial:chroma_spatial:luma_tmp:chroma_tmp
+# Weak (preserve detail): 2:1:2:3
+# Medium (balanced): 4:3:6:4.5 (FFmpeg default)
+# Strong (aggressive): 7:7:5:5
+FFMPEG_DENOISE_VIDEO_LIGHT = 'hqdn3d=2:1:2:3'  # Weak - preserves detail
+FFMPEG_DENOISE_VIDEO_MEDIUM = 'hqdn3d=4:3:6:4.5'  # Medium - balanced
+FFMPEG_DENOISE_VIDEO_STRONG = 'hqdn3d=6:5:8:6'  # Strong - more aggressive
+
+# nlmeans: Non-local means - highest quality but very slow (~160x slower than hqdn3d)
+# Best for archival/quality-critical work. s=denoise strength, p=patch size, r=research size
+FFMPEG_DENOISE_VIDEO_NLMEANS = 'nlmeans=s=3.5:p=7:r=15'  # High quality, slow
+
+# --- Video Sharpening Filters ---
+# unsharp: Classic unsharp mask
+# Parameters: luma_msize_x:luma_msize_y:luma_amount:chroma_msize_x:chroma_msize_y:chroma_amount
+# Light sharpening (subtle enhancement)
+FFMPEG_SHARPEN_LIGHT = 'unsharp=3:3:0.5:3:3:0.25'
+# Medium sharpening (noticeable but not harsh)
+FFMPEG_SHARPEN_MEDIUM = 'unsharp=5:5:0.8:5:5:0.4'
+# Strong sharpening (aggressive - may cause halos)
+FFMPEG_SHARPEN_STRONG = 'unsharp=5:5:1.5:5:5:0.75'
+
+# cas: Contrast Adaptive Sharpening (modern, edge-aware)
+# strength 0.0-1.0 where 0 is no sharpening
+FFMPEG_SHARPEN_CAS = 'cas=0.4'  # Balanced edge-aware sharpening
+
+# --- Video Stabilization ---
+# deshake: Single-pass stabilization (can be applied in yt-dlp workflow)
+# rx/ry: search range in pixels (larger = more correction but slower)
+# edge: 0=blank, 1=original, 2=clamp, 3=mirror
+FFMPEG_STABILIZE_LIGHT = 'deshake=rx=16:ry=16:edge=1'  # Light correction
+FFMPEG_STABILIZE_MEDIUM = 'deshake=rx=32:ry=32:edge=1'  # Medium correction
+FFMPEG_STABILIZE_STRONG = 'deshake=rx=64:ry=64:edge=3:blocksize=8'  # Strong correction
+
+# --- Video Color Correction ---
+# eq filter: brightness, contrast, saturation, gamma
+# brightness: -1.0 to 1.0 (0 = no change)
+# contrast: 0 to 2.0 (1 = no change)
+# saturation: 0 to 3.0 (1 = no change, 0 = grayscale)
+# gamma: 0.1 to 10.0 (1 = no change)
+FFMPEG_COLOR_BOOST = 'eq=saturation=1.2:contrast=1.1'  # Slight color boost
+FFMPEG_COLOR_VIVID = 'eq=saturation=1.4:contrast=1.15:gamma=1.05'  # Vivid colors
+FFMPEG_COLOR_CINEMATIC = 'eq=saturation=0.9:contrast=1.2:gamma=0.95'  # Cinematic look
+FFMPEG_COLOR_BRIGHTEN = 'eq=brightness=0.06:gamma=1.1'  # Brighten dark videos
+
+# --- Audio Denoising Filters ---
+# afftdn: FFT-based denoising
+# nr: noise reduction in dB (0.01-97, default 12)
+# nf: noise floor in dB (range -80 to -20)
+# tn: track noise (enable adaptive noise floor)
+FFMPEG_DENOISE_AUDIO_LIGHT = 'afftdn=nf=-25:nr=10:tn=1'  # Light - preserves detail
+FFMPEG_DENOISE_AUDIO_MEDIUM = 'afftdn=nf=-20:nr=15:tn=1'  # Medium - balanced
+FFMPEG_DENOISE_AUDIO_STRONG = 'afftdn=nf=-15:nr=20:tn=1'  # Strong - aggressive
+
+# Speech enhancement: highpass + lowpass + denoise
+# Cuts sub-bass rumble (<200Hz) and high-frequency hiss (>3000Hz)
+FFMPEG_SPEECH_ENHANCE = 'highpass=f=200,lowpass=f=3000,afftdn=nf=-20'
+
+# --- Audio Normalization ---
+# loudnorm: EBU R128 loudness normalization
+# I: integrated loudness target (-24 to 0, -16 is broadcast standard)
+# LRA: loudness range (1-20, 11 is typical)
+# TP: true peak max (-9.0 to 0, -1.5 prevents clipping)
+FFMPEG_NORMALIZE_BROADCAST = 'loudnorm=I=-16:LRA=11:TP=-1.5'  # EBU R128 broadcast
+FFMPEG_NORMALIZE_PODCAST = 'loudnorm=I=-16:LRA=7:TP=-1'  # Tighter range for podcasts
+FFMPEG_NORMALIZE_MUSIC = 'loudnorm=I=-14:LRA=11:TP=-1'  # Slightly louder for music
+FFMPEG_NORMALIZE_STREAMING = 'loudnorm=I=-14:LRA=11:TP=-2'  # Streaming platforms
+
+# Add aresample after loudnorm to fix sample rate issues (recommended by FFmpeg wiki)
+FFMPEG_NORMALIZE_WITH_RESAMPLE = 'loudnorm=I=-16:LRA=11:TP=-1.5,aresample=48000'
+
+# dynaudnorm: Dynamic audio normalization (for varying volume levels)
+# p: peak target (0-1, 0.95 is safe)
+# m: max gain (1-100, 10 prevents extreme boosting)
+# s: smoothing (1-30, higher = smoother transitions)
+# g: Gaussian filter size (3-301, higher = more temporal smoothing)
+FFMPEG_DYNAUDNORM_GENTLE = 'dynaudnorm=p=0.9:m=5:s=15:g=7'  # Gentle leveling
+FFMPEG_DYNAUDNORM_BALANCED = 'dynaudnorm=p=0.95:m=10:s=12:g=5'  # Balanced
+FFMPEG_DYNAUDNORM_AGGRESSIVE = 'dynaudnorm=p=0.98:m=15:s=8:g=3'  # Aggressive leveling
+
+# --- Audio Compression/Limiting ---
+# compand: Dynamic range compressor
+# For dialogue (reduces loud peaks, boosts quiet parts)
+FFMPEG_COMPRESS_DIALOGUE = 'compand=attacks=0.1:decays=0.3:points=-80/-80|-45/-35|-27/-25|0/-10:gain=3'
+# For podcast/voiceover (tighter compression)
+FFMPEG_COMPRESS_PODCAST = 'compand=attacks=0.05:decays=0.2:points=-80/-80|-50/-40|-30/-25|-10/-10|0/-5:gain=4'
+
+# --- Audio Bass/Treble Enhancement ---
+# equalizer: Parametric EQ for bass boost or treble clarity
+FFMPEG_BASS_BOOST = 'bass=g=5:f=100:w=0.6'  # +5dB bass boost at 100Hz
+FFMPEG_TREBLE_BOOST = 'treble=g=3:f=4000:w=0.5'  # +3dB treble at 4kHz
+FFMPEG_VOICE_CLARITY = 'equalizer=f=2500:width_type=o:width=1:g=3'  # Boost vocal presence
+
+# --- Combined Filter Chains (recommended combinations) ---
+# Video: Light enhancement (denoise + mild sharpen)
+FFMPEG_VIDEO_ENHANCE_LIGHT = 'hqdn3d=2:1:2:3,unsharp=3:3:0.3:3:3:0.15'
+# Video: Medium enhancement (denoise + sharpen + color)
+FFMPEG_VIDEO_ENHANCE_MEDIUM = 'hqdn3d=4:3:6:4.5,unsharp=5:5:0.6:5:5:0.3,eq=saturation=1.1:contrast=1.05'
+# Audio: Speech/podcast cleanup
+FFMPEG_AUDIO_SPEECH_FULL = 'highpass=f=80,afftdn=nf=-20:tn=1,loudnorm=I=-16:LRA=7:TP=-1'
+# Audio: Music enhancement
+FFMPEG_AUDIO_MUSIC_FULL = 'afftdn=nf=-25:nr=8,loudnorm=I=-14:LRA=11:TP=-1'

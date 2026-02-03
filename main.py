@@ -138,7 +138,8 @@ class DownloadThread(QThread):
                  audio_codec='mp3', audio_quality='192', download_subs=False,
                  embed_thumbnail=False, normalize_audio=False, denoise_audio=False,
                  dynamic_normalization=False, filename_template=None, cookies_from_browser=None,
-                 video_container='mp4'):
+                 video_container='mp4', denoise_video=False, stabilize_video=False, 
+                 sharpen_video=False, normalize_video_audio=False, denoise_video_audio=False):
         super().__init__()
         self.urls = urls
         self.output_path = output_path
@@ -154,6 +155,12 @@ class DownloadThread(QThread):
         self.dynamic_normalization = dynamic_normalization
         self.filename_template = filename_template or '%(title)s.%(ext)s'
         self.cookies_from_browser = cookies_from_browser
+        # Video enhancement options
+        self.denoise_video = denoise_video
+        self.stabilize_video = stabilize_video
+        self.sharpen_video = sharpen_video
+        self.normalize_video_audio = normalize_video_audio
+        self.denoise_video_audio = denoise_video_audio
         
     def progress_hook(self, d):
         if d['status'] == 'downloading':
@@ -220,7 +227,12 @@ class DownloadThread(QThread):
                     self.normalize_audio,
                     self.denoise_audio,
                     self.dynamic_normalization,
-                    self.video_container
+                    self.video_container,
+                    self.denoise_video,
+                    self.stabilize_video,
+                    self.sharpen_video,
+                    self.normalize_video_audio,
+                    self.denoise_video_audio
                 )
                 
                 # Add progress hook
@@ -577,23 +589,90 @@ class MediaDownloaderApp(QMainWindow):
         
         # === VIDEO OPTIONS (shown when Video is selected) ===
         self.video_options_widget = QWidget()
-        video_options_layout = QGridLayout(self.video_options_widget)
-        video_options_layout.setSpacing(10)
+        video_options_layout = QVBoxLayout(self.video_options_widget)
         video_options_layout.setContentsMargins(0, 5, 0, 5)
+        video_options_layout.setSpacing(8)
         
-        video_options_layout.addWidget(QLabel("Video Quality:"), 0, 0)
+        # Video format row
+        video_format_layout = QGridLayout()
+        video_format_layout.setSpacing(10)
+        
+        video_format_layout.addWidget(QLabel("Video Quality:"), 0, 0)
         self.quality_combo = QComboBox()
         self.quality_combo.addItems(VIDEO_QUALITIES)
-        video_options_layout.addWidget(self.quality_combo, 0, 1)
+        video_format_layout.addWidget(self.quality_combo, 0, 1)
         
-        video_options_layout.addWidget(QLabel("Video Format:"), 0, 2)
+        video_format_layout.addWidget(QLabel("Video Format:"), 0, 2)
         self.video_container_combo = QComboBox()
         self.video_container_combo.addItems(VIDEO_CONTAINERS)
-        video_options_layout.addWidget(self.video_container_combo, 0, 3)
+        video_format_layout.addWidget(self.video_container_combo, 0, 3)
         
         self.subtitles_checkbox = QCheckBox("Download Subtitles")
         self.subtitles_checkbox.setChecked(False)
-        video_options_layout.addWidget(self.subtitles_checkbox, 0, 4)
+        video_format_layout.addWidget(self.subtitles_checkbox, 0, 4)
+        
+        video_options_layout.addLayout(video_format_layout)
+        
+        # Video enhancement options row
+        video_enhance_layout = QHBoxLayout()
+        video_enhance_layout.setSpacing(15)
+        
+        self.video_denoise_checkbox = QCheckBox("Denoise Video")
+        self.video_denoise_checkbox.setChecked(False)
+        self.video_denoise_checkbox.setToolTip(
+            "Remove video noise/grain using hqdn3d 3D temporal denoiser.\n"
+            "Uses balanced settings (4:3:6:4.5) for quality preservation.\n"
+            "Best for: grainy footage, low-light recordings"
+        )
+        video_enhance_layout.addWidget(self.video_denoise_checkbox)
+        
+        self.video_stabilize_checkbox = QCheckBox("Stabilize Video")
+        self.video_stabilize_checkbox.setChecked(False)
+        self.video_stabilize_checkbox.setToolTip(
+            "Reduce camera shake using deshake filter.\n"
+            "Uses 32px search range with edge mirroring.\n"
+            "Best for: handheld footage, action cameras\n"
+            "Note: May add processing time"
+        )
+        video_enhance_layout.addWidget(self.video_stabilize_checkbox)
+        
+        self.video_sharpen_checkbox = QCheckBox("Sharpen")
+        self.video_sharpen_checkbox.setChecked(False)
+        self.video_sharpen_checkbox.setToolTip(
+            "Enhance video sharpness using unsharp mask filter.\n"
+            "Uses moderate settings (5x5 kernel, 0.8 strength).\n"
+            "Best for: slightly soft footage, after denoising"
+        )
+        video_enhance_layout.addWidget(self.video_sharpen_checkbox)
+        
+        video_enhance_layout.addStretch()
+        video_options_layout.addLayout(video_enhance_layout)
+        
+        # Video audio enhancement options row
+        video_audio_layout = QHBoxLayout()
+        video_audio_layout.setSpacing(15)
+        
+        self.video_normalize_audio_checkbox = QCheckBox("Normalize Audio")
+        self.video_normalize_audio_checkbox.setChecked(False)
+        self.video_normalize_audio_checkbox.setToolTip(
+            "Normalize audio to EBU R128 broadcast standard.\n"
+            "Target: -16 LUFS with -1.5 dB true peak limit.\n"
+            "Includes sample rate correction (48kHz).\n"
+            "Best for: consistent playback volume"
+        )
+        video_audio_layout.addWidget(self.video_normalize_audio_checkbox)
+        
+        self.video_denoise_audio_checkbox = QCheckBox("Denoise Audio")
+        self.video_denoise_audio_checkbox.setChecked(False)
+        self.video_denoise_audio_checkbox.setToolTip(
+            "Remove background noise using FFT-based filter.\n"
+            "Uses adaptive noise floor tracking (-20dB, 15dB reduction).\n"
+            "Best for: recordings with hiss, hum, or ambient noise"
+        )
+        video_audio_layout.addWidget(self.video_denoise_audio_checkbox)
+        
+        video_audio_layout.addStretch()
+        video_options_layout.addLayout(video_audio_layout)
         
         options_layout.addWidget(self.video_options_widget)
         
@@ -631,17 +710,32 @@ class MediaDownloaderApp(QMainWindow):
         
         self.normalize_audio_checkbox = QCheckBox("Normalize Audio (EBU R128)")
         self.normalize_audio_checkbox.setChecked(False)
-        self.normalize_audio_checkbox.setToolTip("Professional loudness normalization to -16 LUFS")
+        self.normalize_audio_checkbox.setToolTip(
+            "Professional loudness normalization to EBU R128 standard.\n"
+            "Target: -16 LUFS, loudness range 11 LU, true peak -1.5 dB.\n"
+            "Includes sample rate correction to prevent drift.\n"
+            "Best for: broadcast, streaming, consistent playback"
+        )
         audio_enhance_layout.addWidget(self.normalize_audio_checkbox)
         
         self.dynamic_norm_checkbox = QCheckBox("Dynamic Normalization")
         self.dynamic_norm_checkbox.setChecked(False)
-        self.dynamic_norm_checkbox.setToolTip("Better for varying volume levels (alternative to EBU R128)")
+        self.dynamic_norm_checkbox.setToolTip(
+            "Dynamic audio normalizer for varying volume levels.\n"
+            "Uses: 95% peak target, 10dB max gain, smooth transitions.\n"
+            "Alternative to EBU R128 for podcasts/lectures.\n"
+            "Best for: speech with varying loudness"
+        )
         audio_enhance_layout.addWidget(self.dynamic_norm_checkbox)
         
         self.denoise_checkbox = QCheckBox("Denoise Audio")
         self.denoise_checkbox.setChecked(False)
-        self.denoise_checkbox.setToolTip("Remove background noise using FFT-based filtering")
+        self.denoise_checkbox.setToolTip(
+            "Remove background noise using FFT-based filter.\n"
+            "Uses adaptive noise floor tracking for best results.\n"
+            "Settings: -20dB floor, 15dB reduction, adaptive tracking.\n"
+            "Best for: recordings with hiss, hum, or ambient noise"
+        )
         audio_enhance_layout.addWidget(self.denoise_checkbox)
         
         audio_enhance_layout.addStretch()
@@ -1214,6 +1308,12 @@ class MediaDownloaderApp(QMainWindow):
             normalize_audio = True if format_type == 'audio' else False  # Auto-normalize audio
             dynamic_normalization = False  # Use standard EBU R128
             denoise_audio = False  # Don't denoise by default
+            # Video enhancement (off in basic mode)
+            denoise_video = False
+            stabilize_video = False
+            sharpen_video = False
+            normalize_video_audio = False
+            denoise_video_audio = False
         else:
             # Advanced mode - use manual settings
             video_quality = self.quality_combo.currentText() if format_type == 'video' else None
@@ -1230,6 +1330,12 @@ class MediaDownloaderApp(QMainWindow):
             normalize_audio = self.normalize_audio_checkbox.isChecked() if format_type == 'audio' else False
             dynamic_normalization = self.dynamic_norm_checkbox.isChecked() if format_type == 'audio' else False
             denoise_audio = self.denoise_checkbox.isChecked() if format_type == 'audio' else False
+            # Video enhancement options
+            denoise_video = self.video_denoise_checkbox.isChecked() if format_type == 'video' else False
+            stabilize_video = self.video_stabilize_checkbox.isChecked() if format_type == 'video' else False
+            sharpen_video = self.video_sharpen_checkbox.isChecked() if format_type == 'video' else False
+            normalize_video_audio = self.video_normalize_audio_checkbox.isChecked() if format_type == 'video' else False
+            denoise_video_audio = self.video_denoise_audio_checkbox.isChecked() if format_type == 'video' else False
         
         self.status_label.setText(f"Starting download of {len(selected_urls)} item(s)...")
         self.download_btn.setEnabled(False)
@@ -1244,7 +1350,10 @@ class MediaDownloaderApp(QMainWindow):
             selected_urls, self.output_path, format_type, video_quality,
             audio_codec, audio_quality, download_subs, embed_thumbnail, normalize_audio,
             denoise_audio, dynamic_normalization, filename_template, 
-            cookies_from_browser=self.browser_preference, video_container=video_container
+            cookies_from_browser=self.browser_preference, video_container=video_container,
+            denoise_video=denoise_video, stabilize_video=stabilize_video,
+            sharpen_video=sharpen_video, normalize_video_audio=normalize_video_audio,
+            denoise_video_audio=denoise_video_audio
         )
         self.download_thread.progress.connect(self.on_download_progress)
         self.download_thread.finished.connect(self.on_download_finished)

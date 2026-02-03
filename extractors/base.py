@@ -301,7 +301,10 @@ class BaseExtractor:
                          video_quality=None, audio_codec='mp3', audio_quality='192',
                          download_subs=False, embed_thumbnail=False, 
                          normalize_audio=False, denoise_audio=False,
-                         dynamic_normalization=False, video_container='mp4'):
+                         dynamic_normalization=False, video_container='mp4',
+                         denoise_video=False, stabilize_video=False,
+                         sharpen_video=False, normalize_video_audio=False,
+                         denoise_video_audio=False):
         """
         Get yt-dlp options for downloading videos/audio
         
@@ -318,6 +321,11 @@ class BaseExtractor:
             denoise_audio: Whether to denoise audio
             dynamic_normalization: Use dynamic normalization vs EBU R128
             video_container: Video container format (mp4, mkv, webm, avi, mov, flv)
+            denoise_video: Whether to denoise video
+            stabilize_video: Whether to stabilize video (reduce camera shake)
+            sharpen_video: Whether to sharpen video
+            normalize_video_audio: Whether to normalize audio in video
+            denoise_video_audio: Whether to denoise audio in video
             
         Returns:
             dict: Complete yt-dlp options for downloading
@@ -346,17 +354,31 @@ class BaseExtractor:
                                              embed_thumbnail, normalize_audio, 
                                              denoise_audio, dynamic_normalization))
         else:
-            opts.update(self._get_video_opts(video_quality, video_container))
+            opts.update(self._get_video_opts(video_quality, video_container,
+                                             denoise_video, stabilize_video,
+                                             sharpen_video, normalize_video_audio,
+                                             denoise_video_audio))
         
         return opts
     
-    def _get_video_opts(self, video_quality, video_container='mp4'):
+    def _get_video_opts(self, video_quality, video_container='mp4',
+                       denoise_video=False, stabilize_video=False,
+                       sharpen_video=False, normalize_video_audio=False,
+                       denoise_video_audio=False):
         """
-        Get video-specific download options
+        Get video-specific download options with enhanced FFmpeg filter configurations.
+        
+        Filter settings are based on FFmpeg wiki best practices and community recommendations.
+        See: https://trac.ffmpeg.org/wiki/DenoiseExamples
         
         Args:
             video_quality: Quality string from UI
             video_container: Container format (mp4, mkv, webm, avi, mov, flv)
+            denoise_video: Apply video denoising filter (hqdn3d - fast, quality balanced)
+            stabilize_video: Apply video stabilization (deshake - single-pass)
+            sharpen_video: Apply video sharpening filter (unsharp with edge-aware settings)
+            normalize_video_audio: Normalize audio track volume (EBU R128 broadcast standard)
+            denoise_video_audio: Denoise audio track (FFT-based with adaptive noise floor)
             
         Returns:
             dict: Video-specific yt-dlp options
@@ -381,23 +403,102 @@ class BaseExtractor:
         else:
             format_str = 'best'
         
-        return {
+        opts = {
             'format': format_str,
             'merge_output_format': video_container
         }
+        
+        # Build video and audio filter chains using researched best-practice settings
+        video_filters = []
+        audio_filters = []
+        
+        # === VIDEO FILTERS ===
+        
+        if denoise_video:
+            # hqdn3d: High-quality 3D denoise filter
+            # Using medium settings: balances noise reduction with detail preservation
+            # Parameters: luma_spatial:chroma_spatial:luma_tmp:chroma_tmp
+            # - luma_spatial (4.0): Spatial denoising strength for luma
+            # - chroma_spatial (3.0): Spatial denoising for chroma (slightly less aggressive)
+            # - luma_tmp (6.0): Temporal denoising for luma (uses adjacent frames)
+            # - chroma_tmp (4.5): Temporal denoising for chroma
+            # Source: FFmpeg wiki, Handbrake presets
+            video_filters.append('hqdn3d=4:3:6:4.5')
+        
+        if stabilize_video:
+            # deshake: Single-pass video stabilization
+            # Note: vidstab (two-pass) would be better but requires temp file,
+            # which yt-dlp's workflow doesn't support well.
+            # Using medium settings for balanced correction:
+            # - rx/ry (32): Search range in pixels (larger = more shake correction)
+            # - edge (3): Mirror edges to fill gaps (prevents black borders)
+            # - blocksize (4): Motion detection block size
+            # Source: FFmpeg docs, video stabilization community guides
+            video_filters.append('deshake=rx=32:ry=32:edge=3:blocksize=4')
+        
+        if sharpen_video:
+            # unsharp: Unsharp mask filter for edge enhancement
+            # Using light-medium settings to enhance without creating halos:
+            # - luma_msize_x/y (5): 5x5 kernel for luma sharpening
+            # - luma_amount (0.8): Moderate sharpening strength (1.0+ can cause artifacts)
+            # - chroma_msize_x/y (5): 5x5 kernel for chroma
+            # - chroma_amount (0.4): Less aggressive on color to prevent ringing
+            # Source: FFmpeg wiki, video encoding best practices
+            video_filters.append('unsharp=5:5:0.8:5:5:0.4')
+        
+        # === AUDIO FILTERS (for video's audio track) ===
+        
+        if denoise_video_audio:
+            # afftdn: FFT-based audio denoising with enhanced settings
+            # Using adaptive noise floor tracking for better results:
+            # - nf (-20): Noise floor in dB (typical background noise level)
+            # - nr (15): Noise reduction amount in dB
+            # - tn (1): Enable adaptive noise floor tracking (adjusts to varying noise)
+            # Source: FFmpeg audio filter docs, audio engineering guides
+            audio_filters.append('afftdn=nf=-20:nr=15:tn=1')
+        
+        if normalize_video_audio:
+            # loudnorm: EBU R128 loudness normalization (broadcast standard)
+            # Followed by aresample to fix sample rate issues (FFmpeg wiki recommendation):
+            # - I (-16): Integrated loudness target in LUFS (broadcast standard)
+            # - LRA (11): Loudness range (allows natural dynamics)
+            # - TP (-1.5): True peak maximum (prevents clipping on playback)
+            # - aresample (48000): Fixes sample rate issues that loudnorm can introduce
+            # Source: FFmpeg wiki, EBU R128 specification
+            audio_filters.append('loudnorm=I=-16:LRA=11:TP=-1.5,aresample=48000')
+        
+        # Apply filters via postprocessor_args
+        if video_filters or audio_filters:
+            ffmpeg_args = []
+            
+            if video_filters:
+                ffmpeg_args.extend(['-vf', ','.join(video_filters)])
+            
+            if audio_filters:
+                ffmpeg_args.extend(['-af', ','.join(audio_filters)])
+            
+            opts['postprocessor_args'] = {
+                'merger': ffmpeg_args  # Apply during FFmpeg merge step
+            }
+        
+        return opts
     
     def _get_audio_opts(self, audio_codec, audio_quality, embed_thumbnail,
                        normalize_audio, denoise_audio, dynamic_normalization):
         """
-        Get audio-specific download options
+        Get audio-specific download options with enhanced FFmpeg filter configurations.
+        
+        Filter settings are based on FFmpeg wiki best practices, EBU R128 standards,
+        and audio engineering recommendations.
         
         Args:
-            audio_codec: Codec name (mp3, aac, etc.)
-            audio_quality: Bitrate string
-            embed_thumbnail: Whether to embed thumbnail
-            normalize_audio: Whether to normalize volume
-            denoise_audio: Whether to denoise
-            dynamic_normalization: Use dynamic vs EBU R128
+            audio_codec: Codec name (mp3, aac, flac, opus, etc.)
+            audio_quality: Bitrate string (e.g., '192', '320', '0' for lossless)
+            embed_thumbnail: Whether to embed album art/thumbnail
+            normalize_audio: Whether to normalize volume (EBU R128)
+            denoise_audio: Whether to apply noise reduction
+            dynamic_normalization: Use dynamic normalization (for varying volume levels)
+                                   instead of EBU R128
             
         Returns:
             dict: Audio-specific yt-dlp options
@@ -414,17 +515,40 @@ class BaseExtractor:
             'preferredquality': audio_quality,
         })
         
-        # Build audio filter chain
+        # Build audio filter chain using researched best-practice settings
         audio_filters = []
         
         if denoise_audio:
-            audio_filters.append('afftdn=nf=-20')
+            # afftdn: FFT-based audio denoising with adaptive noise tracking
+            # Enhanced settings compared to basic afftdn:
+            # - nf (-20): Noise floor at -20dB (typical background noise)
+            # - nr (15): 15dB noise reduction (balanced - not too aggressive)
+            # - tn (1): Enable adaptive noise floor tracking
+            #   This makes the filter adapt to varying noise levels in the audio
+            # Source: FFmpeg audio filter docs, audio restoration guides
+            audio_filters.append('afftdn=nf=-20:nr=15:tn=1')
         
         if normalize_audio:
             if dynamic_normalization:
+                # dynaudnorm: Dynamic audio normalizer for varying volume levels
+                # Better for content with wide dynamic range (podcasts, lectures, etc.)
+                # Enhanced settings:
+                # - p (0.95): Target peak at 95% to prevent clipping
+                # - m (10): Max gain of 10dB prevents extreme boosting of quiet parts
+                # - s (12): Smoothing factor for natural-sounding transitions
+                # - g (5): Gaussian filter size for temporal smoothing
+                # Source: FFmpeg docs, podcast production guides
                 audio_filters.append('dynaudnorm=p=0.95:m=10:s=12:g=5')
             else:
-                audio_filters.append('loudnorm=I=-16:LRA=11:TP=-1.5')
+                # loudnorm: EBU R128 loudness normalization (broadcast standard)
+                # This is the professional standard for audio normalization.
+                # Enhanced with aresample to fix sample rate issues (FFmpeg wiki recommendation):
+                # - I (-16): Integrated loudness at -16 LUFS (broadcast standard)
+                # - LRA (11): Loudness range of 11 LU (preserves natural dynamics)
+                # - TP (-1.5): True peak at -1.5 dBFS (prevents inter-sample clipping)
+                # - aresample (48000): Fixes sample rate drift issues that loudnorm can cause
+                # Source: FFmpeg wiki, EBU R128 specification, broadcast standards
+                audio_filters.append('loudnorm=I=-16:LRA=11:TP=-1.5,aresample=48000')
         
         if audio_filters:
             opts['postprocessor_args'] = {
@@ -436,7 +560,7 @@ class BaseExtractor:
             opts['postprocessors'].append({'key': 'EmbedThumbnail'})
             opts['writethumbnail'] = True
         
-        # Metadata
+        # Metadata embedding
         opts['postprocessors'].append({'key': 'FFmpegMetadata'})
         
         return opts
