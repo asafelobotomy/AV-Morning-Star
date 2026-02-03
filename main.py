@@ -15,13 +15,52 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QPushButton, QLineEdit, QLabel, 
                              QListWidget, QComboBox, QProgressBar, QTextEdit,
                              QCheckBox, QScrollArea, QGroupBox, QMessageBox,
-                             QFileDialog, QListWidgetItem, QSplashScreen)
-from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
+                             QFileDialog, QListWidgetItem, QSplashScreen, QGridLayout)
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer, QRect, QPoint, QSize
 from PyQt5.QtGui import QIcon, QFont, QPixmap, QPainter, QBrush, QPainterPath
 import yt_dlp
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
+
+
+class FlowLayout(QVBoxLayout):
+    """Custom layout that flows items left-to-right and wraps to new rows"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setSpacing(10)
+        self.rows = []
+        
+    def addWidget(self, widget):
+        # Find current row or create new one
+        if not self.rows or not hasattr(self, '_current_row'):
+            self._current_row = QHBoxLayout()
+            self._current_row.setSpacing(10)
+            self._current_row.setAlignment(Qt.AlignLeft)
+            super().addLayout(self._current_row)
+            self.rows.append(self._current_row)
+        
+        self._current_row.addWidget(widget)
+    
+    def newRow(self):
+        """Force a new row"""
+        self._current_row = QHBoxLayout()
+        self._current_row.setSpacing(10)
+        self._current_row.setAlignment(Qt.AlignLeft)
+        super().addLayout(self._current_row)
+        self.rows.append(self._current_row)
+    
+    def clear(self):
+        """Clear all widgets"""
+        while self.count():
+            item = self.takeAt(0)
+            if item.layout():
+                while item.layout().count():
+                    widget_item = item.layout().takeAt(0)
+                    if widget_item.widget():
+                        widget_item.widget().deleteLater()
+                item.layout().deleteLater()
+        self.rows = []
 
 
 def make_circular_pixmap(pixmap):
@@ -119,7 +158,7 @@ class DownloadThread(QThread):
     def __init__(self, urls, output_path, format_type, video_quality=None, 
                  audio_codec='mp3', audio_quality='192', download_subs=False,
                  embed_thumbnail=False, normalize_audio=False, denoise_audio=False,
-                 dynamic_normalization=False):
+                 dynamic_normalization=False, filename_template=None):
         super().__init__()
         self.urls = urls
         self.output_path = output_path
@@ -132,6 +171,7 @@ class DownloadThread(QThread):
         self.normalize_audio = normalize_audio
         self.denoise_audio = denoise_audio
         self.dynamic_normalization = dynamic_normalization
+        self.filename_template = filename_template or '%(title)s.%(ext)s'
         
     def progress_hook(self, d):
         if d['status'] == 'downloading':
@@ -178,11 +218,8 @@ class DownloadThread(QThread):
         
         for idx, url in enumerate(self.urls, 1):
             try:
-                # Build custom filename template
-                filename_template = self.parent().build_filename_template() if hasattr(self, 'parent') else '%(title)s.%(ext)s'
-                
                 ydl_opts = {
-                    'outtmpl': os.path.join(self.output_path, filename_template),
+                    'outtmpl': os.path.join(self.output_path, self.filename_template),
                     'progress_hooks': [self.progress_hook],
                     'noprogress': False,  # Ensure progress updates are sent
                     'quiet': False,  # Allow progress output
@@ -309,7 +346,7 @@ class MediaDownloaderApp(QMainWindow):
         
     def init_ui(self):
         self.setWindowTitle("AV Morning Star - Media Downloader")
-        self.setMinimumSize(800, 850)
+        self.setMinimumSize(900, 850)
         
         # Set window icon if available
         icon_path = os.path.join(os.path.dirname(__file__), 'av-morning-star.png')
@@ -328,7 +365,7 @@ class MediaDownloaderApp(QMainWindow):
         if os.path.exists(icon_path):
             icon_label = QLabel()
             pixmap = QPixmap(icon_path)
-            scaled_pixmap = pixmap.scaled(80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            scaled_pixmap = pixmap.scaled(60, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             circular_pixmap = make_circular_pixmap(scaled_pixmap)
             icon_label.setPixmap(circular_pixmap)
             banner_layout.addWidget(icon_label)
@@ -336,7 +373,7 @@ class MediaDownloaderApp(QMainWindow):
         # Title section
         title_layout = QVBoxLayout()
         title = QLabel("AV Morning Star")
-        title.setFont(QFont("Arial", 20, QFont.Bold))
+        title.setFont(QFont("Arial", 16, QFont.Bold))
         title.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         title_layout.addWidget(title)
         
@@ -407,17 +444,15 @@ class MediaDownloaderApp(QMainWindow):
         filename_layout = QVBoxLayout()
         
         # Selected tags container (top section)
-        selected_label = QLabel("Selected Tags (drag to reorder, click × to remove):")
+        selected_label = QLabel("Selected Tags (click to remove):")
         filename_layout.addWidget(selected_label)
         
-        # Frame for selected tags
+        # Frame for selected tags with wrapping
         selected_frame = QWidget()
-        selected_frame.setMinimumHeight(60)
-        selected_frame.setMaximumHeight(80)
         selected_frame.setStyleSheet("QWidget { background-color: #2d2d2d; border: 2px solid #444; border-radius: 5px; padding: 5px; }")
-        self.selected_tags_layout = QHBoxLayout(selected_frame)
+        selected_frame.setSizePolicy(QWidget().sizePolicy().Expanding, QWidget().sizePolicy().Minimum)
+        self.selected_tags_layout = FlowLayout(selected_frame)
         self.selected_tags_layout.setSpacing(10)
-        self.selected_tags_layout.setAlignment(Qt.AlignLeft)
         filename_layout.addWidget(selected_frame)
         
         filename_layout.addSpacing(10)
@@ -426,25 +461,24 @@ class MediaDownloaderApp(QMainWindow):
         available_label = QLabel("Available Tags (click to add):")
         filename_layout.addWidget(available_label)
         
-        # Frame for available tags
+        # Frame for available tags with wrapping
         available_frame = QWidget()
-        available_frame.setMinimumHeight(60)
-        available_frame.setMaximumHeight(80)
         available_frame.setStyleSheet("QWidget { background-color: #2d2d2d; border: 2px solid #444; border-radius: 5px; padding: 5px; }")
-        self.available_tags_layout = QHBoxLayout(available_frame)
+        available_frame.setSizePolicy(QWidget().sizePolicy().Expanding, QWidget().sizePolicy().Minimum)
+        self.available_tags_layout = FlowLayout(available_frame)
         self.available_tags_layout.setSpacing(10)
-        self.available_tags_layout.setAlignment(Qt.AlignLeft)
         filename_layout.addWidget(available_frame)
         
         filename_layout.addSpacing(10)
         
         # Preview
-        preview_layout = QHBoxLayout()
+        preview_layout = QVBoxLayout()
         preview_layout.addWidget(QLabel("Preview:"))
         self.filename_preview = QLabel("")
         self.filename_preview.setStyleSheet("QLabel { font-family: monospace; color: #00ff00; font-weight: bold; }")
+        self.filename_preview.setWordWrap(True)
+        self.filename_preview.setMaximumHeight(60)
         preview_layout.addWidget(self.filename_preview)
-        preview_layout.addStretch()
         filename_layout.addLayout(preview_layout)
         
         filename_group.setLayout(filename_layout)
@@ -461,61 +495,50 @@ class MediaDownloaderApp(QMainWindow):
         options_group = QGroupBox("Download Options")
         options_layout = QVBoxLayout()
         
-        # Mode selection row (Basic/Advanced)
-        mode_layout = QHBoxLayout()
-        mode_layout.addWidget(QLabel("Mode:"))
+        # First row: Mode and Format in grid
+        top_grid = QGridLayout()
+        top_grid.setSpacing(10)
+        
+        top_grid.addWidget(QLabel("Mode:"), 0, 0)
         self.mode_combo = QComboBox()
         self.mode_combo.addItems(["Basic (Auto-detect best quality)", "Advanced (Manual settings)"])
         self.mode_combo.currentTextChanged.connect(self.on_mode_changed)
-        mode_layout.addWidget(self.mode_combo)
-        mode_layout.addStretch()
-        options_layout.addLayout(mode_layout)
+        top_grid.addWidget(self.mode_combo, 0, 1)
         
-        # Format selection row
-        format_layout = QHBoxLayout()
-        format_layout.addWidget(QLabel("Format:"))
+        top_grid.addWidget(QLabel("Format:"), 0, 2)
         self.format_combo = QComboBox()
         self.format_combo.addItems(["Video", "Audio Only"])
         self.format_combo.currentTextChanged.connect(self.on_format_changed)
-        format_layout.addWidget(self.format_combo)
-        format_layout.addStretch()
-        options_layout.addLayout(format_layout)
+        top_grid.addWidget(self.format_combo, 0, 3)
         
-        # Quality settings in columns (Video | Audio Codec | Audio Quality)
-        quality_columns = QHBoxLayout()
-        quality_columns.setSpacing(15)
+        options_layout.addLayout(top_grid)
         
-        # Column 1: Video Quality
-        video_col = QVBoxLayout()
-        video_col.addWidget(QLabel("Video Quality:"))
+        # Quality settings in compact grid (3 columns)
+        quality_grid = QGridLayout()
+        quality_grid.setSpacing(10)
+        
+        # Row 1: Video Quality and Audio Codec
+        quality_grid.addWidget(QLabel("Video Quality:"), 0, 0)
         self.quality_combo = QComboBox()
         self.quality_combo.addItems(["Best", "4K (2160p)", "1440p", "1080p", "720p", "480p", "360p"])
-        video_col.addWidget(self.quality_combo)
-        quality_columns.addLayout(video_col)
+        quality_grid.addWidget(self.quality_combo, 0, 1)
         
-        # Column 2: Audio Codec
-        codec_col = QVBoxLayout()
-        codec_col.addWidget(QLabel("Audio Codec:"))
+        quality_grid.addWidget(QLabel("Audio Codec:"), 0, 2)
         self.audio_codec_combo = QComboBox()
         self.audio_codec_combo.addItems(["MP3", "AAC", "FLAC", "Opus", "M4A"])
-        codec_col.addWidget(self.audio_codec_combo)
-        quality_columns.addLayout(codec_col)
+        quality_grid.addWidget(self.audio_codec_combo, 0, 3)
         
-        # Column 3: Audio Quality
-        audio_qual_col = QVBoxLayout()
-        audio_qual_col.addWidget(QLabel("Audio Quality:"))
+        quality_grid.addWidget(QLabel("Audio Quality:"), 0, 4)
         self.audio_quality_combo = QComboBox()
         self.audio_quality_combo.addItems(["320 kbps", "256 kbps", "192 kbps", "128 kbps", "96 kbps"])
-        self.audio_quality_combo.setCurrentIndex(2)  # Default to 192 kbps
-        audio_qual_col.addWidget(self.audio_quality_combo)
-        quality_columns.addLayout(audio_qual_col)
+        self.audio_quality_combo.setCurrentIndex(2)
+        quality_grid.addWidget(self.audio_quality_combo, 0, 5)
         
-        options_layout.addLayout(quality_columns)
-        options_layout.addSpacing(10)
+        options_layout.addLayout(quality_grid)
         
         # Advanced options checkboxes in rows
         advanced_row1 = QHBoxLayout()
-        advanced_row1.setSpacing(20)
+        advanced_row1.setSpacing(15)
         self.subtitles_checkbox = QCheckBox("Download Subtitles")
         self.subtitles_checkbox.setChecked(False)
         advanced_row1.addWidget(self.subtitles_checkbox)
@@ -525,11 +548,11 @@ class MediaDownloaderApp(QMainWindow):
         advanced_row1.addWidget(self.embed_thumbnail_checkbox)
         advanced_row1.addStretch()
         options_layout.addLayout(advanced_row1)
-        options_layout.addSpacing(8)
+        options_layout.addSpacing(5)
         
         # Audio enhancement options row
         advanced_row2 = QHBoxLayout()
-        advanced_row2.setSpacing(20)
+        advanced_row2.setSpacing(15)
         
         self.normalize_audio_checkbox = QCheckBox("Normalize Audio (EBU R128)")
         self.normalize_audio_checkbox.setChecked(False)
@@ -627,12 +650,7 @@ class MediaDownloaderApp(QMainWindow):
         display_text = self.all_tags.get(tag, tag)
         
         if is_selected:
-            # Selected tag with X button
-            container = QWidget()
-            layout = QHBoxLayout(container)
-            layout.setContentsMargins(0, 0, 0, 0)
-            layout.setSpacing(2)
-            
+            # Selected tag - blue button that can be clicked to remove
             btn = QPushButton(display_text)
             btn.setStyleSheet("""
                 QPushButton {
@@ -645,40 +663,16 @@ class MediaDownloaderApp(QMainWindow):
                     font-size: 11px;
                 }
                 QPushButton:hover {
-                    background-color: #3a8eef;
+                    background-color: #ff4444;
                 }
             """)
             btn.setFixedHeight(26)
+            btn.setMinimumWidth(80)
             btn.setCursor(Qt.PointingHandCursor)
-            
-            # X button
-            x_btn = QPushButton("×")
-            x_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #ff4444;
-                    color: white;
-                    border: none;
-                    border-radius: 10px;
-                    padding: 2px;
-                    font-weight: bold;
-                    font-size: 14px;
-                    max-width: 20px;
-                    max-height: 20px;
-                }
-                QPushButton:hover {
-                    background-color: #ff0000;
-                }
-            """)
-            x_btn.setFixedSize(20, 20)
-            x_btn.setCursor(Qt.PointingHandCursor)
-            x_btn.clicked.connect(lambda checked, t=tag: self.remove_tag_visual(t))
-            
-            layout.addWidget(btn)
-            layout.addWidget(x_btn)
-            
-            # Store reference
-            container.tag = tag
-            return container
+            btn.clicked.connect(lambda checked, t=tag: self.remove_tag_visual(t))
+            btn.tag = tag
+            btn.setToolTip("Click to remove")
+            return btn
         else:
             # Available tag (clickable to add)
             btn = QPushButton(display_text)
@@ -698,6 +692,7 @@ class MediaDownloaderApp(QMainWindow):
                 }
             """)
             btn.setFixedHeight(26)
+            btn.setMinimumWidth(80)  # Minimum width to prevent truncation
             btn.setCursor(Qt.PointingHandCursor)
             btn.clicked.connect(lambda checked, t=tag: self.add_tag_visual(t))
             btn.tag = tag
@@ -705,40 +700,42 @@ class MediaDownloaderApp(QMainWindow):
     
     def refresh_tag_buttons(self):
         """Refresh all tag button displays"""
-        # Clear existing buttons
-        while self.selected_tags_layout.count():
-            item = self.selected_tags_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+        # Clear selected tags layout
+        self.selected_tags_layout.clear()
         
-        while self.available_tags_layout.count():
-            item = self.available_tags_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+        # Clear available tags layout
+        self.available_tags_layout.clear()
         
         self.selected_tag_buttons.clear()
         self.available_tag_buttons.clear()
         
-        # Create selected tag buttons
+        # Create selected tag buttons with wrapping
+        col = 0
+        max_cols = 4  # Number of tag buttons per row
         for tag in self.filename_template:
             if tag in self.all_tags:
                 btn = self.create_tag_button(tag, is_selected=True)
                 self.selected_tags_layout.addWidget(btn)
                 self.selected_tag_buttons.append(btn)
+                col += 1
+                # Start new row after max_cols buttons
+                if col >= max_cols:
+                    self.selected_tags_layout.newRow()
+                    col = 0
         
-        # Add stretch to push buttons to left
-        self.selected_tags_layout.addStretch()
-        
-        # Create available tag buttons
+        # Create available tag buttons with wrapping support
+        col = 0
+        max_cols = 4  # Number of buttons per row
         for tag in self.all_tags:
             if tag not in self.filename_template:
                 btn = self.create_tag_button(tag, is_selected=False)
                 self.available_tags_layout.addWidget(btn)
                 self.available_tag_buttons.append(btn)
-        
-        # Add stretch to push buttons to left
-        self.available_tags_layout.addStretch()
-    
+                col += 1
+                # Start new row after max_cols buttons
+                if col >= max_cols:
+                    self.available_tags_layout.newRow()
+                    col = 0
     def add_tag_visual(self, tag):
         """Add tag from available to selected"""
         if tag and tag not in self.filename_template:
@@ -824,15 +821,13 @@ class MediaDownloaderApp(QMainWindow):
             self.normalize_audio_checkbox.setVisible(False)
             self.dynamic_norm_checkbox.setVisible(False)
             self.denoise_checkbox.setVisible(False)
-            # Hide the labels in the quality columns layout
-            quality_layout = self.quality_combo.parent().layout()
-            for i in range(quality_layout.count()):
-                item = quality_layout.itemAt(i)
-                if item and item.layout():
-                    for j in range(item.layout().count()):
-                        widget = item.layout().itemAt(j).widget()
-                        if widget and isinstance(widget, QLabel):
-                            widget.setVisible(False)
+            # Hide labels in grid layout
+            quality_grid = self.quality_combo.parent().layout()
+            if quality_grid:
+                for i in range(quality_grid.count()):
+                    item = quality_grid.itemAt(i)
+                    if item and item.widget() and isinstance(item.widget(), QLabel):
+                        item.widget().setVisible(False)
         else:
             self.mode = 'advanced'
             # Show advanced options
@@ -844,14 +839,12 @@ class MediaDownloaderApp(QMainWindow):
             self.dynamic_norm_checkbox.setVisible(True)
             self.denoise_checkbox.setVisible(True)
             # Show labels
-            quality_layout = self.quality_combo.parent().layout()
-            for i in range(quality_layout.count()):
-                item = quality_layout.itemAt(i)
-                if item and item.layout():
-                    for j in range(item.layout().count()):
-                        widget = item.layout().itemAt(j).widget()
-                        if widget and isinstance(widget, QLabel):
-                            widget.setVisible(True)
+            quality_grid = self.quality_combo.parent().layout()
+            if quality_grid:
+                for i in range(quality_grid.count()):
+                    item = quality_grid.itemAt(i)
+                    if item and item.widget() and isinstance(item.widget(), QLabel):
+                        item.widget().setVisible(True)
             # Re-apply format-based enabling
             self.on_format_changed(self.format_combo.currentText())
     
@@ -1007,11 +1000,14 @@ class MediaDownloaderApp(QMainWindow):
         self.fetch_btn.setEnabled(False)
         self.progress_bar.setValue(0)
         
+        # Build filename template
+        filename_template = self.build_filename_template()
+        
         # Start download thread
         self.download_thread = DownloadThread(
             selected_urls, self.output_path, format_type, video_quality,
             audio_codec, audio_quality, download_subs, embed_thumbnail, normalize_audio,
-            denoise_audio, dynamic_normalization
+            denoise_audio, dynamic_normalization, filename_template
         )
         self.download_thread.progress.connect(self.on_download_progress)
         self.download_thread.finished.connect(self.on_download_finished)
