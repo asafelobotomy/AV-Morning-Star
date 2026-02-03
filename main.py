@@ -137,12 +137,14 @@ class DownloadThread(QThread):
     def __init__(self, urls, output_path, format_type, video_quality=None, 
                  audio_codec='mp3', audio_quality='192', download_subs=False,
                  embed_thumbnail=False, normalize_audio=False, denoise_audio=False,
-                 dynamic_normalization=False, filename_template=None, cookies_from_browser=None):
+                 dynamic_normalization=False, filename_template=None, cookies_from_browser=None,
+                 video_container='mp4'):
         super().__init__()
         self.urls = urls
         self.output_path = output_path
         self.format_type = format_type
         self.video_quality = video_quality
+        self.video_container = video_container
         self.audio_codec = audio_codec
         self.audio_quality = audio_quality
         self.download_subs = download_subs
@@ -217,7 +219,8 @@ class DownloadThread(QThread):
                     self.embed_thumbnail,
                     self.normalize_audio,
                     self.denoise_audio,
-                    self.dynamic_normalization
+                    self.dynamic_normalization,
+                    self.video_container
                 )
                 
                 # Add progress hook
@@ -572,64 +575,82 @@ class MediaDownloaderApp(QMainWindow):
         
         options_layout.addLayout(top_grid)
         
-        # Quality settings in compact grid (3 columns)
-        quality_grid = QGridLayout()
-        quality_grid.setSpacing(10)
+        # === VIDEO OPTIONS (shown when Video is selected) ===
+        self.video_options_widget = QWidget()
+        video_options_layout = QGridLayout(self.video_options_widget)
+        video_options_layout.setSpacing(10)
+        video_options_layout.setContentsMargins(0, 5, 0, 5)
         
-        # Row 1: Video Quality and Audio Codec
-        quality_grid.addWidget(QLabel("Video Quality:"), 0, 0)
+        video_options_layout.addWidget(QLabel("Video Quality:"), 0, 0)
         self.quality_combo = QComboBox()
-        self.quality_combo.addItems(["Best", "4K (2160p)", "1440p", "1080p", "720p", "480p", "360p"])
-        quality_grid.addWidget(self.quality_combo, 0, 1)
+        self.quality_combo.addItems(VIDEO_QUALITIES)
+        video_options_layout.addWidget(self.quality_combo, 0, 1)
         
-        quality_grid.addWidget(QLabel("Audio Codec:"), 0, 2)
-        self.audio_codec_combo = QComboBox()
-        self.audio_codec_combo.addItems(["MP3", "AAC", "FLAC", "Opus", "M4A"])
-        quality_grid.addWidget(self.audio_codec_combo, 0, 3)
+        video_options_layout.addWidget(QLabel("Video Format:"), 0, 2)
+        self.video_container_combo = QComboBox()
+        self.video_container_combo.addItems(VIDEO_CONTAINERS)
+        video_options_layout.addWidget(self.video_container_combo, 0, 3)
         
-        quality_grid.addWidget(QLabel("Audio Quality:"), 0, 4)
-        self.audio_quality_combo = QComboBox()
-        self.audio_quality_combo.addItems(["320 kbps", "256 kbps", "192 kbps", "128 kbps", "96 kbps"])
-        self.audio_quality_combo.setCurrentIndex(2)
-        quality_grid.addWidget(self.audio_quality_combo, 0, 5)
-        
-        options_layout.addLayout(quality_grid)
-        
-        # Advanced options checkboxes in rows
-        advanced_row1 = QHBoxLayout()
-        advanced_row1.setSpacing(15)
         self.subtitles_checkbox = QCheckBox("Download Subtitles")
         self.subtitles_checkbox.setChecked(False)
-        advanced_row1.addWidget(self.subtitles_checkbox)
+        video_options_layout.addWidget(self.subtitles_checkbox, 0, 4)
         
-        self.embed_thumbnail_checkbox = QCheckBox("Embed Thumbnail (Audio)")
+        options_layout.addWidget(self.video_options_widget)
+        
+        # === AUDIO OPTIONS (shown when Audio Only is selected) ===
+        self.audio_options_widget = QWidget()
+        audio_options_layout = QVBoxLayout(self.audio_options_widget)
+        audio_options_layout.setContentsMargins(0, 5, 0, 5)
+        audio_options_layout.setSpacing(8)
+        
+        # Audio codec and quality row
+        audio_format_layout = QGridLayout()
+        audio_format_layout.setSpacing(10)
+        
+        audio_format_layout.addWidget(QLabel("Audio Codec:"), 0, 0)
+        self.audio_codec_combo = QComboBox()
+        self.audio_codec_combo.addItems(AUDIO_CODECS)
+        audio_format_layout.addWidget(self.audio_codec_combo, 0, 1)
+        
+        audio_format_layout.addWidget(QLabel("Audio Quality:"), 0, 2)
+        self.audio_quality_combo = QComboBox()
+        self.audio_quality_combo.addItems(AUDIO_BITRATES)
+        self.audio_quality_combo.setCurrentIndex(3)  # Default to 192 kbps
+        audio_format_layout.addWidget(self.audio_quality_combo, 0, 3)
+        
+        self.embed_thumbnail_checkbox = QCheckBox("Embed Thumbnail")
         self.embed_thumbnail_checkbox.setChecked(True)
-        advanced_row1.addWidget(self.embed_thumbnail_checkbox)
-        advanced_row1.addStretch()
-        options_layout.addLayout(advanced_row1)
-        options_layout.addSpacing(5)
+        self.embed_thumbnail_checkbox.setToolTip("Embed album art/thumbnail in audio file")
+        audio_format_layout.addWidget(self.embed_thumbnail_checkbox, 0, 4)
+        
+        audio_options_layout.addLayout(audio_format_layout)
         
         # Audio enhancement options row
-        advanced_row2 = QHBoxLayout()
-        advanced_row2.setSpacing(15)
+        audio_enhance_layout = QHBoxLayout()
+        audio_enhance_layout.setSpacing(15)
         
         self.normalize_audio_checkbox = QCheckBox("Normalize Audio (EBU R128)")
         self.normalize_audio_checkbox.setChecked(False)
         self.normalize_audio_checkbox.setToolTip("Professional loudness normalization to -16 LUFS")
-        advanced_row2.addWidget(self.normalize_audio_checkbox)
+        audio_enhance_layout.addWidget(self.normalize_audio_checkbox)
         
         self.dynamic_norm_checkbox = QCheckBox("Dynamic Normalization")
         self.dynamic_norm_checkbox.setChecked(False)
         self.dynamic_norm_checkbox.setToolTip("Better for varying volume levels (alternative to EBU R128)")
-        advanced_row2.addWidget(self.dynamic_norm_checkbox)
+        audio_enhance_layout.addWidget(self.dynamic_norm_checkbox)
         
         self.denoise_checkbox = QCheckBox("Denoise Audio")
         self.denoise_checkbox.setChecked(False)
         self.denoise_checkbox.setToolTip("Remove background noise using FFT-based filtering")
-        advanced_row2.addWidget(self.denoise_checkbox)
+        audio_enhance_layout.addWidget(self.denoise_checkbox)
         
-        advanced_row2.addStretch()
-        options_layout.addLayout(advanced_row2)
+        audio_enhance_layout.addStretch()
+        audio_options_layout.addLayout(audio_enhance_layout)
+        
+        options_layout.addWidget(self.audio_options_widget)
+        
+        # Hide audio options initially (Video is default)
+        self.audio_options_widget.setVisible(False)
         
         # Output path
         path_layout = QHBoxLayout()
@@ -647,7 +668,7 @@ class MediaDownloaderApp(QMainWindow):
         
         # Store advanced option widgets for show/hide
         self.advanced_widgets = [
-            self.quality_combo, self.audio_codec_combo, self.audio_quality_combo,
+            self.quality_combo, self.video_container_combo, self.audio_codec_combo, self.audio_quality_combo,
             self.embed_thumbnail_checkbox, self.normalize_audio_checkbox,
             self.dynamic_norm_checkbox, self.denoise_checkbox
         ]
@@ -872,59 +893,26 @@ class MediaDownloaderApp(QMainWindow):
         """Toggle between Basic and Advanced modes"""
         if "Basic" in text:
             self.mode = 'basic'
-            # Hide advanced options
-            self.quality_combo.setVisible(False)
-            self.audio_codec_combo.setVisible(False)
-            self.audio_quality_combo.setVisible(False)
-            self.embed_thumbnail_checkbox.setVisible(False)
-            self.normalize_audio_checkbox.setVisible(False)
-            self.dynamic_norm_checkbox.setVisible(False)
-            self.denoise_checkbox.setVisible(False)
-            # Hide labels in grid layout
-            quality_grid = self.quality_combo.parent().layout()
-            if quality_grid:
-                for i in range(quality_grid.count()):
-                    item = quality_grid.itemAt(i)
-                    if item and item.widget() and isinstance(item.widget(), QLabel):
-                        item.widget().setVisible(False)
+            # Hide both video and audio options in basic mode
+            self.video_options_widget.setVisible(False)
+            self.audio_options_widget.setVisible(False)
         else:
             self.mode = 'advanced'
-            # Show advanced options
-            self.quality_combo.setVisible(True)
-            self.audio_codec_combo.setVisible(True)
-            self.audio_quality_combo.setVisible(True)
-            self.embed_thumbnail_checkbox.setVisible(True)
-            self.normalize_audio_checkbox.setVisible(True)
-            self.dynamic_norm_checkbox.setVisible(True)
-            self.denoise_checkbox.setVisible(True)
-            # Show labels
-            quality_grid = self.quality_combo.parent().layout()
-            if quality_grid:
-                for i in range(quality_grid.count()):
-                    item = quality_grid.itemAt(i)
-                    if item and item.widget() and isinstance(item.widget(), QLabel):
-                        item.widget().setVisible(True)
-            # Re-apply format-based enabling
+            # Show appropriate options based on format selection
             self.on_format_changed(self.format_combo.currentText())
     
     def on_format_changed(self, text):
-        """Enable/disable quality selection based on format"""
-        # Only apply these rules in Advanced mode
-        if self.mode == 'advanced':
-            if text == "Audio Only":
-                self.quality_combo.setEnabled(False)
-                self.audio_codec_combo.setEnabled(True)
-                self.audio_quality_combo.setEnabled(True)
-                self.embed_thumbnail_checkbox.setEnabled(True)
-                self.normalize_audio_checkbox.setEnabled(True)
-                self.dynamic_norm_checkbox.setEnabled(True)
-                self.denoise_checkbox.setEnabled(True)
-            else:
-                self.quality_combo.setEnabled(True)
-                self.audio_codec_combo.setEnabled(False)
-                self.audio_quality_combo.setEnabled(False)
-                self.embed_thumbnail_checkbox.setEnabled(False)
-                self.normalize_audio_checkbox.setEnabled(False)
+        """Show/hide relevant options based on format selection"""
+        if text == "Audio Only":
+            # Show audio options, hide video options
+            self.video_options_widget.setVisible(False)
+            if self.mode == 'advanced':
+                self.audio_options_widget.setVisible(True)
+        else:
+            # Show video options, hide audio options
+            self.audio_options_widget.setVisible(False)
+            if self.mode == 'advanced':
+                self.video_options_widget.setVisible(True)
     
     def fetch_videos(self):
         """Fetch videos from URL"""
@@ -1218,6 +1206,7 @@ class MediaDownloaderApp(QMainWindow):
         # In Basic mode, use auto-detect best settings
         if self.mode == 'basic':
             video_quality = 'Best'  # Auto-detect best quality
+            video_container = 'mp4'  # Most compatible
             audio_codec = 'mp3'  # Most compatible
             audio_quality = '320'  # Highest quality
             download_subs = False
@@ -1228,8 +1217,14 @@ class MediaDownloaderApp(QMainWindow):
         else:
             # Advanced mode - use manual settings
             video_quality = self.quality_combo.currentText() if format_type == 'video' else None
-            audio_codec = self.audio_codec_combo.currentText().lower()
-            audio_quality = self.audio_quality_combo.currentText().split()[0]  # Extract number from "192 kbps"
+            video_container = self.video_container_combo.currentText().lower() if format_type == 'video' else None
+            audio_codec = self.audio_codec_combo.currentText().lower().replace(' vorbis', '').replace(' ', '')  # Clean codec name
+            audio_quality_text = self.audio_quality_combo.currentText()
+            # Handle lossless vs bitrate
+            if 'lossless' in audio_quality_text.lower():
+                audio_quality = '0'  # Best quality for lossless codecs
+            else:
+                audio_quality = audio_quality_text.split()[0]  # Extract number from "192 kbps"
             download_subs = self.subtitles_checkbox.isChecked()
             embed_thumbnail = self.embed_thumbnail_checkbox.isChecked() if format_type == 'audio' else False
             normalize_audio = self.normalize_audio_checkbox.isChecked() if format_type == 'audio' else False
@@ -1249,7 +1244,7 @@ class MediaDownloaderApp(QMainWindow):
             selected_urls, self.output_path, format_type, video_quality,
             audio_codec, audio_quality, download_subs, embed_thumbnail, normalize_audio,
             denoise_audio, dynamic_normalization, filename_template, 
-            cookies_from_browser=self.browser_preference
+            cookies_from_browser=self.browser_preference, video_container=video_container
         )
         self.download_thread.progress.connect(self.on_download_progress)
         self.download_thread.finished.connect(self.on_download_finished)

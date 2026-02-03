@@ -301,7 +301,7 @@ class BaseExtractor:
                          video_quality=None, audio_codec='mp3', audio_quality='192',
                          download_subs=False, embed_thumbnail=False, 
                          normalize_audio=False, denoise_audio=False,
-                         dynamic_normalization=False):
+                         dynamic_normalization=False, video_container='mp4'):
         """
         Get yt-dlp options for downloading videos/audio
         
@@ -310,13 +310,14 @@ class BaseExtractor:
             filename_template: Template for output filename
             format_type: 'video' or 'audio'
             video_quality: Video quality string (e.g., 'Best', '1080p')
-            audio_codec: Audio codec (mp3, aac, flac, etc.)
-            audio_quality: Audio bitrate (e.g., '192')
+            audio_codec: Audio codec (mp3, aac, flac, wav, alac, ogg, etc.)
+            audio_quality: Audio bitrate (e.g., '192') or '0' for lossless
             download_subs: Whether to download subtitles
             embed_thumbnail: Whether to embed thumbnail in audio
             normalize_audio: Whether to normalize audio volume
             denoise_audio: Whether to denoise audio
             dynamic_normalization: Use dynamic normalization vs EBU R128
+            video_container: Video container format (mp4, mkv, webm, avi, mov, flv)
             
         Returns:
             dict: Complete yt-dlp options for downloading
@@ -345,16 +346,17 @@ class BaseExtractor:
                                              embed_thumbnail, normalize_audio, 
                                              denoise_audio, dynamic_normalization))
         else:
-            opts.update(self._get_video_opts(video_quality))
+            opts.update(self._get_video_opts(video_quality, video_container))
         
         return opts
     
-    def _get_video_opts(self, video_quality):
+    def _get_video_opts(self, video_quality, video_container='mp4'):
         """
         Get video-specific download options
         
         Args:
             video_quality: Quality string from UI
+            video_container: Container format (mp4, mkv, webm, avi, mov, flv)
             
         Returns:
             dict: Video-specific yt-dlp options
@@ -381,7 +383,7 @@ class BaseExtractor:
         
         return {
             'format': format_str,
-            'merge_output_format': 'mp4'
+            'merge_output_format': video_container
         }
     
     def _get_audio_opts(self, audio_codec, audio_quality, embed_thumbnail,
