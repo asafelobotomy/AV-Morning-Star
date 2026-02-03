@@ -8,6 +8,9 @@ import sys
 import os
 import json
 
+# Import application constants
+from constants import *
+
 # Suppress Qt Wayland warnings
 os.environ['QT_LOGGING_RULES'] = 'qt.qpa.wayland=false'
 
@@ -19,16 +22,13 @@ if os.path.exists(deno_path) and deno_path not in os.environ.get('PATH', ''):
 
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QPushButton, QLineEdit, QLabel, 
-                             QListWidget, QComboBox, QProgressBar, QTextEdit,
+                             QComboBox, QProgressBar,
                              QCheckBox, QScrollArea, QGroupBox, QMessageBox,
-                             QFileDialog, QListWidgetItem, QSplashScreen, QGridLayout,
+                             QFileDialog, QSplashScreen, QGridLayout,
                              QDialog)
-from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer, QRect, QPoint, QSize
-from PyQt5.QtGui import QIcon, QFont, QPixmap, QPainter, QBrush, QPainterPath
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
+from PyQt5.QtGui import QIcon, QFont, QPixmap, QPainter, QPainterPath
 import yt_dlp
-import requests
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse
 
 # Import our modular extractors
 from extractors import get_extractor
@@ -256,8 +256,8 @@ class PreferencesDialog(QDialog):
     """Preferences dialog for application settings"""
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Preferences - AV Morning Star")
-        self.setMinimumSize(550, 350)
+        self.setWindowTitle(PREFERENCES_WINDOW_TITLE)
+        self.setMinimumSize(PREFERENCES_WINDOW_MIN_WIDTH, PREFERENCES_WINDOW_MIN_HEIGHT)
         self.setModal(True)
         
         # Get parent's current settings
@@ -273,7 +273,7 @@ class PreferencesDialog(QDialog):
         layout.addSpacing(20)
         
         # Authentication section
-        auth_group = QGroupBox("YouTube Authentication")
+        auth_group = QGroupBox(GROUP_AUTHENTICATION)
         auth_layout = QVBoxLayout()
         
         # Main description
@@ -324,11 +324,11 @@ class PreferencesDialog(QDialog):
         button_layout = QHBoxLayout()
         button_layout.addStretch()
         
-        cancel_btn = QPushButton("Cancel")
+        cancel_btn = QPushButton(BTN_CANCEL)
         cancel_btn.clicked.connect(self.close)
         button_layout.addWidget(cancel_btn)
         
-        save_btn = QPushButton("Save")
+        save_btn = QPushButton(BTN_SAVE)
         save_btn.clicked.connect(self.save_preferences)
         save_btn.setDefault(True)
         button_layout.addWidget(save_btn)
@@ -370,12 +370,12 @@ class MediaDownloaderApp(QMainWindow):
         super().__init__()
         self.videos_list = []
         self.checkboxes = []
-        self.output_path = os.path.expanduser("~/Downloads")
-        self.mode = 'basic'  # Default to basic mode
-        self.filename_template = ['title', 'quality', 'uploader']  # Default template
+        self.output_path = os.path.expanduser(DEFAULT_OUTPUT_DIR)
+        self.mode = MODE_BASIC  # Default to basic mode
+        self.filename_template = DEFAULT_FILENAME_TAGS.copy()  # Default template
         
         # Default to Auto mode (will detect best browser at runtime)
-        self.browser_preference = 'auto'
+        self.browser_preference = DEFAULT_BROWSER_PREFERENCE
         
         # Track if we've tried cookieless and it failed
         self.cookieless_failed = False
@@ -383,11 +383,11 @@ class MediaDownloaderApp(QMainWindow):
         self.init_ui()
         
     def init_ui(self):
-        self.setWindowTitle("AV Morning Star - Media Downloader")
-        self.setMinimumSize(900, 850)
+        self.setWindowTitle(MAIN_WINDOW_TITLE)
+        self.setMinimumSize(MAIN_WINDOW_MIN_WIDTH, MAIN_WINDOW_MIN_HEIGHT)
         
         # Set window icon if available
-        icon_path = os.path.join(os.path.dirname(__file__), 'av-morning-star.png')
+        icon_path = os.path.join(os.path.dirname(__file__), ICON_FILENAME)
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
         
@@ -395,19 +395,19 @@ class MediaDownloaderApp(QMainWindow):
         menubar = self.menuBar()
         
         # Tools menu
-        tools_menu = menubar.addMenu('Tools')
+        tools_menu = menubar.addMenu(MENU_TOOLS)
         
-        preferences_action = tools_menu.addAction('Preferences')
-        preferences_action.setShortcut('Ctrl+,')
+        preferences_action = tools_menu.addAction(MENU_PREFERENCES)
+        preferences_action.setShortcut(SHORTCUT_PREFERENCES)
         preferences_action.triggered.connect(self.show_preferences)
         
         tools_menu.addSeparator()
         
-        about_action = tools_menu.addAction('About')
+        about_action = tools_menu.addAction(MENU_ABOUT)
         about_action.triggered.connect(self.show_about)
         
-        help_action = tools_menu.addAction('Help')
-        help_action.setShortcut('F1')
+        help_action = tools_menu.addAction(MENU_HELP)
+        help_action.setShortcut(SHORTCUT_HELP)
         help_action.triggered.connect(self.show_help)
         
         # Central widget
@@ -430,12 +430,12 @@ class MediaDownloaderApp(QMainWindow):
         
         # Title section
         title_layout = QVBoxLayout()
-        title = QLabel("AV Morning Star")
+        title = QLabel(APP_NAME)
         title.setFont(QFont("Arial", 16, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
         title_layout.addWidget(title)
         
-        subtitle = QLabel("Video & Audio Downloader")
+        subtitle = QLabel(APP_SUBTITLE)
         subtitle.setAlignment(Qt.AlignCenter)
         title_layout.addWidget(subtitle)
         
@@ -445,16 +445,16 @@ class MediaDownloaderApp(QMainWindow):
         main_layout.addLayout(banner_layout)
         
         # URL Input Section
-        url_group = QGroupBox("Enter URL")
+        url_group = QGroupBox(GROUP_ENTER_URL)
         url_layout = QVBoxLayout()
         
         url_input_layout = QHBoxLayout()
         self.url_input = QLineEdit()
-        self.url_input.setPlaceholderText("Enter video URL or channel/playlist URL...")
+        self.url_input.setPlaceholderText(PLACEHOLDER_URL)
         self.url_input.returnPressed.connect(self.fetch_videos)
         url_input_layout.addWidget(self.url_input)
         
-        self.fetch_btn = QPushButton("Fetch")
+        self.fetch_btn = QPushButton(BTN_FETCH)
         self.fetch_btn.clicked.connect(self.fetch_videos)
         url_input_layout.addWidget(self.fetch_btn)
         
@@ -467,7 +467,7 @@ class MediaDownloaderApp(QMainWindow):
         content_row = QHBoxLayout()
         
         # Videos List Section (LEFT SIDE)
-        videos_group = QGroupBox("Available Videos/Audio")
+        videos_group = QGroupBox(GROUP_AVAILABLE_VIDEOS)
         videos_layout = QVBoxLayout()
         
         # Scroll area for checkboxes
@@ -484,12 +484,12 @@ class MediaDownloaderApp(QMainWindow):
         
         # Select all/none buttons
         select_layout = QHBoxLayout()
-        self.select_all_btn = QPushButton("Select All")
+        self.select_all_btn = QPushButton(BTN_SELECT_ALL)
         self.select_all_btn.clicked.connect(self.select_all)
         self.select_all_btn.setEnabled(False)
         select_layout.addWidget(self.select_all_btn)
         
-        self.select_none_btn = QPushButton("Select None")
+        self.select_none_btn = QPushButton(BTN_SELECT_NONE)
         self.select_none_btn.clicked.connect(self.select_none)
         self.select_none_btn.setEnabled(False)
         select_layout.addWidget(self.select_none_btn)
@@ -499,7 +499,7 @@ class MediaDownloaderApp(QMainWindow):
         content_row.addWidget(videos_group, 2)  # Stretch factor 2 - larger
         
         # Filename Template Section (RIGHT SIDE)
-        filename_group = QGroupBox("Filename Template")
+        filename_group = QGroupBox(GROUP_FILENAME_TEMPLATE)
         filename_layout = QVBoxLayout()
         
         # Selected tags container (top section)
@@ -551,7 +551,7 @@ class MediaDownloaderApp(QMainWindow):
         self.init_filename_tags()
         
         # Download Options Section
-        options_group = QGroupBox("Download Options")
+        options_group = QGroupBox(GROUP_DOWNLOAD_OPTIONS)
         options_layout = QVBoxLayout()
         
         # First row: Mode and Format in grid
@@ -637,7 +637,7 @@ class MediaDownloaderApp(QMainWindow):
         self.path_label = QLabel(self.output_path)
         path_layout.addWidget(self.path_label)
         
-        self.browse_btn = QPushButton("Browse")
+        self.browse_btn = QPushButton(BTN_BROWSE)
         self.browse_btn.clicked.connect(self.browse_output_path)
         path_layout.addWidget(self.browse_btn)
         
@@ -657,26 +657,26 @@ class MediaDownloaderApp(QMainWindow):
         self.on_mode_changed("Basic (Auto-detect best quality)")
         
         # Download Button
-        self.download_btn = QPushButton("Download Selected")
+        self.download_btn = QPushButton(BTN_DOWNLOAD_SELECTED)
         self.download_btn.setMinimumHeight(40)
         self.download_btn.clicked.connect(self.start_download)
         self.download_btn.setEnabled(False)
         main_layout.addWidget(self.download_btn)
         
         # Progress Section
-        progress_group = QGroupBox("Progress")
+        progress_group = QGroupBox(GROUP_PROGRESS)
         progress_layout = QVBoxLayout()
         
         self.progress_bar = QProgressBar()
         progress_layout.addWidget(self.progress_bar)
         
-        self.status_label = QLabel("Ready")
+        self.status_label = QLabel(STATUS_READY)
         progress_layout.addWidget(self.status_label)
         
         progress_group.setLayout(progress_layout)
         main_layout.addWidget(progress_group)
         
-        self.statusBar().showMessage("Ready")
+        self.statusBar().showMessage(STATUS_READY)
         
     def init_filename_tags(self):
         """Initialize available and selected filename tags"""
@@ -1286,36 +1286,13 @@ class MediaDownloaderApp(QMainWindow):
     
     def show_about(self):
         """Show about dialog"""
-        about_text = (
-            "<h2>AV Morning Star</h2>"
-            "<p>Version 1.0.0</p>"
-            "<p>A powerful video and audio downloader supporting 1000+ websites.</p>"
-            "<p>Built with PyQt5, yt-dlp, and InnerTube.</p>"
-            "<p>© 2026 AV Morning Star Project</p>"
-        )
-        QMessageBox.about(self, "About AV Morning Star", about_text)
+        QMessageBox.about(self, ABOUT_WINDOW_TITLE, ABOUT_TEXT)
     
     def show_help(self):
         """Show help dialog"""
-        help_text = (
-            "<h3>Getting Started</h3>"
-            "<ol>"
-            "<li>Enter a video URL in the input field</li>"
-            "<li>Click 'Fetch' to retrieve available videos</li>"
-            "<li>Select the videos you want to download</li>"
-            "<li>Choose your download options (format, quality, etc.)</li>"
-            "<li>Click 'Download Selected' to start</li>"
-            "</ol>"
-            "<h3>YouTube Authentication</h3>"
-            "<p>For YouTube downloads, go to <b>Tools > Preferences</b> and select your browser. "
-            "Make sure you're logged into YouTube in that browser.</p>"
-            "<h3>Supported Sites</h3>"
-            "<p>YouTube, Odysee, and 1000+ other sites supported by yt-dlp.</p>"
-            "<h3>Need More Help?</h3>"
-            "<p>Check the AUTHENTICATION_GUIDE.md file in the application directory.</p>"
-        )
+        help_text = HELP_GETTING_STARTED + HELP_YOUTUBE_AUTH + HELP_SUPPORTED_SITES + HELP_MORE_INFO
         msg = QMessageBox(self)
-        msg.setWindowTitle("Help - AV Morning Star")
+        msg.setWindowTitle(HELP_WINDOW_TITLE)
         msg.setTextFormat(Qt.RichText)
         msg.setText(help_text)
         msg.setIcon(QMessageBox.Information)
@@ -1323,14 +1300,27 @@ class MediaDownloaderApp(QMainWindow):
 
 
 def main():
+    # Set WM_CLASS before creating QApplication (critical for KDE/Wayland)
+    os.environ['RESOURCE_NAME'] = 'av-morning-star'
+    
     app = QApplication(sys.argv)
     
+    # Set application name and icon for desktop environments
+    app.setApplicationName("av-morning-star")
+    app.setApplicationDisplayName(APP_FULL_TITLE)
+    app.setDesktopFileName("av-morning-star.desktop")
+    
+    # Set application icon (affects taskbar and window decorations)
+    icon_path = os.path.join(os.path.dirname(__file__), ICON_FILENAME)
+    if os.path.exists(icon_path):
+        app_icon = QIcon(icon_path)
+        app.setWindowIcon(app_icon)  # Set for all windows
+    
     # Show splash screen if icon exists
-    icon_path = os.path.join(os.path.dirname(__file__), 'av-morning-star.png')
     if os.path.exists(icon_path):
         splash_pix = QPixmap(icon_path)
         # Scale splash screen to a reasonable size (400x400)
-        scaled_splash = splash_pix.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        scaled_splash = splash_pix.scaled(ICON_SPLASH_SIZE, ICON_SPLASH_SIZE, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         circular_splash = make_circular_pixmap(scaled_splash)
         splash = QSplashScreen(circular_splash, Qt.WindowStaysOnTopHint)
         splash.show()

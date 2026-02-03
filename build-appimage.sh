@@ -4,7 +4,7 @@
 set -e
 
 APP_NAME="AV-Morning-Star"
-APP_VERSION="1.0.0"
+APP_VERSION="0.3.0"
 BUILD_DIR="build"
 APPDIR="${BUILD_DIR}/${APP_NAME}.AppDir"
 
