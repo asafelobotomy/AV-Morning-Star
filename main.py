@@ -33,6 +33,9 @@ from urllib.parse import urljoin, urlparse
 # Import our modular extractors
 from extractors import get_extractor
 
+# Import browser detection utilities
+from browser_utils import detect_available_browsers, get_browsers_with_youtube_cookies, get_default_browser
+
 
 class FlowLayout(QVBoxLayout):
     """Custom layout that flows items left-to-right and wraps to new rows"""
@@ -284,10 +287,11 @@ class PreferencesDialog(QDialog):
         
         # Browser selector
         browser_layout = QHBoxLayout()
-        browser_layout.addWidget(QLabel("Select browser:"))
+        browser_layout.addWidget(QLabel("Authentication:"))
         
         self.browser_combo = QComboBox()
         self.browser_combo.addItems([
+            "Auto (Recommended)",
             "None (No authentication)",
             "Firefox",
             "Chrome",
@@ -297,7 +301,7 @@ class PreferencesDialog(QDialog):
             "Opera",
             "Vivaldi"
         ])
-        self.browser_combo.setToolTip("Choose the browser where you're logged into YouTube")
+        self.browser_combo.setToolTip("Auto mode automatically finds the best browser with YouTube login")
         browser_layout.addWidget(self.browser_combo)
         browser_layout.addStretch()
         
@@ -333,16 +337,17 @@ class PreferencesDialog(QDialog):
         
         # Load current settings
         if parent:
-            current_browser = getattr(parent, 'browser_preference', 'none')
+            current_browser = getattr(parent, 'browser_preference', 'auto')
             browser_map = {
-                'none': 0,
-                'firefox': 1,
-                'chrome': 2,
-                'brave': 3,
-                'edge': 4,
-                'chromium': 5,
-                'opera': 6,
-                'vivaldi': 7
+                'auto': 0,
+                'none': 1,
+                'firefox': 2,
+                'chrome': 3,
+                'brave': 4,
+                'edge': 5,
+                'chromium': 6,
+                'opera': 7,
+                'vivaldi': 8
             }
             self.browser_combo.setCurrentIndex(browser_map.get(current_browser, 0))
     
@@ -350,9 +355,12 @@ class PreferencesDialog(QDialog):
         """Save preferences and close dialog"""
         if self.parent_app:
             browser_text = self.browser_combo.currentText()
-            if "None" in browser_text:
+            if "Auto" in browser_text:
+                self.parent_app.browser_preference = 'auto'
+            elif "None" in browser_text:
                 self.parent_app.browser_preference = 'none'
             else:
+                # Extract browser name (e.g., "Firefox" -> "firefox")
                 self.parent_app.browser_preference = browser_text.lower()
         self.close()
 
@@ -365,7 +373,13 @@ class MediaDownloaderApp(QMainWindow):
         self.output_path = os.path.expanduser("~/Downloads")
         self.mode = 'basic'  # Default to basic mode
         self.filename_template = ['title', 'quality', 'uploader']  # Default template
-        self.browser_preference = 'brave'  # Default browser for authentication (has cookies on this system)
+        
+        # Default to Auto mode (will detect best browser at runtime)
+        self.browser_preference = 'auto'
+        
+        # Track if we've tried cookieless and it failed
+        self.cookieless_failed = False
+        
         self.init_ui()
         
     def init_ui(self):
@@ -403,6 +417,7 @@ class MediaDownloaderApp(QMainWindow):
         
         # Banner with icon
         banner_layout = QHBoxLayout()
+        banner_layout.addStretch()  # Add stretch before content to center it
         
         # Icon in banner
         if os.path.exists(icon_path):
@@ -417,15 +432,15 @@ class MediaDownloaderApp(QMainWindow):
         title_layout = QVBoxLayout()
         title = QLabel("AV Morning Star")
         title.setFont(QFont("Arial", 16, QFont.Bold))
-        title.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        title.setAlignment(Qt.AlignCenter)
         title_layout.addWidget(title)
         
         subtitle = QLabel("Video & Audio Downloader")
-        subtitle.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        subtitle.setAlignment(Qt.AlignCenter)
         title_layout.addWidget(subtitle)
         
         banner_layout.addLayout(title_layout)
-        banner_layout.addStretch()
+        banner_layout.addStretch()  # Add stretch after content to center it
         
         main_layout.addLayout(banner_layout)
         
@@ -923,12 +938,42 @@ class MediaDownloaderApp(QMainWindow):
             QMessageBox.warning(self, "Error", "Please enter a valid URL starting with http:// or https://")
             return
         
-        # Get browser for authentication
+        # Smart cookie detection strategy:
+        # 1. For YouTube URLs: Try cookieless first (unless we know it failed before)
+        # 2. If cookieless fails with bot detection, auto-retry with best browser
+        # 3. For non-YouTube URLs: Use cookies if available
+        
         cookies_from_browser = None
-        if self.browser_preference and self.browser_preference != 'none':
-            cookies_from_browser = self.browser_preference
+        is_youtube = 'youtube.com' in url.lower() or 'youtu.be' in url.lower()
+        
+        # Resolve 'auto' preference to actual browser
+        resolved_browser = None
+        if self.browser_preference == 'auto':
+            resolved_browser = get_default_browser()
+        elif self.browser_preference != 'none':
+            resolved_browser = self.browser_preference
+        
+        if is_youtube:
+            # YouTube: Try cookieless first unless we've already failed
+            if self.cookieless_failed or resolved_browser:
+                # Either we know cookieless doesn't work, or user has set a browser preference
+                if resolved_browser:
+                    cookies_from_browser = resolved_browser
+                    browser_display = resolved_browser.title()
+                    if self.browser_preference == 'auto':
+                        self.status_label.setText(f"Auto-detected {browser_display}, fetching...")
+                    else:
+                        self.status_label.setText(f"Fetching with {browser_display} authentication...")
+                else:
+                    self.status_label.setText("Fetching (no authentication)...")
+            else:
+                # First attempt: try without cookies
+                self.status_label.setText("Fetching video information (no authentication)...")
+        else:
+            # Non-YouTube: Use cookies if we have a browser set
+            if resolved_browser:
+                cookies_from_browser = resolved_browser
             
-        self.status_label.setText("Fetching video information...")
         self.statusBar().showMessage("Connecting to URL...")
         self.fetch_btn.setEnabled(False)
         self.download_btn.setEnabled(False)
@@ -936,7 +981,7 @@ class MediaDownloaderApp(QMainWindow):
         # Clear previous results
         self.clear_videos_list()
         
-        # Start scraping thread with browser cookies authentication
+        # Start scraping thread
         self.scraper_thread = URLScraperThread(
             url, 
             cookies_from_browser=cookies_from_browser
@@ -993,12 +1038,158 @@ class MediaDownloaderApp(QMainWindow):
         self.status_label.setText(f"Found {len(videos)} video(s)")
         self.statusBar().showMessage(f"Successfully loaded {len(videos)} video(s)")
         
+    def parse_cookie_error(self, error):
+        """Parse yt-dlp cookie errors into user-friendly messages"""
+        error_lower = error.lower()
+        
+        # Cookie database not found errors
+        if 'could not find' in error_lower and 'cookies database' in error_lower:
+            # Extract browser name from error
+            for browser in ['firefox', 'chrome', 'brave', 'edge', 'chromium', 'opera', 'vivaldi', 'safari']:
+                if browser in error_lower:
+                    browser_display = browser.title()
+                    
+                    # Get available browsers
+                    available = detect_available_browsers()
+                    
+                    if available:
+                        msg = (
+                            f"❌ {browser_display} cookies not found\n\n"
+                            f"The selected browser ({browser_display}) doesn't appear to be installed "
+                            f"or doesn't have cookies on this system.\n\n"
+                            f"Available browsers with YouTube login:\n"
+                        )
+                        
+                        # List browsers with YouTube cookies
+                        yt_browsers = get_browsers_with_youtube_cookies()
+                        if yt_browsers:
+                            for b in yt_browsers:
+                                msg += f"  ✓ {b.title()}\n"
+                            msg += f"\n💡 Recommendation: Set authentication to 'Auto (Recommended)' "
+                            msg += f"in Tools > Preferences, and I'll automatically use {yt_browsers[0].title()}."
+                        else:
+                            msg += f"  (None detected with YouTube login)\n\n"
+                            msg += f"💡 Recommendation: Sign into YouTube in one of your browsers, "
+                            msg += f"then use 'Auto (Recommended)' mode."
+                    else:
+                        msg = (
+                            f"❌ {browser_display} not found\n\n"
+                            f"I couldn't find {browser_display} or any other supported browsers on your system.\n\n"
+                            f"Supported browsers: Firefox, Chrome, Brave, Edge, Chromium, Opera, Vivaldi\n\n"
+                            f"💡 Recommendation: Install a browser, sign into YouTube, then use 'Auto (Recommended)' mode."
+                        )
+                    
+                    return msg
+        
+        # Corrupted cookie database
+        if 'database' in error_lower and ('corrupt' in error_lower or 'malformed' in error_lower):
+            return (
+                "❌ Browser cookie database is corrupted\n\n"
+                "The selected browser's cookie file appears to be damaged or corrupted.\n\n"
+                "💡 Try these solutions:\n"
+                "  1. Restart your browser and try again\n"
+                "  2. Use 'Auto (Recommended)' to try a different browser\n"
+                "  3. Clear browser cookies and sign into YouTube again\n"
+            )
+        
+        # Permission errors
+        if 'permission denied' in error_lower or 'access denied' in error_lower:
+            return (
+                "❌ Permission denied\n\n"
+                "Cannot access browser cookies due to file permissions.\n\n"
+                "💡 This can happen if:\n"
+                "  - The browser is currently running (some browsers lock cookie files)\n"
+                "  - Your user account doesn't have permission to read the cookie file\n\n"
+                "Try closing the browser and running this app again."
+            )
+        
+        # No user-friendly version available
+        return None
+    
     def on_fetch_error(self, error):
-        """Handle fetch error"""
+        """Handle fetch error with smart cookie retry"""
+        # Parse common yt-dlp cookie errors into user-friendly messages
+        user_friendly_error = self.parse_cookie_error(error)
+        
+        # Check if this is a YouTube bot detection error
+        is_bot_error = ('bot' in error.lower() or 'sign in to confirm' in error.lower() or 
+                       'requested format is not available' in error.lower())
+        
+        url = self.url_input.text().strip()
+        is_youtube = 'youtube.com' in url.lower() or 'youtu.be' in url.lower()
+        
+        # If YouTube bot detection and we haven't tried cookies yet
+        if is_youtube and is_bot_error and not self.cookieless_failed:
+            self.cookieless_failed = True
+            
+            # Try to find a browser with YouTube cookies
+            browsers_with_youtube = get_browsers_with_youtube_cookies()
+            
+            if browsers_with_youtube:
+                # Auto-retry with detected browser
+                browser = browsers_with_youtube[0]
+                self.browser_preference = browser
+                
+                reply = QMessageBox.question(
+                    self,
+                    "YouTube Authentication Required",
+                    f"YouTube is requesting authentication to prevent bot access.\n\n"
+                    f"Good news! I detected you're logged into YouTube in {browser.title()}.\n\n"
+                    f"Would you like to retry using your {browser.title()} login?",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.Yes
+                )
+                
+                if reply == QMessageBox.Yes:
+                    self.status_label.setText(f"Retrying with {browser} authentication...")
+                    self.fetch_videos()  # Retry automatically
+                    return
+                else:
+                    # User declined, show error
+                    self.fetch_btn.setEnabled(True)
+                    self.status_label.setText("Authentication declined")
+                    self.statusBar().showMessage("YouTube authentication required")
+                    return
+            else:
+                # No browsers with YouTube cookies found
+                available_browsers = detect_available_browsers()
+                
+                if available_browsers:
+                    msg = (
+                        f"YouTube requires authentication to download this video.\n\n"
+                        f"I found these browsers on your system:\n"
+                        f"  • {', '.join([b.title() for b in available_browsers])}\n\n"
+                        f"To fix this:\n"
+                        f"1. Sign into YouTube in one of these browsers\n"
+                        f"2. Go to Tools > Preferences\n"
+                        f"3. Select your browser\n"
+                        f"4. Try fetching again\n\n"
+                        f"Technical details: {error[:200]}"
+                    )
+                else:
+                    msg = (
+                        f"YouTube requires authentication, but I couldn't find any supported browsers.\n\n"
+                        f"Supported browsers: Firefox, Chrome, Brave, Edge, Chromium, Opera, Vivaldi\n\n"
+                        f"Please install a browser and sign into YouTube, then try again.\n\n"
+                        f"Technical details: {error[:200]}"
+                    )
+                
+                self.fetch_btn.setEnabled(True)
+                self.status_label.setText("Authentication required")
+                self.statusBar().showMessage("YouTube authentication required")
+                QMessageBox.warning(self, "Authentication Required", msg)
+                return
+        
+        # Not a bot error, or already tried cookies - show error
         self.fetch_btn.setEnabled(True)
         self.status_label.setText("Error fetching videos")
         self.statusBar().showMessage("Failed to fetch videos")
-        QMessageBox.critical(self, "Error", error)
+        
+        # Show user-friendly error if available, otherwise show technical error
+        if user_friendly_error:
+            QMessageBox.critical(self, "Error", user_friendly_error)
+        else:
+            QMessageBox.critical(self, "Error", error)
         
     def select_all(self):
         """Select all checkboxes"""
