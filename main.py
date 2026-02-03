@@ -1345,12 +1345,19 @@ class MediaDownloaderApp(QMainWindow):
         # Build filename template
         filename_template = self.build_filename_template()
         
+        # Resolve 'auto' browser preference to actual browser name
+        resolved_browser = None
+        if self.browser_preference == 'auto':
+            resolved_browser = get_default_browser()
+        elif self.browser_preference != 'none':
+            resolved_browser = self.browser_preference
+        
         # Start download thread with browser cookies
         self.download_thread = DownloadThread(
             selected_urls, self.output_path, format_type, video_quality,
             audio_codec, audio_quality, download_subs, embed_thumbnail, normalize_audio,
             denoise_audio, dynamic_normalization, filename_template, 
-            cookies_from_browser=self.browser_preference, video_container=video_container,
+            cookies_from_browser=resolved_browser, video_container=video_container,
             denoise_video=denoise_video, stabilize_video=stabilize_video,
             sharpen_video=sharpen_video, normalize_video_audio=normalize_video_audio,
             denoise_video_audio=denoise_video_audio
