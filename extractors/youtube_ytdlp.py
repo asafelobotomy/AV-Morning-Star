@@ -211,7 +211,7 @@ class YouTubeExtractor:
                 video_filters.append('hqdn3d=4:3:6:4.5')
             
             if stabilize_video:
-                video_filters.append('deshake=rx=32:ry=32:edge=3:blocksize=4')
+                video_filters.append('deshake')
             
             if sharpen_video:
                 video_filters.append('unsharp=5:5:0.8:5:5:0.4')
@@ -222,8 +222,48 @@ class YouTubeExtractor:
             if normalize_video_audio:
                 audio_filters.append('loudnorm=I=-16:LRA=11:TP=-1.5,aresample=48000')
             
-            # Apply filters via postprocessor_args
+            # Apply filters if any are enabled
             if video_filters or audio_filters:
+                # Initialize postprocessors list
+                ydl_opts['postprocessors'] = ydl_opts.get('postprocessors', [])
+                
+                # Determine codec based on container format
+                container_lower = video_container.lower()
+                
+                # Container-specific codec settings
+                if container_lower == 'webm':
+                    video_codec = 'libvpx-vp9'
+                    audio_codec_out = 'libopus'
+                    codec_args = ['-c:v', video_codec, '-crf', '30', '-b:v', '0',
+                                  '-c:a', audio_codec_out, '-b:a', '192k']
+                elif container_lower == 'avi':
+                    video_codec = 'mpeg4'
+                    audio_codec_out = 'mp3'
+                    codec_args = ['-c:v', video_codec, '-q:v', '3',
+                                  '-c:a', audio_codec_out, '-b:a', '192k']
+                elif container_lower == 'flv':
+                    video_codec = 'flv1'
+                    audio_codec_out = 'mp3'
+                    codec_args = ['-c:v', video_codec, '-q:v', '3',
+                                  '-c:a', audio_codec_out, '-b:a', '192k']
+                elif container_lower == 'mov':
+                    video_codec = 'libx264'
+                    audio_codec_out = 'aac'
+                    codec_args = ['-c:v', video_codec, '-preset', 'medium', '-crf', '18',
+                                  '-c:a', audio_codec_out, '-b:a', '192k']
+                else:  # mp4, mkv, and default
+                    video_codec = 'libx264'
+                    audio_codec_out = 'aac'
+                    codec_args = ['-c:v', video_codec, '-preset', 'medium', '-crf', '18',
+                                  '-c:a', audio_codec_out, '-b:a', '192k']
+                
+                # Add video convertor postprocessor
+                ydl_opts['postprocessors'].append({
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': video_container.lower(),
+                })
+                
+                # Build FFmpeg arguments
                 ffmpeg_args = []
                 
                 if video_filters:
@@ -232,8 +272,11 @@ class YouTubeExtractor:
                 if audio_filters:
                     ffmpeg_args.extend(['-af', ','.join(audio_filters)])
                 
+                # Add codec-specific encoding settings
+                ffmpeg_args.extend(codec_args)
+                
                 ydl_opts['postprocessor_args'] = {
-                    'merger': ffmpeg_args
+                    'videoconvertor': ffmpeg_args
                 }
         
         # Subtitle download

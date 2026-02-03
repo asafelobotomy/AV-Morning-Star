@@ -429,12 +429,9 @@ class BaseExtractor:
             # deshake: Single-pass video stabilization
             # Note: vidstab (two-pass) would be better but requires temp file,
             # which yt-dlp's workflow doesn't support well.
-            # Using medium settings for balanced correction:
-            # - rx/ry (32): Search range in pixels (larger = more shake correction)
-            # - edge (3): Mirror edges to fill gaps (prevents black borders)
-            # - blocksize (4): Motion detection block size
+            # Using simple deshake for maximum compatibility
             # Source: FFmpeg docs, video stabilization community guides
-            video_filters.append('deshake=rx=32:ry=32:edge=3:blocksize=4')
+            video_filters.append('deshake')
         
         if sharpen_video:
             # unsharp: Unsharp mask filter for edge enhancement
@@ -467,8 +464,48 @@ class BaseExtractor:
             # Source: FFmpeg wiki, EBU R128 specification
             audio_filters.append('loudnorm=I=-16:LRA=11:TP=-1.5,aresample=48000')
         
-        # Apply filters via postprocessor_args
+        # Apply filters via FFmpegVideoConvertor postprocessor for re-encoding
         if video_filters or audio_filters:
+            # Initialize postprocessors list
+            opts['postprocessors'] = opts.get('postprocessors', [])
+            
+            # Determine codec based on container format
+            container_lower = video_container.lower()
+            
+            # Container-specific codec settings
+            if container_lower == 'webm':
+                video_codec = 'libvpx-vp9'
+                audio_codec_out = 'libopus'
+                codec_args = ['-c:v', video_codec, '-crf', '30', '-b:v', '0',
+                              '-c:a', audio_codec_out, '-b:a', '192k']
+            elif container_lower == 'avi':
+                video_codec = 'mpeg4'
+                audio_codec_out = 'mp3'
+                codec_args = ['-c:v', video_codec, '-q:v', '3',
+                              '-c:a', audio_codec_out, '-b:a', '192k']
+            elif container_lower == 'flv':
+                video_codec = 'flv1'
+                audio_codec_out = 'mp3'
+                codec_args = ['-c:v', video_codec, '-q:v', '3',
+                              '-c:a', audio_codec_out, '-b:a', '192k']
+            elif container_lower == 'mov':
+                video_codec = 'libx264'
+                audio_codec_out = 'aac'
+                codec_args = ['-c:v', video_codec, '-preset', 'medium', '-crf', '18',
+                              '-c:a', audio_codec_out, '-b:a', '192k']
+            else:  # mp4, mkv, and default
+                video_codec = 'libx264'
+                audio_codec_out = 'aac'
+                codec_args = ['-c:v', video_codec, '-preset', 'medium', '-crf', '18',
+                              '-c:a', audio_codec_out, '-b:a', '192k']
+            
+            # Add video convertor postprocessor
+            opts['postprocessors'].append({
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': video_container.lower(),
+            })
+            
+            # Build FFmpeg arguments
             ffmpeg_args = []
             
             if video_filters:
@@ -477,8 +514,11 @@ class BaseExtractor:
             if audio_filters:
                 ffmpeg_args.extend(['-af', ','.join(audio_filters)])
             
+            # Add codec-specific encoding settings
+            ffmpeg_args.extend(codec_args)
+            
             opts['postprocessor_args'] = {
-                'merger': ffmpeg_args  # Apply during FFmpeg merge step
+                'videoconvertor': ffmpeg_args
             }
         
         return opts
