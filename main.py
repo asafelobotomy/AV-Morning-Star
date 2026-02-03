@@ -11,17 +11,27 @@ import json
 # Suppress Qt Wayland warnings
 os.environ['QT_LOGGING_RULES'] = 'qt.qpa.wayland=false'
 
+# Add Deno to PATH if installed (required for YouTube PO tokens)
+deno_path = os.path.expanduser('~/.deno/bin')
+if os.path.exists(deno_path) and deno_path not in os.environ.get('PATH', ''):
+    os.environ['PATH'] = f"{deno_path}:{os.environ.get('PATH', '')}"
+    os.environ['DENO_INSTALL'] = os.path.expanduser('~/.deno')
+
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QPushButton, QLineEdit, QLabel, 
                              QListWidget, QComboBox, QProgressBar, QTextEdit,
                              QCheckBox, QScrollArea, QGroupBox, QMessageBox,
-                             QFileDialog, QListWidgetItem, QSplashScreen, QGridLayout)
+                             QFileDialog, QListWidgetItem, QSplashScreen, QGridLayout,
+                             QDialog)
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer, QRect, QPoint, QSize
 from PyQt5.QtGui import QIcon, QFont, QPixmap, QPainter, QBrush, QPainterPath
 import yt_dlp
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
+
+# Import our modular extractors
+from extractors import get_extractor
 
 
 class FlowLayout(QVBoxLayout):
@@ -90,67 +100,33 @@ def make_circular_pixmap(pixmap):
 
 
 class URLScraperThread(QThread):
-    """Thread for scraping video URLs from a page"""
+    """Thread for scraping video URLs from a page using platform-specific extractors"""
     finished = pyqtSignal(list)
     error = pyqtSignal(str)
     
-    def __init__(self, url):
+    def __init__(self, url, cookies_from_browser=None):
         super().__init__()
         self.url = url
+        self.cookies_from_browser = cookies_from_browser
         
     def run(self):
         try:
-            # First, try to get playlist/channel info using yt-dlp
-            ydl_opts = {
-                'quiet': True,
-                'no_warnings': True,
-                'extract_flat': True,
-            }
+            # Get the appropriate extractor for this URL with browser cookies
+            extractor = get_extractor(
+                self.url, 
+                cookies_from_browser=self.cookies_from_browser
+            )
             
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(self.url, download=False)
-                
-                if info and 'entries' in info:
-                    # This is a playlist/channel
-                    videos = []
-                    for entry in info['entries']:
-                        if entry:
-                            # Try multiple fields for uploader
-                            uploader = (entry.get('uploader') or 
-                                      entry.get('channel') or 
-                                      entry.get('uploader_id') or 
-                                      entry.get('creator') or 
-                                      'Unknown')
-                            
-                            videos.append({
-                                'url': entry.get('url') or entry.get('webpage_url') or f"https://www.youtube.com/watch?v={entry.get('id')}",
-                                'title': entry.get('title', 'Unknown Title'),
-                                'duration': entry.get('duration', 0),
-                                'uploader': uploader
-                            })
-                    self.finished.emit(videos)
-                else:
-                    # Single video
-                    uploader = (info.get('uploader') or 
-                              info.get('channel') or 
-                              info.get('uploader_id') or 
-                              info.get('creator') or 
-                              'Unknown')
-                    
-                    videos = [{
-                        'url': self.url,
-                        'title': info.get('title', 'Unknown Title'),
-                        'duration': info.get('duration', 0),
-                        'uploader': uploader
-                    }]
-                    self.finished.emit(videos)
+            # Extract video information
+            videos = extractor.extract_info()
+            self.finished.emit(videos)
                     
         except Exception as e:
             self.error.emit(f"Error scraping URL: {str(e)}")
 
 
 class DownloadThread(QThread):
-    """Thread for downloading videos/audio"""
+    """Thread for downloading videos/audio using platform-specific extractors"""
     progress = pyqtSignal(str, int)
     finished = pyqtSignal(str)
     error = pyqtSignal(str)
@@ -158,7 +134,7 @@ class DownloadThread(QThread):
     def __init__(self, urls, output_path, format_type, video_quality=None, 
                  audio_codec='mp3', audio_quality='192', download_subs=False,
                  embed_thumbnail=False, normalize_audio=False, denoise_audio=False,
-                 dynamic_normalization=False, filename_template=None):
+                 dynamic_normalization=False, filename_template=None, cookies_from_browser=None):
         super().__init__()
         self.urls = urls
         self.output_path = output_path
@@ -172,6 +148,7 @@ class DownloadThread(QThread):
         self.denoise_audio = denoise_audio
         self.dynamic_normalization = dynamic_normalization
         self.filename_template = filename_template or '%(title)s.%(ext)s'
+        self.cookies_from_browser = cookies_from_browser
         
     def progress_hook(self, d):
         if d['status'] == 'downloading':
@@ -218,92 +195,30 @@ class DownloadThread(QThread):
         
         for idx, url in enumerate(self.urls, 1):
             try:
-                ydl_opts = {
-                    'outtmpl': os.path.join(self.output_path, self.filename_template),
-                    'progress_hooks': [self.progress_hook],
-                    'noprogress': False,  # Ensure progress updates are sent
-                    'quiet': False,  # Allow progress output
-                    'no_warnings': False,
-                    'retries': 3,
-                    'fragment_retries': 3,
-                    'socket_timeout': 30,
-                }
+                # Get selected browser for authentication (passed from main window)
+                # For downloads, we'll use the same browser that was used for fetching
+                # This could be enhanced to store the browser choice per URL
                 
-                # Subtitle options
-                if self.download_subs:
-                    ydl_opts['writesubtitles'] = True
-                    ydl_opts['writeautomaticsub'] = True
-                    ydl_opts['subtitleslangs'] = ['en', 'en-US']
-                    if self.format_type == 'video':
-                        ydl_opts['embedsubtitles'] = True
+                # Get platform-specific extractor with browser cookies
+                extractor = get_extractor(url, cookies_from_browser=self.cookies_from_browser)
                 
-                if self.format_type == 'audio':
-                    # Audio extraction with configurable codec and quality
-                    postprocessors = [{
-                        'key': 'FFmpegExtractAudio',
-                        'preferredcodec': self.audio_codec,
-                        'preferredquality': self.audio_quality,
-                    }]
-                    
-                    # Build audio filter chain
-                    audio_filters = []
-                    
-                    # Add denoising if requested (FFT-based noise reduction)
-                    if self.denoise_audio:
-                        audio_filters.append('afftdn=nf=-20')
-                    
-                    # Add normalization if requested
-                    if self.normalize_audio:
-                        if self.dynamic_normalization:
-                            # Dynamic audio normalization - excellent for varying volumes
-                            audio_filters.append('dynaudnorm=p=0.95:m=10:s=12:g=5')
-                        else:
-                            # EBU R128 loudness normalization (two-pass)
-                            audio_filters.append('loudnorm=I=-16:LRA=11:TP=-1.5')
-                    
-                    # Apply audio filters if any
-                    if audio_filters:
-                        ydl_opts['postprocessor_args'] = {
-                            'ffmpeg': ['-af', ','.join(audio_filters)]
-                        }
-                    
-                    # Add thumbnail embedding if requested
-                    if self.embed_thumbnail:
-                        postprocessors.append({
-                            'key': 'EmbedThumbnail',
-                        })
-                        ydl_opts['writethumbnail'] = True
-                    
-                    # Add metadata
-                    postprocessors.append({
-                        'key': 'FFmpegMetadata',
-                    })
-                    
-                    ydl_opts.update({
-                        'format': 'bestaudio/best',
-                        'postprocessors': postprocessors,
-                    })
-                else:  # video
-                    # Parse video quality from UI text
-                    quality_text = self.video_quality.lower()
-                    if 'best' in quality_text:
-                        ydl_opts['format'] = 'bestvideo+bestaudio/best'
-                    elif '2160' in quality_text or '4k' in quality_text:
-                        ydl_opts['format'] = 'bestvideo[height<=2160]+bestaudio/best[height<=2160]'
-                    elif '1440' in quality_text:
-                        ydl_opts['format'] = 'bestvideo[height<=1440]+bestaudio/best[height<=1440]'
-                    elif '1080' in quality_text:
-                        ydl_opts['format'] = 'bestvideo[height<=1080]+bestaudio/best[height<=1080]'
-                    elif '720' in quality_text:
-                        ydl_opts['format'] = 'bestvideo[height<=720]+bestaudio/best[height<=720]'
-                    elif '480' in quality_text:
-                        ydl_opts['format'] = 'bestvideo[height<=480]+bestaudio/best[height<=480]'
-                    elif '360' in quality_text:
-                        ydl_opts['format'] = 'bestvideo[height<=360]+bestaudio/best[height<=360]'
-                    else:
-                        ydl_opts['format'] = 'best'
-                        
-                    ydl_opts['merge_output_format'] = 'mp4'
+                # Get platform-specific download options
+                ydl_opts = extractor.get_download_opts(
+                    self.output_path,
+                    self.filename_template,
+                    self.format_type,
+                    self.video_quality,
+                    self.audio_codec,
+                    self.audio_quality,
+                    self.download_subs,
+                    self.embed_thumbnail,
+                    self.normalize_audio,
+                    self.denoise_audio,
+                    self.dynamic_normalization
+                )
+                
+                # Add progress hook
+                ydl_opts['progress_hooks'] = [self.progress_hook]
                 
                 self.progress.emit(f'Downloading {idx}/{len(self.urls)}...', 0)
                 
@@ -334,6 +249,114 @@ class DownloadThread(QThread):
             self.finished.emit(message)
 
 
+class PreferencesDialog(QDialog):
+    """Preferences dialog for application settings"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Preferences - AV Morning Star")
+        self.setMinimumSize(550, 350)
+        self.setModal(True)
+        
+        # Get parent's current settings
+        self.parent_app = parent
+        
+        layout = QVBoxLayout(self)
+        
+        # Title
+        title = QLabel("Preferences")
+        title.setFont(QFont("Arial", 14, QFont.Bold))
+        layout.addWidget(title)
+        
+        layout.addSpacing(20)
+        
+        # Authentication section
+        auth_group = QGroupBox("YouTube Authentication")
+        auth_layout = QVBoxLayout()
+        
+        # Main description
+        main_desc = QLabel(
+            "To download YouTube videos, AV Morning Star can use your browser's login session.\n"
+            "Simply select the browser where you're logged into YouTube."
+        )
+        main_desc.setWordWrap(True)
+        main_desc.setStyleSheet("QLabel { font-size: 10pt; margin-bottom: 15px; }")
+        auth_layout.addWidget(main_desc)
+        
+        # Browser selector
+        browser_layout = QHBoxLayout()
+        browser_layout.addWidget(QLabel("Select browser:"))
+        
+        self.browser_combo = QComboBox()
+        self.browser_combo.addItems([
+            "None (No authentication)",
+            "Firefox",
+            "Chrome",
+            "Brave",
+            "Edge",
+            "Chromium",
+            "Opera",
+            "Vivaldi"
+        ])
+        self.browser_combo.setToolTip("Choose the browser where you're logged into YouTube")
+        browser_layout.addWidget(self.browser_combo)
+        browser_layout.addStretch()
+        
+        auth_layout.addLayout(browser_layout)
+        
+        # Instructions
+        instructions = QLabel(
+            "<b>Important:</b> Make sure you're logged into YouTube in the selected browser before downloading."
+        )
+        instructions.setWordWrap(True)
+        instructions.setStyleSheet("QLabel { color: #ff8800; font-size: 9pt; margin-top: 10px; background-color: #2a2a2a; padding: 8px; border-radius: 4px; }")
+        auth_layout.addWidget(instructions)
+        
+        auth_group.setLayout(auth_layout)
+        layout.addWidget(auth_group)
+        
+        layout.addStretch()
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.close)
+        button_layout.addWidget(cancel_btn)
+        
+        save_btn = QPushButton("Save")
+        save_btn.clicked.connect(self.save_preferences)
+        save_btn.setDefault(True)
+        button_layout.addWidget(save_btn)
+        
+        layout.addLayout(button_layout)
+        
+        # Load current settings
+        if parent:
+            current_browser = getattr(parent, 'browser_preference', 'none')
+            browser_map = {
+                'none': 0,
+                'firefox': 1,
+                'chrome': 2,
+                'brave': 3,
+                'edge': 4,
+                'chromium': 5,
+                'opera': 6,
+                'vivaldi': 7
+            }
+            self.browser_combo.setCurrentIndex(browser_map.get(current_browser, 0))
+    
+    def save_preferences(self):
+        """Save preferences and close dialog"""
+        if self.parent_app:
+            browser_text = self.browser_combo.currentText()
+            if "None" in browser_text:
+                self.parent_app.browser_preference = 'none'
+            else:
+                self.parent_app.browser_preference = browser_text.lower()
+        self.close()
+
+
 class MediaDownloaderApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -342,6 +365,7 @@ class MediaDownloaderApp(QMainWindow):
         self.output_path = os.path.expanduser("~/Downloads")
         self.mode = 'basic'  # Default to basic mode
         self.filename_template = ['title', 'quality', 'uploader']  # Default template
+        self.browser_preference = 'brave'  # Default browser for authentication (has cookies on this system)
         self.init_ui()
         
     def init_ui(self):
@@ -352,6 +376,25 @@ class MediaDownloaderApp(QMainWindow):
         icon_path = os.path.join(os.path.dirname(__file__), 'av-morning-star.png')
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
+        
+        # Create menu bar
+        menubar = self.menuBar()
+        
+        # Tools menu
+        tools_menu = menubar.addMenu('Tools')
+        
+        preferences_action = tools_menu.addAction('Preferences')
+        preferences_action.setShortcut('Ctrl+,')
+        preferences_action.triggered.connect(self.show_preferences)
+        
+        tools_menu.addSeparator()
+        
+        about_action = tools_menu.addAction('About')
+        about_action.triggered.connect(self.show_about)
+        
+        help_action = tools_menu.addAction('Help')
+        help_action.setShortcut('F1')
+        help_action.triggered.connect(self.show_help)
         
         # Central widget
         central_widget = QWidget()
@@ -401,6 +444,7 @@ class MediaDownloaderApp(QMainWindow):
         url_input_layout.addWidget(self.fetch_btn)
         
         url_layout.addLayout(url_input_layout)
+        
         url_group.setLayout(url_layout)
         main_layout.addWidget(url_group)
         
@@ -866,16 +910,7 @@ class MediaDownloaderApp(QMainWindow):
                 self.audio_quality_combo.setEnabled(False)
                 self.embed_thumbnail_checkbox.setEnabled(False)
                 self.normalize_audio_checkbox.setEnabled(False)
-                self.dynamic_norm_checkbox.setEnabled(False)
-                self.denoise_checkbox.setEnabled(False)
-            
-    def browse_output_path(self):
-        """Browse for output directory"""
-        path = QFileDialog.getExistingDirectory(self, "Select Output Directory", self.output_path)
-        if path:
-            self.output_path = path
-            self.path_label.setText(path)
-            
+    
     def fetch_videos(self):
         """Fetch videos from URL"""
         url = self.url_input.text().strip()
@@ -887,6 +922,11 @@ class MediaDownloaderApp(QMainWindow):
         if not url.startswith(('http://', 'https://')):
             QMessageBox.warning(self, "Error", "Please enter a valid URL starting with http:// or https://")
             return
+        
+        # Get browser for authentication
+        cookies_from_browser = None
+        if self.browser_preference and self.browser_preference != 'none':
+            cookies_from_browser = self.browser_preference
             
         self.status_label.setText("Fetching video information...")
         self.statusBar().showMessage("Connecting to URL...")
@@ -896,11 +936,21 @@ class MediaDownloaderApp(QMainWindow):
         # Clear previous results
         self.clear_videos_list()
         
-        # Start scraping thread
-        self.scraper_thread = URLScraperThread(url)
+        # Start scraping thread with browser cookies authentication
+        self.scraper_thread = URLScraperThread(
+            url, 
+            cookies_from_browser=cookies_from_browser
+        )
         self.scraper_thread.finished.connect(self.on_videos_fetched)
         self.scraper_thread.error.connect(self.on_fetch_error)
         self.scraper_thread.start()
+    
+    def browse_output_path(self):
+        """Browse for output directory"""
+        directory = QFileDialog.getExistingDirectory(self, "Select Download Directory", self.output_path)
+        if directory:
+            self.output_path = directory
+            self.path_label.setText(self.output_path)
         
     def clear_videos_list(self):
         """Clear the videos list"""
@@ -1003,11 +1053,12 @@ class MediaDownloaderApp(QMainWindow):
         # Build filename template
         filename_template = self.build_filename_template()
         
-        # Start download thread
+        # Start download thread with browser cookies
         self.download_thread = DownloadThread(
             selected_urls, self.output_path, format_type, video_quality,
             audio_codec, audio_quality, download_subs, embed_thumbnail, normalize_audio,
-            denoise_audio, dynamic_normalization, filename_template
+            denoise_audio, dynamic_normalization, filename_template, 
+            cookies_from_browser=self.browser_preference
         )
         self.download_thread.progress.connect(self.on_download_progress)
         self.download_thread.finished.connect(self.on_download_finished)
@@ -1036,6 +1087,48 @@ class MediaDownloaderApp(QMainWindow):
         self.status_label.setText("Download failed")
         self.statusBar().showMessage("Download failed - check error message")
         QMessageBox.critical(self, "Error", error)
+    
+    def show_preferences(self):
+        """Show preferences dialog"""
+        dialog = PreferencesDialog(self)
+        dialog.exec_()
+    
+    def show_about(self):
+        """Show about dialog"""
+        about_text = (
+            "<h2>AV Morning Star</h2>"
+            "<p>Version 1.0.0</p>"
+            "<p>A powerful video and audio downloader supporting 1000+ websites.</p>"
+            "<p>Built with PyQt5, yt-dlp, and InnerTube.</p>"
+            "<p>© 2026 AV Morning Star Project</p>"
+        )
+        QMessageBox.about(self, "About AV Morning Star", about_text)
+    
+    def show_help(self):
+        """Show help dialog"""
+        help_text = (
+            "<h3>Getting Started</h3>"
+            "<ol>"
+            "<li>Enter a video URL in the input field</li>"
+            "<li>Click 'Fetch' to retrieve available videos</li>"
+            "<li>Select the videos you want to download</li>"
+            "<li>Choose your download options (format, quality, etc.)</li>"
+            "<li>Click 'Download Selected' to start</li>"
+            "</ol>"
+            "<h3>YouTube Authentication</h3>"
+            "<p>For YouTube downloads, go to <b>Tools > Preferences</b> and select your browser. "
+            "Make sure you're logged into YouTube in that browser.</p>"
+            "<h3>Supported Sites</h3>"
+            "<p>YouTube, Odysee, and 1000+ other sites supported by yt-dlp.</p>"
+            "<h3>Need More Help?</h3>"
+            "<p>Check the AUTHENTICATION_GUIDE.md file in the application directory.</p>"
+        )
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Help - AV Morning Star")
+        msg.setTextFormat(Qt.RichText)
+        msg.setText(help_text)
+        msg.setIcon(QMessageBox.Information)
+        msg.exec_()
 
 
 def main():
