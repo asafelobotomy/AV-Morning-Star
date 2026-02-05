@@ -52,3 +52,33 @@ appimagetool-x86_64.AppImage
 
 # Logs
 *.log
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.whl
+*.tar.gz
+
+# AppImage build
+build/
+AppDir/
+*.AppImage
+appimagetool-x86_64.AppImage
+
+# Test coverage
+.coverage
+htmlcov/
+
+# Environment variables
+.env
+.env.local
+
+# IDE files
+*.sublime-project
+*.sublime-workspace
+.DS_Store
