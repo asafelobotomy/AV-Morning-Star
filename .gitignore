@@ -1,40 +1,21 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
+# Build artifacts
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# PyInstaller
-*.manifest
 *.spec
+*.AppImage
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
 
 # Virtual environments
-venv/
 .venv/
+venv/
 ENV/
 env/
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
@@ -45,40 +26,15 @@ env/
 .DS_Store
 Thumbs.db
 
-# AppImage files
-*.AppImage
-*.AppDir
-appimagetool-x86_64.AppImage
-
-# Logs
-*.log
-# Type checking
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Build artifacts
-build/
-dist/
-*.egg-info/
-*.whl
-*.tar.gz
-
-# AppImage build
-build/
-AppDir/
-*.AppImage
-appimagetool-x86_64.AppImage
-
-# Test coverage
+# Testing
+.pytest_cache/
 .coverage
 htmlcov/
 
-# Environment variables
-.env
-.env.local
+# AppImage tools
+appimagetool-x86_64.AppImage
+squashfs-root/
 
-# IDE files
-*.sublime-project
-*.sublime-workspace
-.DS_Store
+# Temporary files
+*.tmp
+*.log

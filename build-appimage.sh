@@ -42,21 +42,32 @@ pyinstaller --onefile \
 # Copy executable to AppDir
 cp "dist/${APP_NAME}" "${APPDIR}/usr/bin/"
 
-# Create AppRun script
+# Create AppRun script with icon support
 cat > "${APPDIR}/AppRun" << 'APPRUN_EOF'
 #!/bin/bash
 SELF=$(readlink -f "$0")
 HERE=${SELF%/*}
 export PATH="${HERE}/usr/bin:${PATH}"
 export LD_LIBRARY_PATH="${HERE}/usr/lib:${LD_LIBRARY_PATH}"
+
+# Set icon paths for proper icon display
+export XDG_DATA_DIRS="${HERE}/usr/share:${XDG_DATA_DIRS}"
+export QT_STYLE_OVERRIDE=fusion
+export QT_SCALE_FACTOR=1
+
+# Set icon theme search path for PyQt5
+export QT_ICON_THEME_SEARCH_PATH="${HERE}/usr/share/icons:${QT_ICON_THEME_SEARCH_PATH}"
+
+# Ensure icon is available to desktop environment
+if [ -n "$DISPLAY" ]; then
+    export GTK_DATA_PREFIX="${HERE}/usr/share:${GTK_DATA_PREFIX}"
+    export ICON_THEME_NAME="hicolor"
+fi
+
 exec "${HERE}/usr/bin/AV-Morning-Star" "$@"
 APPRUN_EOF
 
 chmod +x "${APPDIR}/AppRun"
-
-# Copy desktop file
-cp av-morning-star.desktop "${APPDIR}/usr/share/applications/"
-cp av-morning-star.desktop "${APPDIR}/"
 
 # Create icon if it doesn't exist
 if [ ! -f "av-morning-star.png" ]; then
@@ -64,9 +75,24 @@ if [ ! -f "av-morning-star.png" ]; then
     python3 create_icon.py
 fi
 
-# Copy icon
-cp av-morning-star.png "${APPDIR}/usr/share/icons/hicolor/256x256/apps/"
-cp av-morning-star.png "${APPDIR}/"
+# Copy desktop file (must be done BEFORE icon for appimagetool)
+cp av-morning-star.desktop "${APPDIR}/usr/share/applications/"
+cp av-morning-star.desktop "${APPDIR}/"
+
+# Copy icon to multiple locations for maximum compatibility
+echo "Embedding application icon..."
+# XDG standard location (primary)
+mkdir -p "${APPDIR}/usr/share/icons/hicolor/256x256/apps"
+cp av-morning-star.png "${APPDIR}/usr/share/icons/hicolor/256x256/apps/av-morning-star.png"
+
+# Legacy pixmaps location (secondary)
+mkdir -p "${APPDIR}/usr/share/pixmaps"
+cp av-morning-star.png "${APPDIR}/usr/share/pixmaps/av-morning-star.png"
+
+# Root level icon (appimagetool will use this for .DirIcon)
+cp av-morning-star.png "${APPDIR}/av-morning-star.png"
+
+# DO NOT manually create .DirIcon - let appimagetool handle it
 
 # Download appimagetool if not present
 if [ ! -f "appimagetool-x86_64.AppImage" ]; then
