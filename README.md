@@ -1,8 +1,63 @@
-# 🌟 AV Morning Star - Video & Audio Downloader
+<div align="center">
+
+<img src="av-morning-star.png" alt="AV Morning Star" width="200">
+
+# AV Morning Star
+
+### Video & Audio Downloader
 
 > A powerful, privacy-first desktop application for downloading videos and audio from 1000+ websites.
 
+[![Release](https://img.shields.io/github/v/release/asafelobotomy/AV-Morning-Star)](https://github.com/asafelobotomy/AV-Morning-Star/releases)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
+[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey.svg)](https://github.com/asafelobotomy/AV-Morning-Star)
+
 **Version 0.3.0** | Built with PyQt5 & yt-dlp | [📖 Full Documentation](docs/README.md)
+
+[Download AppImage](https://github.com/asafelobotomy/AV-Morning-Star/releases/latest) • [Documentation](docs/README.md) • [Report Bug](https://github.com/asafelobotomy/AV-Morning-Star/issues)
+
+</div>
+
+---
+
+## 📸 Screenshots
+
+<div align="center">
+<img src="docs/images/app-screenshot.png" alt="AV Morning Star Interface" width="800">
+<p><i>Clean, intuitive interface with drag-and-drop filename templating</i></p>
+</div>
+
+---
+
+## 🆕 What's New in v0.3.0
+
+### 📦 AppImage Distribution
+- **Self-contained Linux package** (69 MB) - no installation required
+- Works on any distribution with glibc 2.6.32+ (Ubuntu 20.04+, Fedora 32+, Arch, etc.)
+- Desktop integration with proper icon embedding
+- Squashfs 4.0 compression (98.94% efficiency)
+
+### 🎬 Video Enhancement
+- **Denoise video** - 3D temporal denoising for grainy footage
+- **Stabilize video** - Reduce camera shake with deshake filter
+- **Sharpen video** - Unsharp mask with edge-aware settings
+- **Audio processing** - Normalization & denoising for video audio
+- **Container support** - MP4, MKV, WebM, MOV, AVI, FLV
+
+### 🔧 Build System Improvements
+- Enhanced AppImage build script with proper icon handling
+- Icon now uses .DirIcon symlink (AppImageKit standard)
+- Improved AppRun script with icon environment variables
+- Comprehensive build documentation ([BUILD_SUMMARY.md](BUILD_SUMMARY.md))
+
+### 📚 Documentation Updates
+- Platform extractor coverage analysis
+- Complete build verification checklist
+- Distribution guidelines and system requirements
+- Enhanced security and privacy documentation
+
+See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 
 ---
 
@@ -31,6 +86,13 @@
 - **🔍 Browser Support** – Firefox, Chrome, Brave, Edge, Chromium, Opera, Vivaldi
 - **🛡️ Secure by Design** – Read-only access, in-memory storage, OS keyring encryption
 - **💬 User-Friendly** – Plain-English errors with actionable solutions
+
+### 🎬 Video Enhancement (New in v0.3.0!)
+- **🎞️ Denoise** – 3D temporal denoising (hqdn3d) for grainy footage
+- **🤳 Stabilize** – Camera shake reduction (deshake filter)
+- **✨ Sharpen** – Unsharp mask with edge-aware settings
+- **🔊 Audio Processing** – Normalization & denoising for video audio tracks
+- **📦 Container Support** – MP4, MKV, WebM, MOV, AVI, FLV
 
 ## 🌐 Supported Platforms
 
@@ -64,7 +126,33 @@ All automatically installed via `requirements.txt`:
 
 ## 🚀 Installation
 
-### ⚡ Quick Start (Recommended)
+### 📦 AppImage (Recommended - No Installation Required!)
+
+**Download, make executable, and run:**
+
+```bash
+# Download the latest AppImage
+wget https://github.com/asafelobotomy/AV-Morning-Star/releases/download/v0.3.0/AV-Morning-Star-0.3.0-x86_64.AppImage
+
+# Make it executable
+chmod +x AV-Morning-Star-0.3.0-x86_64.AppImage
+
+# Run it!
+./AV-Morning-Star-0.3.0-x86_64.AppImage
+```
+
+**✨ Benefits:**
+- ✅ **No installation required** - Just download and run
+- ✅ **Self-contained** - Includes all dependencies (69 MB)
+- ✅ **Universal** - Works on any Linux distribution (glibc 2.6.32+)
+- ✅ **No conflicts** - Doesn't interfere with system packages
+- ✅ **Desktop integration** - Adds to application menu automatically
+
+**Requirements:** FFmpeg (for audio/video processing) and optionally Deno (for YouTube).
+
+---
+
+### ⚡ Quick Start (From Source)
 
 ```bash
 # Clone the repository
@@ -159,7 +247,15 @@ chmod +x build-appimage.sh
 ./build-appimage.sh
 ```
 
-Output: `AV-Morning-Star-0.3.0-x86_64.AppImage`
+**Output:** `AV-Morning-Star-0.3.0-x86_64.AppImage` (69 MB)
+
+**Build includes:**
+- ✅ All Python dependencies bundled
+- ✅ PyQt5 GUI framework
+- ✅ yt-dlp with 1000+ site extractors
+- ✅ Desktop integration files
+- ✅ Application icon (.DirIcon symlink)
+- ✅ Squashfs 4.0 with gzip compression (98.94% efficiency)
 
 Share this single file with others – no installation needed!
 
@@ -334,11 +430,13 @@ Complete documentation is available in the [`docs/`](docs/) folder:
 ### Technical Documentation
 - **[Architecture](docs/ARCHITECTURE.md)**: Modular extractor system design
 - **[Project Structure](docs/PROJECT_STRUCTURE.md)**: Complete project organization
+- **[Build Summary](BUILD_SUMMARY.md)**: v0.3.0 AppImage build manifest
+- **[Extractor Coverage](docs/EXTRACTORS_COVERAGE_ANALYSIS.md)**: Platform support analysis
 - **[Security Audit](docs/SECURITY_AUDIT.md)**: Comprehensive technical security review
-- **[Reorganization](docs/REORGANIZATION.md)**: v0.3.0 reorganization details
 
 ### Quick Links
 - **[CHANGELOG.md](CHANGELOG.md)**: Version history and release notes
+- **[Latest Release](https://github.com/asafelobotomy/AV-Morning-Star/releases/latest)**: Download AppImage
 - **[Documentation Index](docs/README.md)**: Full documentation guide
 - **[Archive](archive/)**: Historical development documentation
 
@@ -490,6 +588,8 @@ Want to add support for a new platform? It's easy with our modular architecture!
 
 ### 📋 Project Resources
 - **[CHANGELOG.md](CHANGELOG.md)** – Version history and updates
+- **[Latest Release](https://github.com/asafelobotomy/AV-Morning-Star/releases/latest)** – Download AppImage
+- **[Build Summary](BUILD_SUMMARY.md)** – v0.3.0 build documentation
 - **[Archive](archive/)** – Historical development notes
 - **[Full Documentation Index](docs/README.md)** – Everything in one place
 
