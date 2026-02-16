@@ -18,6 +18,7 @@ mkdir -p "${APPDIR}"
 mkdir -p "${APPDIR}/usr/bin"
 mkdir -p "${APPDIR}/usr/lib"
 mkdir -p "${APPDIR}/usr/share/applications"
+mkdir -p "${APPDIR}/usr/share/metainfo"
 mkdir -p "${APPDIR}/usr/share/icons/hicolor/256x256/apps"
 
 # Install Python dependencies in a virtual environment
@@ -33,7 +34,7 @@ echo "Creating standalone executable..."
 pyinstaller --onefile \
     --windowed \
     --name "${APP_NAME}" \
-    --add-data "av-morning-star.desktop:." \
+    --add-data "com.github.asafelobotomy.avmorningstar.desktop:." \
     --hidden-import=PyQt5 \
     --hidden-import=yt_dlp \
     --collect-all yt_dlp \
@@ -76,8 +77,13 @@ if [ ! -f "av-morning-star.png" ]; then
 fi
 
 # Copy desktop file (must be done BEFORE icon for appimagetool)
-cp av-morning-star.desktop "${APPDIR}/usr/share/applications/"
-cp av-morning-star.desktop "${APPDIR}/"
+cp com.github.asafelobotomy.avmorningstar.desktop "${APPDIR}/usr/share/applications/"
+cp com.github.asafelobotomy.avmorningstar.desktop "${APPDIR}/"
+
+# Copy AppStream metadata
+if [ -f "com.github.asafelobotomy.avmorningstar.appdata.xml" ]; then
+    cp com.github.asafelobotomy.avmorningstar.appdata.xml "${APPDIR}/usr/share/metainfo/"
+fi
 
 # Copy icon to multiple locations for maximum compatibility
 echo "Embedding application icon..."

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+  <id>com.github.asafelobotomy.avmorningstar.desktop</id>
+  <name>AV Morning Star</name>
+  <summary>Video and audio downloader</summary>
+  <developer id="com.github.asafelobotomy">
+    <name>asafelobotomy</name>
+  </developer>
+  <description>
+    <p>AV Morning Star is a privacy-first desktop app for downloading videos and audio from 1000+ sites using yt-dlp.</p>
+    <p>It supports playlists, audio extraction, format selection, browser-cookie authentication, and audio enhancement tools.</p>
+  </description>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <launchable type="desktop-id">com.github.asafelobotomy.avmorningstar.desktop</launchable>
+  <url type="homepage">https://github.com/asafelobotomy/AV-Morning-Star</url>
+  <url type="bugtracker">https://github.com/asafelobotomy/AV-Morning-Star/issues</url>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.3.0" date="2026-02-16"/>
+  </releases>
+</component>

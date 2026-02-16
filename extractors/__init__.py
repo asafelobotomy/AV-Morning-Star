@@ -6,8 +6,9 @@ from .base import BaseExtractor
 from .youtube_ytdlp import YouTubeExtractor  # Using yt-dlp backend for PO token support
 from .odysee import OdyseeExtractor
 from .generic import GenericExtractor
+from .podcast_page import PodcastPageExtractor
 
-__all__ = ['BaseExtractor', 'YouTubeExtractor', 'OdyseeExtractor', 'GenericExtractor', 'get_extractor']
+__all__ = ['BaseExtractor', 'YouTubeExtractor', 'OdyseeExtractor', 'GenericExtractor', 'PodcastPageExtractor', 'get_extractor']
 
 
 def get_extractor(url, cookies_from_browser=None):
@@ -32,6 +33,10 @@ def get_extractor(url, cookies_from_browser=None):
     elif 'odysee.com' in url_lower or 'lbry.tv' in url_lower:
         return OdyseeExtractor(url)
     
+    # Direct-download podcast pages
+    elif 'fat-pie.com' in url_lower:
+        return PodcastPageExtractor(url)
+
     # Generic fallback for all other sites
     else:
         return GenericExtractor(url)

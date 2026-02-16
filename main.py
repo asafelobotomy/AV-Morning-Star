@@ -1558,7 +1558,7 @@ def main():
     # Set application name and icon for desktop environments
     app.setApplicationName("av-morning-star")
     app.setApplicationDisplayName(APP_FULL_TITLE)
-    app.setDesktopFileName("av-morning-star.desktop")
+    app.setDesktopFileName("com.github.asafelobotomy.avmorningstar.desktop")
     
     # Set application icon (affects taskbar and window decorations)
     icon_path = os.path.join(os.path.dirname(__file__), ICON_FILENAME)

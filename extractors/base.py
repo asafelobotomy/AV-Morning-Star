@@ -3,7 +3,16 @@ Base extractor class defining the common interface for all platform extractors
 """
 
 import os
+import re
 import yt_dlp
+
+
+_ANSI_ESCAPE_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
+
+
+def strip_ansi_codes(text):
+    """Remove ANSI escape codes from an error string for clean display."""
+    return _ANSI_ESCAPE_RE.sub("", text)
 
 
 class BaseExtractor:
@@ -343,8 +352,9 @@ class BaseExtractor:
                 audio_filters.append('loudnorm=I=-16:LRA=11:TP=-1.5,aresample=48000')
         
         if audio_filters:
+            # Apply filters only to the audio extraction postprocessor output.
             opts['postprocessor_args'] = {
-                'ffmpeg': ['-af', ','.join(audio_filters)]
+                'extractaudio+ffmpeg_o': ['-af', ','.join(audio_filters)]
             }
         
         # Thumbnail embedding

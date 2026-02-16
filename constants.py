@@ -14,7 +14,7 @@ APP_TAGLINE = "Built with PyQt5, yt-dlp, and smart browser authentication."
 
 # ===== FILE PATHS =====
 ICON_FILENAME = "av-morning-star.png"
-DESKTOP_ENTRY_FILENAME = "av-morning-star.desktop"
+DESKTOP_ENTRY_FILENAME = "com.github.asafelobotomy.avmorningstar.desktop"
 VERSION_FILE = "VERSION"
 REQUIREMENTS_FILE = "requirements.txt"
 
