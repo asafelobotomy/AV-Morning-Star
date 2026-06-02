@@ -13,6 +13,7 @@
 |-----------|-------|---------|--------|
 | **youtube_ytdlp.py** | YouTube, YouTube Music | Dedicated YouTube extractor with PO token support | ✅ SPECIALIZED |
 | **odysee.py** | Odysee, LBRY | Dedicated Odysee/LBRY extractor | ✅ SPECIALIZED |
+| **podcast_page.py** | Podcast/media pages | Direct-download pages serving audio/video files | ✅ SPECIALIZED |
 | **generic.py** | 1000+ other sites | Fallback using yt-dlp backend | ✅ CATCH-ALL |
 | **base.py** | All platforms | Common base class with shared logic | ✅ FOUNDATION |
 
@@ -24,6 +25,8 @@ Factory Function (get_extractor)
 │   └── YouTubeExtractor (dedicated handler)
 ├── odysee.com / lbry.tv
 │   └── OdyseeExtractor (dedicated handler)
+├── podcast/media pages (direct audio/video URLs)
+│   └── PodcastPageExtractor (direct-download handler)
 └── Everything else
     └── GenericExtractor (fallback to yt-dlp)
 ```

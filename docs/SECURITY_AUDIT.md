@@ -15,7 +15,7 @@ A comprehensive security review of the browser cookie authentication system has 
 - ✅ **No cookie files created**
 - ✅ **Memory-only cookie handling**
 - ✅ **Uses encrypted browser cookie stores (read-only)**
-- ✅ **No network transmission of raw cookies**
+- ✅ **Browser cookies are sent to YouTube over HTTPS; cookies are used in memory only for the duration of the request and are never persisted to this app's own files**
 - ✅ **Proper error handling without exposing sensitive data**
 
 ---
@@ -98,33 +98,19 @@ $ ls -la | grep -E "(cookie|secret|key|password|token)"
 ### What Gets Transmitted?
 
 **To YouTube:**
-- ✅ Standard HTTP cookies (encrypted via HTTPS)
-- ✅ PO tokens (generated locally via Deno)
+- ✅ Browser cookies sent to YouTube over HTTPS when authenticated requests are made
+- ✅ PO tokens (generated locally via Deno, if available)
 - ✅ Video requests with authentication headers
 
 **Security Measures:**
 - ✅ **All traffic over HTTPS** (TLS 1.2+)
 - ✅ **No cookies sent to third parties**
 - ✅ **No analytics/tracking by our app**
-- ✅ **No external servers** (except YouTube and GitHub for ejs components)
+- ✅ **No external servers** (except YouTube)
 
 ### GitHub EJS Components
 
-```python
-ydl_opts['remote_components'] = ['ejs:github']
-```
-
-**What this does:**
-- Downloads JavaScript challenge solver from GitHub (yt-dlp official repo)
-- Used to generate PO tokens locally (runs in Deno sandbox)
-- **Does NOT send cookies to GitHub**
-- **Does NOT send user data to GitHub**
-
-**Security validation:**
-- ✅ Code is from official yt-dlp repository (verified)
-- ✅ Executed in Deno sandbox (isolated)
-- ✅ No network access during execution
-- ✅ Output is mathematical hash (no sensitive data)
+Remote component integration (`ejs:github`) is no longer enabled. yt-dlp handles PO token generation using its built-in mechanisms. No JavaScript is fetched from GitHub at runtime.
 
 ---
 
@@ -289,19 +275,16 @@ raise Exception(
 
 ### Threat: Deno Sandbox Escape
 
-**Attack Vector:** Malicious JavaScript in EJS components escapes Deno sandbox
+**Attack Vector:** Malicious JavaScript in Deno escapes sandbox
 
 **Risk Level:** ⚠️ **VERY LOW**
 
-**Why:** Deno has strong sandboxing, but theoretical exploits exist
+**Why:** The `ejs:github` remote component is no longer enabled. Deno is invoked by yt-dlp as an external process; this app does not configure Deno's permissions. Deno's effective isolation depends on how yt-dlp invokes it. Keep Deno and yt-dlp updated.
 
 **Mitigations:**
-- ✅ EJS components from official yt-dlp GitHub repo
-- ✅ Deno sandbox: no file system, no network, no env access
-- ✅ Code executes in isolated V8 context
-- ✅ Input/output limited to mathematical operations
-
-**Best Practice:** Keep Deno updated (`deno upgrade`)
+- ✅ ejs:github/remote_components no longer used
+- ✅ Deno threat surface limited to yt-dlp's invocation model
+- ✅ Keep Deno updated (`deno upgrade`)
 
 ---
 
@@ -357,6 +340,7 @@ def __init__(self, urls, output_path, format_type, video_quality=None,
              dynamic_normalization=False, filename_template=None, 
              cookies_from_browser=None):  # ✅ Accepts browser name only
     # ...
+    self.browser_preference = 'auto'  # ✅ Default: auto-detection
     self.cookies_from_browser = cookies_from_browser  # ✅ Stored as string
 ```
 
@@ -540,7 +524,7 @@ yt-dlp>=2023.0.0
 
 **Recommended for Production:**
 ```txt
-yt-dlp==2026.1.31  # Pin exact version
+yt-dlp==2026.3.17  # Pin exact version
 ```
 
 **Benefit:** Protection against malicious updates (very unlikely but possible)

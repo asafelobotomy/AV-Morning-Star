@@ -42,6 +42,10 @@ class BaseExtractor:
 - No special authentication needed
 - Inherits standard options from BaseExtractor
 
+**Podcast Page Extractor** (`extractors/podcast_page.py`)
+- Direct-download podcast/media pages
+- Handles pages that serve audio/video files directly
+
 **Generic Extractor** (`extractors/generic.py`)
 - Fallback for all other platforms
 - Works with any yt-dlp-supported site
@@ -131,17 +135,18 @@ Edit `extractors/__init__.py`:
 ```python
 from .twitch import TwitchExtractor
 
-def get_extractor(url):
-    url_lower = url.lower()
+def get_extractor(url, cookies_from_browser=None):
+    from urllib.parse import urlparse
+    hostname = urlparse(url).hostname or ''
     
-    if 'youtube.com' in url_lower or 'youtu.be' in url_lower:
-        return YouTubeExtractor(url)
-    elif 'odysee.com' in url_lower or 'lbry.tv' in url_lower:
-        return OdyseeExtractor(url)
-    elif 'twitch.tv' in url_lower:  # Add this
-        return TwitchExtractor(url)
+    if 'youtube.com' in hostname or hostname == 'youtu.be':
+        return YouTubeExtractor(url, cookies_from_browser)
+    elif 'odysee.com' in hostname or 'lbry.tv' in hostname:
+        return OdyseeExtractor(url, cookies_from_browser)
+    elif 'twitch.tv' in hostname:  # Add this
+        return TwitchExtractor(url, cookies_from_browser)
     else:
-        return GenericExtractor(url)
+        return GenericExtractor(url, cookies_from_browser)
 ```
 
 ### 3. Test
@@ -234,7 +239,6 @@ def _get_audio_opts(self, ...):
 
 Potential improvements to the extractor system:
 
-- **Browser Selector UI**: Let users choose which browser to extract cookies from
 - **Platform Detection**: Auto-detect platform from URL and show platform-specific options
 - **Credential Storage**: Secure storage for API keys and passwords
 - **Rate Limiting**: Platform-specific download rate controls
@@ -245,7 +249,7 @@ Potential improvements to the extractor system:
 ## Troubleshooting
 
 ### YouTube "Sign in to confirm you're not a bot"
-**Solution**: Install the browser extension and log into YouTube in that browser. The extractor will use your session cookies.
+**Solution**: Log into YouTube in your browser and select it (or use Auto mode) in Tools > Preferences.
 
 ### Odysee videos not loading
 **Solution**: Update yt-dlp: `pip install --upgrade yt-dlp`
@@ -298,6 +302,6 @@ Potential improvements to the extractor system:
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: February 3, 2026  
+**Version**: 0.3.0  
+**Last Updated**: June 2, 2026  
 **Maintainer**: AV Morning Star Team

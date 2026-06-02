@@ -21,7 +21,7 @@
 - **[Build Summary](BUILD_SUMMARY.md)** - Latest AppImage build report
 - **[Constants Reference](CONSTANTS.md)** - Application constants and configuration
 - **[Extractor Coverage](EXTRACTORS_COVERAGE_ANALYSIS.md)** - Platform support analysis
-- **[Reorganization Notes](REORGANIZATION.md)** - v0.3.0 reorganization details
+- **[Reorganization Notes](REORGANIZATION.md)** - v0.3.0 reorganization details *(historical)*
 
 ## 📖 Quick Links
 

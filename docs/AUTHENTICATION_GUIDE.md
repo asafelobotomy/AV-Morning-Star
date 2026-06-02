@@ -13,7 +13,7 @@ As of February 2026, YouTube has implemented bot protection that blocks both yt-
 
 ## Supported Browsers
 
-- **Firefox** (including Firefox ESR, LibreWolf, IceCat)
+- **Firefox**
 - **Chrome** / Chromium
 - **Brave**
 - **Edge**
@@ -54,7 +54,7 @@ As of February 2026, YouTube has implemented bot protection that blocks both yt-
 1. **Open Brave and log into YouTube**
    - Same as Firefox - just sign in normally
 
-2. **Specify browser when extracting** (currently manual, UI coming soon)
+2. **Select a browser in Tools > Preferences, or leave Auto enabled. Auto mode tries cookieless download first and retries with a detected browser if needed.**
    ```python
    extractor = get_extractor(youtube_url, cookies_from_browser='brave')
    ```
@@ -177,7 +177,8 @@ Yes, keep your browser session active:
 ```python
 from extractors import get_extractor
 
-# Will use Firefox by default if available
+# Browser selection is handled by the GUI (main.py);
+# get_extractor() accepts the resolved browser string but does not auto-detect one.
 extractor = get_extractor(
     'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
     cookies_from_browser='firefox'
@@ -207,7 +208,7 @@ for video in videos:
 2. **Using real browser cookies** means:
    - YouTube sees you as a legitimate logged-in user
    - All videos accessible to your account can be downloaded
-   - Age-restricted and members-only content works
+   - Age-restricted content may work when a browser with an active authenticated YouTube session is selected; this is not guaranteed for all content types.
 
 3. **yt-dlp with cookies**:
    - yt-dlp handles YouTube's official client protocols

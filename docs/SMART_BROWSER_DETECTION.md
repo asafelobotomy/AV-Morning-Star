@@ -8,7 +8,7 @@ AV Morning Star now features **intelligent browser detection** that automaticall
 
 ### 1. Automatic Browser Detection
 
-When you start the app, it automatically:
+During the fetch/retry flow when a cookieless download fails and Auto mode is enabled, the app:
 - ✅ Scans for installed browsers (Brave, Firefox, Chrome, Edge, etc.)
 - ✅ Checks which browsers have YouTube authentication cookies
 - ✅ Auto-selects the best browser with active YouTube login
@@ -120,12 +120,11 @@ When you start the app, it automatically:
 ✅ **Reduces bot detection** - Cookieless downloads preferred  
 ✅ **Better UX** - Automatic vs. manual configuration  
 ✅ **Fewer support requests** - Self-diagnosing authentication issues  
-✅ **Cross-platform** - Works on Linux, macOS, Windows  
+✅ **Cross-platform** - Works on macOS and Linux; Windows browser path detection is not currently implemented  
 
 ## Manual Override
 
 Users can still manually select a browser in **Tools > Preferences** if they want to:
-- Use a specific browser profile
 - Force authentication even if cookieless works
 - Switch between multiple YouTube accounts
 - Disable cookies entirely (set to "None")
@@ -178,10 +177,11 @@ For each available browser, the app:
 ✅ **Checked:** Presence of YouTube authentication cookies  
 ✅ **Checked:** Cookie domain (only YouTube cookies examined)  
 
-❌ **NOT checked:** Cookie values (never read until user approves)  
 ❌ **NOT checked:** Browsing history  
 ❌ **NOT checked:** Saved passwords  
 ❌ **NOT stored:** Cookie data on disk  
+
+**Note:** In Auto mode, browser cookies are inspected to identify which browsers have an active YouTube session before the retry prompt is shown.  
 
 ### When Cookies Are Used
 

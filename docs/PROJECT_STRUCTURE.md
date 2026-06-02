@@ -11,7 +11,9 @@ AV-Morning-Star/
 ├── browser_utils.py                 # Browser detection and cookie utilities
 ├── constants.py                     # Application constants and configuration
 ├── start.sh                         # Quick start launcher
-├── requirements.txt                 # Python dependencies (4 packages)
+├── requirements.txt                 # Python runtime dependencies
+├── requirements-dev.txt             # Development-only dependencies (mcp[cli])
+├── requirements-lock.txt            # Pinned lockfile (5 runtime packages)
 ├── VERSION                          # Single source of version truth (0.3.0)
 ├── README.md                        # Main project documentation
 ├── CHANGELOG.md                     # Version history and release notes
@@ -37,6 +39,7 @@ AV-Morning-Star/
 ├── tests/                           # Automated test suite (unittest)
 │   ├── __init__.py
 │   ├── test_extractors.py           # Extractor and filter-chain tests
+│   ├── test_main_logic.py           # Main application logic tests
 │   └── test_browser_utils.py        # Browser detection tests
 │
 ├── docs/                            # Project documentation
@@ -71,8 +74,8 @@ AV-Morning-Star/
 │       └── reports/                 # Feb 2026 code review reports
 │
 ├── .github/                         # GitHub / Copilot surface
-└── .gitignore                       # Git ignore rules
-```
+└── .gitignore                       # Git ignore rules└── .vscode/
+    └── mcp.json                     # MCP server configuration```
 
 ## File Descriptions
 
@@ -106,7 +109,6 @@ AV-Morning-Star/
 **extractors/youtube_ytdlp.py** (204 lines)
 - YouTube-specific handling with PO token support
 - Browser cookie authentication
-- Remote component integration (ejs:github)
 - Bot detection error handling
 
 **extractors/odysee.py**
@@ -116,6 +118,17 @@ AV-Morning-Star/
 **extractors/generic.py**
 - Fallback for 1000+ other sites
 - Standard yt-dlp options
+
+### Tests
+
+**tests/test_extractors.py**
+- Extractor and filter-chain tests
+
+**tests/test_main_logic.py**
+- Main application logic tests (closeEvent, thread lifecycle, audio codec mapping)
+
+**tests/test_browser_utils.py**
+- Browser detection tests
 
 ### Scripts
 
@@ -199,12 +212,18 @@ AV-Morning-Star/
 
 **requirements.txt**
 ```
-PyQt5>=5.15.0
-yt-dlp>=2026.1.31
-requests>=2.28.0
-beautifulsoup4>=4.11.0
-Pillow>=10.0.0
+PyQt5==5.15.11
+yt-dlp==2026.3.17
+Pillow==12.2.0
 ```
+
+**requirements-dev.txt**
+```
+mcp[cli]==1.27.2
+```
+
+**requirements-lock.txt**
+Pinned lockfile with 5 runtime packages: pillow, PyQt5, PyQt5-Qt5, PyQt5_sip, yt-dlp.
 
 **VERSION**
 ```
@@ -222,11 +241,12 @@ Pillow>=10.0.0
 ### Runtime Dependencies
 
 **Python Packages:**
-- PyQt5: GUI framework
-- yt-dlp: Video downloading engine
-- requests: HTTP library
-- beautifulsoup4: HTML parsing
-- Pillow: Image processing
+- PyQt5==5.15.11: GUI framework
+- yt-dlp==2026.3.17: Video downloading engine
+- Pillow==12.2.0: Image processing
+
+**Development-Only:**
+- mcp[cli]==1.27.2: MCP server tooling (requirements-dev.txt)
 
 **System Dependencies:**
 - FFmpeg: Media processing

@@ -5,6 +5,19 @@ All notable changes to AV Morning Star will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **closeEvent handler**: `MediaDownloaderApp` now prompts the user if a download thread is running on window close; waits up to 3 seconds then terminates the thread gracefully.
+- **Test suite expanded to 103 tests**: New tests cover main application logic (`tests/test_main_logic.py`).
+
+### Changed
+- **Audio codec mapping**: Explicit label→yt-dlp codec dictionary introduced; OGG Vorbis label now correctly maps to `"vorbis"` for yt-dlp.
+- **Dependency split**: `mcp[cli]` moved to `requirements-dev.txt`; runtime `requirements.txt` now contains PyQt5, yt-dlp, and Pillow only.
+- **Lockfile trimmed**: `requirements-lock.txt` pinned to 5 runtime packages (pillow, PyQt5, PyQt5-Qt5, PyQt5_sip, yt-dlp).
+- **start.sh**: Hash sentinel is now written only after a successful `pip install`, preventing partial-install false-positives.
+- **Security/privacy docs corrected**: Removed inaccurate Deno sandbox and ejs:github claims; updated cookie transmission description.
+
 ## [0.3.0] - 2026-02-03
 
 ### Added
@@ -25,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Default Authentication**: Changed from hardcoded 'Brave' to 'Auto (Recommended)'
 - **Preferences Menu**: Reorganized with Auto mode as first option
 - **YouTube Extraction**: Now uses yt-dlp backend instead of InnerTube library
-- **PO Token Support**: Enabled remote components for YouTube Proof of Origin tokens
+- **PO Token Support**: yt-dlp handles Proof of Origin token generation natively; no remote component configuration required.
 - **Error Handling**: Enhanced with specific messages for browser detection failures
 - **Documentation Structure**: Moved 8 documentation files to `docs/` folder
 - Version number updated to 0.3.0 across all build files
@@ -101,7 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `YouTubeExtractor`: YouTube-specific handling
   - `OdyseeExtractor`: Odysee/LBRY support
   - `GenericExtractor`: Fallback for all other sites
-- Filename template builder with drag-and-drop tags
+- Filename template builder with interactive tag selection
 - Subtitle download and embedding
 - AppImage packaging for portable distribution
 - Virtual environment setup scripts (`start.sh`, `test.sh`)
@@ -130,10 +143,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Dependencies
 - Python 3.7+
-- PyQt5 >= 5.15.0
-- yt-dlp >= 2026.1.31
-- requests >= 2.28.0
-- beautifulsoup4 >= 4.11.0
-- Pillow >= 10.0.0
+- PyQt5 == 5.15.11
+- yt-dlp == 2026.3.17
+- Pillow == 12.2.0
 - FFmpeg (system dependency)
-- Deno/Node.js 25+/QuickJS/Bun (for YouTube PO tokens)
+- Deno/Node.js 25+/QuickJS/Bun (optional, for YouTube PO tokens)

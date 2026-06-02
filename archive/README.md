@@ -129,10 +129,11 @@ Development notes from various implementation phases:
 
 Historical build and utility scripts:
 
-Contents archived to avoid clutter. Current scripts are in root:
-- `start.sh` – Launch application
-- `test.sh` – Run tests
-- `build-appimage.sh` – Build portable AppImage
+Current active scripts are:
+- `start.sh` – Launch application (repo root)
+- `scripts/test.sh` – Run tests
+- `scripts/build-appimage.sh` – Build portable AppImage
+- `scripts/create_icon.py` – Icon generator
 
 ---
 

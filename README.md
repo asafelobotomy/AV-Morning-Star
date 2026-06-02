@@ -25,7 +25,7 @@
 
 <div align="center">
 <img src="docs/images/app-screenshot.png" alt="AV Morning Star Interface" width="800">
-<p><i>Clean, intuitive interface with drag-and-drop filename templating</i></p>
+<p><i>Clean, intuitive interface with interactive filename tag selection</i></p>
 </div>
 
 ---
@@ -49,7 +49,7 @@
 - Enhanced AppImage build script with proper icon handling
 - Icon now uses .DirIcon symlink (AppImageKit standard)
 - Improved AppRun script with icon environment variables
-- Comprehensive build documentation ([BUILD_SUMMARY.md](BUILD_SUMMARY.md))
+- Comprehensive build documentation ([BUILD_SUMMARY.md](docs/BUILD_SUMMARY.md))
 
 ### 📚 Documentation Updates
 - Platform extractor coverage analysis
@@ -76,7 +76,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history.
   - Dynamic normalization for varying volume levels
   - FFT-based noise reduction (adaptive filtering)
   - Thumbnail/album art embedding
-- **📝 Filename Customization** – Drag-and-drop template tags (title, uploader, date, duration, etc.)
+- **📝 Filename Customization** – click-to-add/remove filename tags (title, uploader, date, duration, etc.)
 - **📑 Subtitle Handling** – Download and embed subtitles automatically
 - **⚡ Real-time Progress** – Live download tracking with filename and percentage
 - **🔒 Privacy-First** – Cookieless by default, authenticated only when needed
@@ -96,7 +96,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 
 ## 🌐 Supported Platforms
 
-Powered by **yt-dlp (2026.1.31+)** with support for:
+Powered by **yt-dlp (2026.3.17+)** with support for:
 
 | Category | Platforms |
 |----------|-----------|
@@ -166,7 +166,7 @@ chmod +x start.sh
 - ✅ Virtual environment creation
 - ✅ Python dependency installation
 - ✅ FFmpeg availability check
-- ✅ Deno installation (optional, for YouTube)
+- ✅ Checks whether a JavaScript runtime is available and prints installation guidance if not found (optional, for YouTube)
 - ✅ Application launch
 
 ### 📋 Manual Installation
@@ -290,7 +290,7 @@ Share this single file with others – no installation needed!
   - 🔊 Dynamic normalization
   - 🔇 FFT-based noise reduction
   - 🖼️ Thumbnail embedding
-- Video enhancements (for MP4/MKV/WebM):
+- Video enhancements (for MP4/MKV/WebM/MOV):
   - 🎬 Video denoising
   - 🤳 Stabilization (reduce camera shake)
   - ✨ Sharpening
@@ -298,7 +298,7 @@ Share this single file with others – no installation needed!
 
 ### 📝 Filename Templates
 
-Customize output filenames with drag-and-drop tags:
+Customize output filenames by clicking tags to add or remove them:
 
 | Tag | Example | Use Case |
 |-----|---------|----------|
@@ -429,7 +429,7 @@ Complete documentation is available in the [`docs/`](docs/) folder:
 ### Technical Documentation
 - **[Architecture](docs/ARCHITECTURE.md)**: Modular extractor system design
 - **[Project Structure](docs/PROJECT_STRUCTURE.md)**: Complete project organization
-- **[Build Summary](BUILD_SUMMARY.md)**: v0.3.0 AppImage build manifest
+- **[Build Summary](docs/BUILD_SUMMARY.md)**: v0.3.0 AppImage build manifest
 - **[Extractor Coverage](docs/EXTRACTORS_COVERAGE_ANALYSIS.md)**: Platform support analysis
 - **[Security Audit](docs/SECURITY_AUDIT.md)**: Comprehensive technical security review
 
@@ -586,12 +586,12 @@ Want to add support for a new platform? It's easy with our modular architecture!
 - **[Architecture](docs/ARCHITECTURE.md)** – Modular system design
 - **[Project Structure](docs/PROJECT_STRUCTURE.md)** – Complete file organization
 - **[Security Audit](docs/SECURITY_AUDIT.md)** – Technical security review
-- **[Code Review](CODE_REVIEW_REPORT.md)** – Code quality analysis
+- **[Code Review (historical)](archive/legacy/reports/CODE_REVIEW_REPORT.md)** – Code quality analysis
 
 ### 📋 Project Resources
 - **[CHANGELOG.md](CHANGELOG.md)** – Version history and updates
 - **[Latest Release](https://github.com/asafelobotomy/AV-Morning-Star/releases/latest)** – Download AppImage
-- **[Build Summary](BUILD_SUMMARY.md)** – v0.3.0 build documentation
+- **[Build Summary](docs/BUILD_SUMMARY.md)** – v0.3.0 build documentation
 - **[Archive](archive/)** – Historical development notes
 - **[Full Documentation Index](docs/README.md)** – Everything in one place
 

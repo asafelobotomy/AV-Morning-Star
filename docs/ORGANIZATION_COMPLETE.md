@@ -1,3 +1,5 @@
+> **Historical record** — This document describes a repository reorganization that was completed in early 2026. It reflects the state of the repo at that time, not the current structure. See [docs/PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for the current layout.
+
 # ✅ Repository Organization Complete
 
 **Date:** February 5, 2026  

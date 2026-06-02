@@ -2,7 +2,7 @@
 
 ## Is AV Morning Star Safe?
 
-**Yes!** Your credentials and personal data are secure. Here's why:
+**AV Morning Star is designed with privacy in mind. Here is what the application does and does not do with your data:**
 
 ### ✅ What We DON'T Store
 
@@ -45,16 +45,12 @@ When you download a video using AV Morning Star:
 
 ## What About Deno?
 
-**Deno** is a JavaScript runtime that generates "Proof of Origin" tokens to prove you're not a bot.
+**Deno** is a JavaScript runtime that yt-dlp may invoke to generate "Proof of Origin" tokens.
 
 **Security:**
 - ✅ Official tool from Deno.land (trusted source)
-- ✅ Official tool from Deno.land (trusted source)
-- ⚠️ Deno is invoked by yt-dlp; this app does not impose additional sandboxing — Deno's effective permissions depend on how yt-dlp calls it
-- ✅ Only does math to generate tokens
 - ✅ Open source (you can audit the code)
-
-**Think of it like:** Deno is a calculator that solves YouTube's math problem to prove you're human. It doesn't know anything about you.
+- ⚠️ Deno is invoked by yt-dlp as an external process. This app only adds Deno to PATH; it does not impose additional sandboxing — Deno's effective permissions depend on how yt-dlp calls it.
 
 ---
 
@@ -244,30 +240,21 @@ Check what was downloaded via Google Activity:
 
 ## Reporting Security Issues
 
-**Found a security problem?** Please report it responsibly:
+**Found a security problem?** Report it responsibly:
 
-1. **DO NOT** post publicly on GitHub
-2. **DO** email the maintainers directly
-3. **DO** include:
-   - Description of the issue
-   - Steps to reproduce
-   - Your suggested fix (if any)
-
-We take security seriously. Please open a [GitHub issue](https://github.com/asafelobotomy/AV-Morning-Star/issues) or email the maintainers directly and we will respond as promptly as possible.
+Report security issues privately by emailing the maintainers directly. Do not open a public GitHub issue for security vulnerabilities.
 
 ---
 
 ## Audit Trail
 
-This application has undergone comprehensive security review:
+This application has undergone security review:
 
 - ✅ **No credential storage vulnerabilities**
 - ✅ **No data leakage**
-- ✅ **No network security issues**
-- ✅ **Complies with privacy best practices**
+- No network security issues were identified in the most recent review. For the latest status, check the repository's security advisories.
 
-**Last Security Audit:** February 3, 2026  
-**Next Audit:** August 2026  
+**Last Security Audit:** February 3, 2026
 
 Full audit report: `SECURITY_AUDIT.md`
 
@@ -297,5 +284,5 @@ Full audit report: `SECURITY_AUDIT.md`
 
 ---
 
-**Last Updated:** February 3, 2026  
-**Version:** 1.0.0
+**Last Updated:** June 2, 2026  
+**Version:** 0.3.0

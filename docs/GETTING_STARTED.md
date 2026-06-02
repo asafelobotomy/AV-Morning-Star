@@ -4,7 +4,7 @@
 
 AV Morning Star is a desktop application that allows you to:
 - Download videos from YouTube, Vimeo, and 1000+ other sites
-- Extract audio from videos in MP3 format
+- Extract audio in MP3 or other formats (AAC, FLAC, Opus, M4A, WAV, ALAC, OGG Vorbis)
 - Download entire playlists or channels with checkbox selection
 - Choose video quality (Best, 1080p, 720p, 480p)
 - Track download progress in real-time
@@ -156,7 +156,7 @@ Default: `~/Downloads`
 - **480p**: Standard definition
 
 ### Audio Format
-Audio is extracted as MP3 at 192 kbps quality.
+Audio is extracted as MP3 at 320 kbps in Basic mode. Advanced mode supports AAC, FLAC, Opus, M4A, WAV, ALAC, and OGG Vorbis with configurable bitrates.
 
 ## 🐛 Troubleshooting
 
