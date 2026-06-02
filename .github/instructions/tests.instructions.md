@@ -8,7 +8,7 @@ description: "Conventions for test files in this workspace — framework, fixtur
 
 ## Execution scope
 
-- Testing framework for this workspace: **Python** — run tests with `(not detected)`
+- Testing framework for this workspace: **Python** — run tests with `python3 -m unittest discover -s tests -p "test_*.py"`
 - Run the single test module or test class that directly covers the changed code during intermediate work.
 - Run the full suite at task completion or when any file imported by more than one test module is modified.
 - Write tests alongside every code change.

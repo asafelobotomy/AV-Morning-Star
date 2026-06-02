@@ -11,7 +11,7 @@ I work **in** AV-Morning-Star — implementing features, reviewing code, running
 
 | Task | Command |
 | ------ | --------- |
-| Run tests | `(not detected)` |
+| Run tests | `python3 -m unittest discover -s tests -p "test_*.py"` |
 | Drift preflight | `python3 scripts/drift_preflight.py` |
 | LOC gate | `python3 scripts/check_loc.py` |
 | Inspect Copilot install state | `python3 <xanad-root>/xanadAssistant.py inspect --workspace . --package-root <xanad-root> --json` |
