@@ -70,7 +70,7 @@ python3 main.py
 To create a portable AppImage:
 
 ```bash
-./build-appimage.sh
+./scripts/build-appimage.sh
 ```
 
 This will create `AV-Morning-Star-1.0.0-x86_64.AppImage` which you can:
@@ -116,7 +116,7 @@ After building, run it with:
 
 Run the test script to verify everything is working:
 ```bash
-./test.sh
+./scripts/test.sh
 ```
 
 This will check:
@@ -131,13 +131,16 @@ AV Morning Star/
 ├── main.py                    # Main application
 ├── requirements.txt           # Python dependencies
 ├── README.md                  # Full documentation
-├── GETTING_STARTED.md         # This file
 ├── start.sh                   # Quick start script
-├── build-appimage.sh          # AppImage build script
-├── test.sh                    # Test script
-├── create_icon.py             # Icon generator
-├── av-morning-star.desktop    # Desktop entry
-└── .gitignore                 # Git ignore file
+├── av-morning-star.png        # Application icon
+├── scripts/
+│   ├── build-appimage.sh      # AppImage build script
+│   ├── test.sh                # Test script
+│   └── create_icon.py         # Icon generator
+├── packaging/
+│   ├── *.desktop              # Linux desktop entry
+│   └── *.appdata.xml          # AppStream metadata
+└── docs/                      # Full documentation
 ```
 
 ## ⚙️ Configuration
@@ -178,7 +181,7 @@ pip install -r requirements.txt
 ### Application won't start
 Run the test script to diagnose:
 ```bash
-./test.sh
+./scripts/test.sh
 ```
 
 ## 🌐 Supported Websites

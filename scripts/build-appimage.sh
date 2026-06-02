@@ -53,7 +53,7 @@ echo "Creating standalone executable..."
 pyinstaller --onefile \
     --windowed \
     --name "${APP_NAME}" \
-    --add-data "com.github.asafelobotomy.avmorningstar.desktop:." \
+    --add-data "packaging/com.github.asafelobotomy.avmorningstar.desktop:." \
     --hidden-import=PyQt5 \
     --hidden-import=yt_dlp \
     --collect-all yt_dlp \
@@ -92,16 +92,16 @@ chmod +x "${APPDIR}/AppRun"
 # Create icon if it doesn't exist
 if [ ! -f "av-morning-star.png" ]; then
     echo "Creating application icon..."
-    python3 create_icon.py
+    python3 scripts/create_icon.py
 fi
 
 # Copy desktop file (must be done BEFORE icon for appimagetool)
-cp com.github.asafelobotomy.avmorningstar.desktop "${APPDIR}/usr/share/applications/"
-cp com.github.asafelobotomy.avmorningstar.desktop "${APPDIR}/"
+cp packaging/com.github.asafelobotomy.avmorningstar.desktop "${APPDIR}/usr/share/applications/"
+cp packaging/com.github.asafelobotomy.avmorningstar.desktop "${APPDIR}/"
 
 # Copy AppStream metadata
-if [ -f "com.github.asafelobotomy.avmorningstar.appdata.xml" ]; then
-    cp com.github.asafelobotomy.avmorningstar.appdata.xml "${APPDIR}/usr/share/metainfo/"
+if [ -f "packaging/com.github.asafelobotomy.avmorningstar.appdata.xml" ]; then
+    cp packaging/com.github.asafelobotomy.avmorningstar.appdata.xml "${APPDIR}/usr/share/metainfo/"
 fi
 
 # Copy icon to multiple locations for maximum compatibility

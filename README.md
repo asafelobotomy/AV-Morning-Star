@@ -243,8 +243,8 @@ python3 main.py
 Create a portable, standalone executable:
 
 ```bash
-chmod +x build-appimage.sh
-./build-appimage.sh
+chmod +x scripts/build-appimage.sh
+./scripts/build-appimage.sh
 ```
 
 **Output:** `AV-Morning-Star-0.3.0-x86_64.AppImage` (69 MB)
@@ -277,7 +277,7 @@ Share this single file with others – no installation needed!
 
 #### **Basic Mode** (Default - Recommended)
 - ✅ Auto-detects best quality
-- ✅ Auto-configures audio settings  
+- ✅ Auto-configures audio settings
 - ✅ Perfect for 90% of users
 - ✅ No technical knowledge required
 
@@ -325,12 +325,12 @@ Customize output filenames with drag-and-drop tags:
 5. **Uses your login session** – You stay logged in
 
 #### Supported Browsers
-✅ Firefox (recommended)  
-✅ Chrome / Chromium  
-✅ Brave  
-✅ Edge  
-✅ Opera  
-✅ Vivaldi  
+✅ Firefox (recommended)
+✅ Chrome / Chromium
+✅ Brave
+✅ Edge
+✅ Opera
+✅ Vivaldi
 ✅ Safari (macOS)
 
 #### Troubleshooting YouTube Issues
@@ -352,7 +352,7 @@ extractors/
 ├── __init__.py          # Factory function (get_extractor)
 ├── base.py              # BaseExtractor (common interface)
 ├── youtube_ytdlp.py     # YouTube with PO token support
-├── odysee.py            # Odysee/LBRY platform  
+├── odysee.py            # Odysee/LBRY platform
 └── generic.py           # Fallback for 1000+ other sites
 ```
 
@@ -547,12 +547,12 @@ Want to add support for a new platform? It's easy with our modular architecture!
 1. **Create extractor file** – `extractors/yourplatform.py`
    ```python
    from .base import BaseExtractor
-   
+
    class YourPlatformExtractor(BaseExtractor):
        def extract_info(self):
            # Return list of videos with title, url, duration, uploader
            pass
-       
+
        def get_download_opts(self, ...):
            # Return yt-dlp options for downloading
            pass
@@ -596,7 +596,7 @@ Want to add support for a new platform? It's easy with our modular architecture!
 ## 📄 License & Credits
 
 ### License
-This project is **open source** and available for personal and educational use.  
+This project is **open source** and available for personal and educational use.
 See [LICENSE](LICENSE) file for full details.
 
 ### Built With ❤️ By
@@ -634,7 +634,7 @@ The developers are **not responsible** for misuse of this software.
 
 **AV Morning Star v0.3.0**
 
-Built with 🎥 for video enthusiasts  
+Built with 🎥 for video enthusiasts
 Maintained with ❤️ by the community
 
 *Privacy-first • Open-source • Easy-to-use*

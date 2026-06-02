@@ -133,7 +133,7 @@ echo ""
 # Create icon if it doesn't exist
 if [ ! -f "av-morning-star.png" ] && [ ! -f "av-morning-star.svg" ]; then
     echo "Creating application icon..."
-    python3 create_icon.py
+    python3 scripts/create_icon.py
     echo ""
 fi
 

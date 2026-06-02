@@ -10,19 +10,21 @@ AV-Morning-Star/
 ├── main.py                          # Main PyQt5 application
 ├── browser_utils.py                 # Browser detection and cookie utilities
 ├── constants.py                     # Application constants and configuration
-├── create_icon.py                   # Icon generator script
-├── start.sh                         # Quick start script
-├── test.sh                          # Test runner (imports + unittest suite)
-├── build-appimage.sh                # AppImage builder (reads version from VERSION)
+├── start.sh                         # Quick start launcher
 ├── requirements.txt                 # Python dependencies (4 packages)
 ├── VERSION                          # Single source of version truth (0.3.0)
 ├── README.md                        # Main project documentation
 ├── CHANGELOG.md                     # Version history and release notes
-├── av-morning-star.png              # Application icon (PNG)
-├── com.github.asafelobotomy.avmorningstar.desktop   # Desktop entry
-├── com.github.asafelobotomy.avmorningstar.appdata.xml  # AppStream metadata
-├── AV-Morning-Star-0.3.0-x86_64.AppImage.sha256    # Release checksum
-└── AV-Morning-Star-0.3.0-x86_64.AppImage.md5       # Release checksum
+└── av-morning-star.png              # Application icon (PNG)
+│
+├── scripts/                         # Build, test, and utility scripts
+│   ├── build-appimage.sh            # AppImage builder (reads version from VERSION)
+│   ├── test.sh                      # Test runner (imports + unittest suite)
+│   └── create_icon.py               # Icon generator
+│
+├── packaging/                       # Linux packaging metadata
+│   ├── com.github.asafelobotomy.avmorningstar.desktop    # Desktop entry
+│   └── com.github.asafelobotomy.avmorningstar.appdata.xml  # AppStream metadata
 │
 ├── extractors/                      # Modular platform extractors
 │   ├── __init__.py                  # Factory function: get_extractor()
@@ -117,25 +119,22 @@ AV-Morning-Star/
 
 ### Scripts
 
-**start.sh** (~130 lines)
-- Virtual environment setup
-- Dependency installation
-- FFmpeg check
-- Deno detection and installation
-- Auto-launch application
+**start.sh**
+- Primary user launcher — sets up virtual environment, installs dependencies, checks FFmpeg, launches `main.py`
 
-**test.sh**
-- Import validation
-- FFmpeg verification
-- yt-dlp YouTube test
-
-**build-appimage.sh**
+**scripts/build-appimage.sh**
+- Version-sync check (VERSION vs constants.py)
 - PyInstaller executable creation
 - AppDir structure generation
 - AppImage packaging
 
-**create_icon.py**
-- Generates application icon if missing
+**scripts/test.sh**
+- Import validation
+- FFmpeg verification
+- `python3 -m unittest discover -s tests -v`
+
+**scripts/create_icon.py**
+- Generates `av-morning-star.png` if missing
 - Creates circular PNG from source
 
 ### Documentation
