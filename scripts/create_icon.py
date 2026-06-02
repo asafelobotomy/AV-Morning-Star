@@ -9,37 +9,37 @@ def create_icon():
     size = 256
     img = Image.new('RGB', (size, size), color='#2c3e50')
     draw = ImageDraw.Draw(img)
-    
+
     # Draw a gradient-like effect
     for i in range(0, size, 4):
         color = int(44 + (i / size) * 40)
         draw.rectangle([0, i, size, i+4], fill=(color, color+20, color+40))
-    
+
     # Draw a play button symbol
     triangle = [(80, 60), (80, 196), (196, 128)]
     draw.polygon(triangle, fill='#e74c3c')
-    
+
     # Draw a music note
     draw.ellipse([140, 180, 170, 210], fill='#3498db')
     draw.rectangle([165, 150, 175, 195], fill='#3498db')
-    
+
     # Add text
     try:
         font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
     except (OSError, IOError):
         font = ImageFont.load_default()
-    
+
     text = "AV ⭐"
     bbox = draw.textbbox((0, 0), text, font=font)
     text_width = bbox[2] - bbox[0]
     text_height = bbox[3] - bbox[1]
     text_x = (size - text_width) // 2
     text_y = 20
-    
+
     # Draw text with shadow
     draw.text((text_x+2, text_y+2), text, fill='#000000', font=font)
     draw.text((text_x, text_y), text, fill='#ecf0f1', font=font)
-    
+
     # Save
     img.save('av-morning-star.png')
     print("Icon created: av-morning-star.png")

@@ -238,7 +238,7 @@ HELP_GETTING_STARTED = """
 
 HELP_YOUTUBE_AUTH = f"""
 <h3>YouTube Authentication</h3>
-<p>For YouTube downloads, go to <b>{MENU_TOOLS} > {MENU_PREFERENCES}</b> and select your browser. 
+<p>For YouTube downloads, go to <b>{MENU_TOOLS} > {MENU_PREFERENCES}</b> and select your browser.
 Make sure you're logged into YouTube in that browser.</p>
 """
 
