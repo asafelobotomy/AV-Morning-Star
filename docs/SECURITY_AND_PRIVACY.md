@@ -7,7 +7,7 @@
 ### ✅ What We DON'T Store
 
 - ❌ **No passwords** - We never see or save your YouTube password
-- ❌ **No cookies on disk** - Cookies stay in your browser's secure storage
+- ❌ **No cookies persisted by this app** - Cookies are read from your browser's encrypted database into memory only for the duration of the request, then discarded; this app never writes them to its own files
 - ❌ **No personal data** - We don't collect or store ANY information about you
 - ❌ **No tracking** - No analytics, telemetry, or phone-home functionality
 - ❌ **No browsing history** - We only read the cookies needed for YouTube
@@ -49,8 +49,8 @@ When you download a video using AV Morning Star:
 
 **Security:**
 - ✅ Official tool from Deno.land (trusted source)
-- ✅ Runs in a sandbox (isolated from your system)
-- ✅ No access to your files, network, or cookies
+- ✅ Official tool from Deno.land (trusted source)
+- ⚠️ Deno is invoked by yt-dlp; this app does not impose additional sandboxing — Deno's effective permissions depend on how yt-dlp calls it
 - ✅ Only does math to generate tokens
 - ✅ Open source (you can audit the code)
 
@@ -67,7 +67,7 @@ When you download a video using AV Morning Star:
 - ✅ 10+ million downloads per month
 - ✅ Actively maintained since 2021
 - ✅ Used by major organizations and projects
-- ✅ No known security issues
+- ✅ Check the [yt-dlp security advisories](https://github.com/yt-dlp/yt-dlp/security/advisories) for any disclosed issues; keeping yt-dlp up to date is the best mitigation
 
 **Read more:** https://github.com/yt-dlp/yt-dlp
 
@@ -253,7 +253,7 @@ Check what was downloaded via Google Activity:
    - Steps to reproduce
    - Your suggested fix (if any)
 
-We take security seriously and will respond within 24 hours.
+We take security seriously. Please open a [GitHub issue](https://github.com/asafelobotomy/AV-Morning-Star/issues) or email the maintainers directly and we will respond as promptly as possible.
 
 ---
 

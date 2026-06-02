@@ -3,6 +3,9 @@ Browser detection and cookie utilities
 """
 
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def detect_available_browsers():
@@ -82,9 +85,12 @@ def get_browsers_with_youtube_cookies():
             
             if auth_cookies:
                 browsers_with_youtube.append(browser)
-        except Exception:
-            # Browser exists but cookies not accessible or no cookies
-            continue
+        except PermissionError as exc:
+            logger.warning("Cannot read %s cookie store (permission denied): %s", browser, exc)
+        except OSError as exc:
+            logger.warning("Cannot read %s cookie store: %s", browser, exc)
+        except Exception as exc:  # noqa: BLE001 — yt-dlp raises miscellaneous internal errors
+            logger.debug("Skipping %s during YouTube cookie check: %s", browser, exc)
     
     return browsers_with_youtube
 

@@ -8,7 +8,7 @@ As of February 2026, YouTube has implemented bot protection that blocks both yt-
 
 1. You log into YouTube using your browser (Firefox, Chrome, Brave, etc.)
 2. AV Morning Star extracts your authentication cookies from the browser
-3. These cookies are passed to both InnerTube API and yt-dlp
+3. These cookies are passed to yt-dlp
 4. YouTube recognizes you as an authenticated user and allows downloads
 
 ## Supported Browsers
@@ -18,15 +18,13 @@ As of February 2026, YouTube has implemented bot protection that blocks both yt-
 - **Brave**
 - **Edge**
 - **Opera**
-- **Safari** (macOS only)
 - **Vivaldi**
 
-## Current Status (February 2026)
+## Current Status (June 2026)
 
-### InnerTube API (Default)
-- **Library**: innertube 2.1.19
-- **Status**: Supports cookie authentication via custom httpx.Client
-- **Implementation**: COMPLETE ✓
+### yt-dlp Backend (Primary)
+- **Library**: yt-dlp 2026.3.17
+- **Status**: Active — browser cookies passed natively for authentication
 - **How to use**:
   ```python
   from extractors import get_extractor
@@ -37,11 +35,6 @@ As of February 2026, YouTube has implemented bot protection that blocks both yt-
   # Or Firefox
   extractor = get_extractor(url, cookies_from_browser='firefox')
   ```
-
-### yt-dlp Fallback
-- **Library**: yt-dlp 2026.1.31
-- **Status**: Also supports browser cookies natively
-- **Automatic**: Cookies are automatically passed to yt-dlp downloads
 
 ## How to Enable YouTube Downloads
 
@@ -81,32 +74,23 @@ As of February 2026, YouTube has implemented bot protection that blocks both yt-
 ```python
 class YouTubeExtractor:
     def __init__(self, url, cookies_from_browser=None):
-        # 1. Extract cookies from specified browser
-        cookies = self._extract_browser_cookies()  # Uses yt-dlp's extraction
-        
-        # 2. Create custom httpx.Client with cookies
-        session = httpx.Client(
-            base_url=config.base_url,
-            cookies=httpx_cookies,  # Converted from cookie jar
-            headers={
-                'User-Agent': '...',
-                'Origin': 'https://www.youtube.com',
-                'Referer': 'https://www.youtube.com/'
-            }
-        )
-        
-        # 3. Create InnerTubeAdaptor with authenticated session
-        adaptor = InnerTubeAdaptor(context=context, session=session)
-        self.client = Client(adaptor=adaptor)
+        self.cookies_from_browser = cookies_from_browser
+
+    def get_download_opts(self, ...):
+        ydl_opts = { ... }
+        # Pass browser cookies directly to yt-dlp
+        if self.cookies_from_browser:
+            ydl_opts['cookiesfrombrowser'] = (self.cookies_from_browser,)
+        return ydl_opts
 ```
 
 ### Download Flow with Cookies
 
 ```python
-# In get_download_opts():
+# yt-dlp extracts cookies from the named browser at download time
 ydl_opts['cookiesfrombrowser'] = (self.cookies_from_browser,)
 
-# yt-dlp uses the same browser cookies for downloads
+# yt-dlp handles all YouTube authentication protocols internally
 ```
 
 ## Security & Privacy
@@ -152,43 +136,39 @@ Yes, keep your browser session active:
 3. Try downloading again
 4. If still failing, restart your browser
 
-### ⚠️ Downloads work but metadata extraction fails
+### ⚠️ Downloads work but video list fails
 
-**Cause**: InnerTube API still blocked even with cookies
+**Cause**: Metadata extraction hit a transient rate limit
 
 **Solutions**:
-- This is normal - download will continue via yt-dlp fallback
-- Videos will still download successfully
-- Metadata (title, uploader) may show as "Unknown" but file will be correct
+- Wait 30 seconds and retry
+- Videos will still download successfully once the fetch succeeds
 
 ## Future Enhancements (Coming Soon)
 
 ### UI Integration
-- [ ] **Browser selection dropdown** in main UI
+- [x] **Browser selection dropdown** in Tools > Preferences ✓
+- [x] **Auto-detect default browser** (Auto mode) ✓
 - [ ] **"Login with Browser" button** to test cookies
 - [ ] **Status indicator** showing authentication state
-- [ ] **Auto-detect default browser**
 
 ### Advanced Features
-- [ ] **OAuth2 login** (when innertube library adds support)
 - [ ] **Cookie file support** (load from cookies.txt)
 - [ ] **Multi-account support** (switch between Google accounts)
 - [ ] **Persistent authentication** (remember browser choice)
 
 ## Comparison: Before vs After Authentication
 
-### Before (Unauthenticated - Feb 2026)
+### Before (Unauthenticated)
 ```
-❌ InnerTube API: LOGIN_REQUIRED
 ❌ yt-dlp: Bot detection errors
-❌ Result: No YouTube downloads work
+❌ Result: YouTube downloads blocked
 ```
 
 ### After (With Browser Cookies)
 ```
-✅ InnerTube API: Authenticated access
-✅ yt-dlp: Downloads work with cookies
-✅ Result: YouTube downloads work normally!
+✅ yt-dlp: Authenticated via browser cookies
+✅ Result: YouTube downloads work normally
 ```
 
 ## Example Code Usage
@@ -222,16 +202,16 @@ for video in videos:
 1. **YouTube's bot protection** checks for:
    - Valid user-agent headers ✓ (We mimic browsers)
    - Authentication cookies ✓ (We use real browser cookies)
-   - Request patterns ✓ (InnerTube mimics official clients)
+   - Request patterns ✓ (yt-dlp mimics official clients)
 
 2. **Using real browser cookies** means:
    - YouTube sees you as a legitimate logged-in user
    - All videos accessible to your account can be downloaded
    - Age-restricted and members-only content works
 
-3. **Combining InnerTube + cookies**:
-   - InnerTube uses YouTube's official internal API
-   - Adding cookies authenticates the API requests
+3. **yt-dlp with cookies**:
+   - yt-dlp handles YouTube's official client protocols
+   - Adding cookies authenticates the requests
    - Same method used by successful apps like GrayJay
 
 ## Recommended Setup
@@ -243,5 +223,5 @@ for video in videos:
 
 ---
 
-**Last Updated**: February 3, 2026  
-**Compatible with**: innertube 2.1.19, yt-dlp 2026.1.31
+**Last Updated**: June 2026  
+**Compatible with**: yt-dlp 2026.3.17

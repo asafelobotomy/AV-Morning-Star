@@ -118,11 +118,9 @@ Powered by **yt-dlp (2026.1.31+)** with support for:
 
 ### 🐍 Python Packages
 All automatically installed via `requirements.txt`:
-- `PyQt5 >= 5.15.0` – GUI framework
-- `yt-dlp >= 2026.1.31` – Video downloading
-- `requests >= 2.28.0` – HTTP client
-- `beautifulsoup4 >= 4.11.0` – HTML parsing
-- `Pillow >= 10.0.0` – Image handling
+- `PyQt5 == 5.15.11` – GUI framework
+- `yt-dlp == 2026.3.17` – Video downloading
+- `Pillow == 12.2.0` – Image handling
 
 ## 🚀 Installation
 
@@ -214,23 +212,25 @@ pip install -r requirements.txt
 
 #### 3️⃣ Install Deno (Optional, for YouTube)
 
+Install via your package manager or see the **[official installation guide](https://docs.deno.com/runtime/getting_started/installation/)**:
+
 ```bash
-# Install Deno
-curl -fsSL https://deno.land/install.sh | sh
+# Linux (snap)
+snap install deno
 
-# Add to PATH
-echo 'export DENO_INSTALL="$HOME/.deno"' >> ~/.bashrc
-echo 'export PATH="$DENO_INSTALL/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
+# Linux (cargo)
+cargo install deno
 
-# Verify installation
-deno --version
+# macOS (Homebrew)
+brew install deno
 ```
 
 **Alternatives to Deno:**
 - Node.js 25+ – See [nodejs.org](https://nodejs.org/)
 - Bun – See [bun.sh](https://bun.sh/)
 - QuickJS – `sudo apt install quickjs`
+
+After installing, verify with `deno --version`.
 
 #### 4️⃣ Launch Application
 
@@ -331,7 +331,6 @@ Customize output filenames with drag-and-drop tags:
 ✅ Edge
 ✅ Opera
 ✅ Vivaldi
-✅ Safari (macOS)
 
 #### Troubleshooting YouTube Issues
 | Problem | Solution |
@@ -467,10 +466,13 @@ brew install ffmpeg
 ```
 
 #### "No JavaScript runtime found"
-**✓ Solution:** Install Deno
+**✓ Solution:** Install Deno via your package manager or see the [official installation guide](https://docs.deno.com/runtime/getting_started/installation/).
+
 ```bash
-curl -fsSL https://deno.land/install.sh | sh
-source ~/.bashrc
+# Linux (snap)
+snap install deno
+# macOS
+brew install deno
 ```
 
 #### Repeated "Bot detected" errors

@@ -32,11 +32,10 @@ class BaseExtractor:
 
 #### Platform-Specific Extractors
 
-**YouTube Extractor** (`extractors/youtube.py`)
-- Cookie-based authentication from browsers (Firefox by default)
+**YouTube Extractor** (`extractors/youtube_ytdlp.py`)
+- Cookie-based authentication from supported browsers
 - Age-gate bypassing
 - DASH/HLS manifest support
-- Parallel fragment downloads
 
 **Odysee Extractor** (`extractors/odysee.py`)
 - Basic Odysee/LBRY support
@@ -153,12 +152,8 @@ No changes needed to `main.py` - the extractor system handles everything!
 
 ### YouTube
 - **Cookie Authentication**: Bypasses bot detection by using browser cookies
-- **Browser Selection**: Defaults to Firefox, can be changed:
-  ```python
-  extractor = YouTubeExtractor(url, browser='chrome')
-  ```
+- **Browser Selection**: Configured via Tools > Preferences (Auto mode selects best available browser)
 - **DASH/HLS**: Full support for adaptive streaming formats
-- **Parallel Downloads**: 4 concurrent fragment downloads
 
 ### Odysee
 - **Direct Access**: No authentication needed

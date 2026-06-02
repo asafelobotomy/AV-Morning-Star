@@ -29,16 +29,23 @@ fi
 echo "Activating virtual environment..."
 source .venv/bin/activate
 
-# Check if dependencies are installed
-if [ ! -f ".venv/.deps_installed" ]; then
-    echo "Installing dependencies..."
-    pip install --upgrade pip
-    pip install -r requirements.txt
-    touch .venv/.deps_installed
+# Check if dependencies need to be installed or updated (hash-based, not a static sentinel)
+REQ_HASH=$(sha256sum requirements.txt | cut -d' ' -f1)
+STORED_HASH=""
+if [ -f ".venv/.deps_hash" ]; then
+    STORED_HASH=$(cat .venv/.deps_hash)
+fi
+if [ "$REQ_HASH" != "$STORED_HASH" ]; then
+    echo "Installing/updating dependencies..."
+    pip install --upgrade pip && pip install -r requirements.txt || {
+        echo "Error: dependency installation failed. Not updating hash."
+        exit 1
+    }
+    echo "$REQ_HASH" > .venv/.deps_hash
     echo "✓ Dependencies installed"
     echo ""
 else
-    echo "✓ Dependencies already installed"
+    echo "✓ Dependencies up to date"
     echo ""
 fi
 
@@ -97,35 +104,28 @@ if [ "$JS_RUNTIME_FOUND" = false ]; then
     echo ""
     echo "Recommended: Install Deno (preferred by yt-dlp)"
     echo ""
-    echo "Quick install:"
-    echo "  curl -fsSL https://deno.land/install.sh | sh"
+    echo "Install via your package manager or see the official guide:"
+    echo "  https://docs.deno.com/runtime/getting_started/installation/"
     echo ""
-    echo "Then add to your PATH:"
-    echo "  echo 'export DENO_INSTALL=\"\$HOME/.deno\"' >> ~/.bashrc"
-    echo "  echo 'export PATH=\"\$DENO_INSTALL/bin:\$PATH\"' >> ~/.bashrc"
-    echo "  source ~/.bashrc"
+    echo "Common options:"
+    echo "  Linux (snap):   snap install deno"
+    echo "  Linux (cargo):  cargo install deno"
+    echo "  macOS (brew):   brew install deno"
     echo ""
     echo "Alternatives:"
     echo "  - Node.js 25+: https://nodejs.org/"
     echo "  - QuickJS: sudo apt install quickjs (or build from source)"
-    echo "  - Bun: curl -fsSL https://bun.sh/install | bash"
     echo ""
-    echo "See YOUTUBE_FIX_IMPLEMENTATION.md for more details."
+    echo "After installing, add Deno to your PATH and restart this script."
     echo ""
-    read -p "Would you like to install Deno now? (y/n) " -n 1 -r
+    read -p "Would you like to continue without a JS runtime? (y/n) " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installing Deno..."
-        curl -fsSL https://deno.land/install.sh | sh
-        export DENO_INSTALL="$HOME/.deno"
-        export PATH="$DENO_INSTALL/bin:$PATH"
-        echo ""
-        echo "✓ Deno installed successfully!"
-        echo "Note: Add Deno to PATH in your shell config for permanent use."
-        echo ""
-    else
         echo "Continuing without JS runtime (YouTube may not work)..."
         echo ""
+    else
+        echo "Please install a JS runtime from the link above and re-run this script."
+        exit 0
     fi
 fi
 echo ""

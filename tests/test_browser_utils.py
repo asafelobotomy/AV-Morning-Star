@@ -20,7 +20,7 @@ from browser_utils import detect_available_browsers, get_default_browser
 class TestDetectAvailableBrowsers(unittest.TestCase):
     """detect_available_browsers inspects the filesystem for browser cookie paths."""
 
-    KNOWN_BROWSERS = {"brave", "firefox", "chrome", "chromium", "edge", "opera", "vivaldi", "safari"}
+    KNOWN_BROWSERS = {"brave", "firefox", "chrome", "chromium", "edge", "opera", "vivaldi"}
 
     def test_returns_a_list(self):
         result = detect_available_browsers()

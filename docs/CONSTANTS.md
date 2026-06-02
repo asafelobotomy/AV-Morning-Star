@@ -5,7 +5,7 @@
 
 ## Overview
 
-The `constants.py` module centralizes all commonly used strings, configuration values, and application settings. This provides:
+The `constants.py` module centralizes most configuration values, codec lists, and application settings. Some UI labels and error strings remain inline in `main.py`. This provides:
 
 - **Consistency**: Single source of truth for all terminology
 - **Maintainability**: Update in one place, reflect everywhere

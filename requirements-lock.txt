@@ -1,0 +1,10 @@
+# Project lockfile — generated from a clean venv with only requirements.txt installed.
+# Regenerate with:
+#   python3 -m venv /tmp/fresh && source /tmp/fresh/bin/activate \
+#     && pip install -r requirements.txt && pip freeze > requirements-lock.txt
+# Last updated: 2026-06-02
+pillow==12.2.0
+PyQt5==5.15.11
+PyQt5-Qt5==5.15.19
+PyQt5_sip==12.18.0
+yt-dlp==2026.3.17

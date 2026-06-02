@@ -8,8 +8,19 @@ Covers:
 
 import os
 import sys
+import types
 import unittest
 from unittest.mock import patch, MagicMock
+
+# ---- Stub yt_dlp so extractor tests run without the downloader installed ----
+if 'yt_dlp' not in sys.modules:
+    _yt_dlp = types.ModuleType('yt_dlp')
+    _yt_dlp.YoutubeDL = type('YoutubeDL', (object,), {'__init__': lambda self, *a, **kw: None})
+    _yt_dlp_utils = types.ModuleType('yt_dlp.utils')
+    _yt_dlp_utils.DownloadError = Exception
+    _yt_dlp.utils = _yt_dlp_utils
+    sys.modules['yt_dlp'] = _yt_dlp
+    sys.modules['yt_dlp.utils'] = _yt_dlp_utils
 
 # Ensure the workspace root is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -26,7 +37,7 @@ from extractors.base import (
 from extractors.generic import GenericExtractor
 from extractors.odysee import OdyseeExtractor
 from extractors.youtube_ytdlp import YouTubeExtractor
-from extractors import get_extractor
+from extractors import get_extractor, is_youtube_url
 
 
 # ---------------------------------------------------------------------------
@@ -389,6 +400,46 @@ class TestGetExtractorFactory(unittest.TestCase):
     def test_generic_extractor_has_no_cookies_attribute(self):
         ext = get_extractor("https://vimeo.com/123456789")
         self.assertIsInstance(ext, GenericExtractor)
+
+
+# ---------------------------------------------------------------------------
+# is_youtube_url — hostname-based classification (injection-safe)
+# ---------------------------------------------------------------------------
+
+class TestIsYoutubeUrl(unittest.TestCase):
+    """is_youtube_url must use parsed hostname, not substring matching."""
+
+    def test_standard_youtube_url(self):
+        self.assertTrue(is_youtube_url("https://www.youtube.com/watch?v=abc"))
+
+    def test_short_youtu_be_url(self):
+        self.assertTrue(is_youtube_url("https://youtu.be/abc"))
+
+    def test_mobile_youtube_url(self):
+        self.assertTrue(is_youtube_url("https://m.youtube.com/watch?v=abc"))
+
+    def test_non_youtube_url(self):
+        self.assertFalse(is_youtube_url("https://vimeo.com/123456789"))
+
+    def test_odysee_url(self):
+        self.assertFalse(is_youtube_url("https://odysee.com/@channel/video"))
+
+    # Hostile URL cases — must NOT match despite containing 'youtube.com'
+    def test_userinfo_confusion_youtube_in_username(self):
+        # https://youtube.com@evil.example/ — parsed hostname is evil.example
+        self.assertFalse(is_youtube_url("https://youtube.com@evil.example/watch?v=abc"))
+
+    def test_youtube_in_path_only(self):
+        self.assertFalse(is_youtube_url("https://evil.example/youtube.com/watch?v=abc"))
+
+    def test_youtube_in_query_only(self):
+        self.assertFalse(is_youtube_url("https://evil.example/?ref=youtube.com"))
+
+    def test_malformed_url_returns_false(self):
+        self.assertFalse(is_youtube_url("not a url at all"))
+
+    def test_empty_string_returns_false(self):
+        self.assertFalse(is_youtube_url(""))
 
 
 if __name__ == "__main__":

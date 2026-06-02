@@ -23,8 +23,6 @@ try:
     import yt_dlp
     print("  ✓ yt-dlp imported successfully")
 
-    import bs4
-    print("  ✓ beautifulsoup4 imported successfully")
 
     print("\nAll imports successful!")
 except ImportError as e:
@@ -78,7 +76,7 @@ echo "Test complete!"
 echo ""
 echo "If all tests passed, you can:"
 echo "  1. Run the app: ./start.sh"
-echo "  2. Build AppImage: ./build-appimage.sh"
+echo "  2. Build AppImage: ./scripts/build-appimage.sh"
 echo "========================================="
 
 echo ""

@@ -119,16 +119,51 @@ cp av-morning-star.png "${APPDIR}/av-morning-star.png"
 
 # DO NOT manually create .DirIcon - let appimagetool handle it
 
-# Download appimagetool if not present
-if [ ! -f "appimagetool-x86_64.AppImage" ]; then
+# Download appimagetool if not present, verifying SHA256 via GitHub API before use.
+# Uses the canonical appimagetool repo (not the obsolete AppImageKit repo).
+APPIMAGETOOL="appimagetool-x86_64.AppImage"
+if [ ! -f "$APPIMAGETOOL" ]; then
     echo "Downloading appimagetool..."
-    wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
-    chmod +x appimagetool-x86_64.AppImage
+    TOOL_URL="https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+    wget "$TOOL_URL" -O "$APPIMAGETOOL"
+    echo "Verifying checksum via GitHub API..."
+    EXPECTED_SHA256=$(python3 - <<'PYEOF'
+import json, urllib.request, ssl
+ctx = ssl.create_default_context()
+req = urllib.request.Request(
+    "https://api.github.com/repos/AppImage/appimagetool/releases/tags/continuous",
+    headers={"Accept": "application/vnd.github+json", "User-Agent": "build-appimage-sh"}
+)
+with urllib.request.urlopen(req, context=ctx) as r:
+    data = json.load(r)
+for asset in data.get("assets", []):
+    if asset.get("name") == "appimagetool-x86_64.AppImage":
+        digest = asset.get("digest", "")
+        if digest.startswith("sha256:"):
+            print(digest[7:])
+            break
+PYEOF
+)
+    if [ -z "$EXPECTED_SHA256" ]; then
+        echo "ERROR: Could not retrieve expected SHA256 from GitHub API"
+        rm -f "$APPIMAGETOOL"
+        exit 1
+    fi
+    ACTUAL_SHA256=$(sha256sum "$APPIMAGETOOL" | cut -d' ' -f1)
+    if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+        echo "ERROR: SHA256 verification failed for appimagetool"
+        echo "  Expected: $EXPECTED_SHA256"
+        echo "  Actual:   $ACTUAL_SHA256"
+        rm -f "$APPIMAGETOOL"
+        exit 1
+    fi
+    echo "✓ Checksum verified"
+    chmod +x "$APPIMAGETOOL"
 fi
 
 # Create AppImage
 echo "Creating AppImage..."
-ARCH=x86_64 ./appimagetool-x86_64.AppImage "${APPDIR}" "${APP_NAME}-${APP_VERSION}-x86_64.AppImage"
+ARCH=x86_64 ./"$APPIMAGETOOL" "${APPDIR}" "${APP_NAME}-${APP_VERSION}-x86_64.AppImage"
 
 echo "AppImage created successfully: ${APP_NAME}-${APP_VERSION}-x86_64.AppImage"
 echo "You can now run it with: ./${APP_NAME}-${APP_VERSION}-x86_64.AppImage"

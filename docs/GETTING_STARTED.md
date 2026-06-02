@@ -73,14 +73,14 @@ To create a portable AppImage:
 ./scripts/build-appimage.sh
 ```
 
-This will create `AV-Morning-Star-1.0.0-x86_64.AppImage` which you can:
+This will create `AV-Morning-Star-0.3.0-x86_64.AppImage` which you can:
 - Run on any Linux distribution
 - Share with others
 - Run without installation
 
 After building, run it with:
 ```bash
-./AV-Morning-Star-1.0.0-x86_64.AppImage
+./AV-Morning-Star-0.3.0-x86_64.AppImage
 ```
 
 ## 🎯 Usage Examples

@@ -96,7 +96,6 @@ AUTH_BROWSER_EDGE = "Edge"
 AUTH_BROWSER_CHROMIUM = "Chromium"
 AUTH_BROWSER_OPERA = "Opera"
 AUTH_BROWSER_VIVALDI = "Vivaldi"
-AUTH_BROWSER_SAFARI = "Safari"
 
 # Browser preference values (lowercase for internal use)
 BROWSER_AUTO = "auto"
@@ -108,7 +107,6 @@ BROWSER_EDGE = "edge"
 BROWSER_CHROMIUM = "chromium"
 BROWSER_OPERA = "opera"
 BROWSER_VIVALDI = "vivaldi"
-BROWSER_SAFARI = "safari"
 
 # ===== DOWNLOAD MODES =====
 MODE_BASIC = "basic"

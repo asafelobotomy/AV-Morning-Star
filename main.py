@@ -31,7 +31,7 @@ from PyQt5.QtGui import QIcon, QFont, QPixmap, QPainter, QPainterPath
 import yt_dlp
 
 # Import our modular extractors
-from extractors import get_extractor
+from extractors import get_extractor, is_youtube_url
 
 # Import browser detection utilities
 from browser_utils import detect_available_browsers, get_browsers_with_youtube_cookies, get_default_browser
@@ -1011,9 +1011,13 @@ class MediaDownloaderApp(QMainWindow):
             if tag in tag_mapping:
                 parts.append(tag_mapping[tag])
 
-        # Join with separator and add extension
+        # Join with separator; always append .%(ext)s unless the template already
+        # includes the extension placeholder (i.e. the user selected the 'ext' tag).
         if parts:
-            return ' - '.join(parts)
+            template = ' - '.join(parts)
+            if '%(ext)s' not in template:
+                template += '.%(ext)s'
+            return template
         else:
             return '%(title)s.%(ext)s'  # Fallback to default
 
@@ -1160,13 +1164,20 @@ class MediaDownloaderApp(QMainWindow):
             QMessageBox.warning(self, "Error", "Please enter a valid URL starting with http:// or https://")
             return
 
+        # Reset per-request state so each new user-initiated fetch starts clean.
+        # on_fetch_error sets this True then immediately calls fetch_videos() for the
+        # bot-detection retry; that retry call relies on explicit_browser_chosen (not
+        # this flag), so resetting here is safe and prevents the flag from leaking
+        # across separate user requests.
+        self.cookieless_failed = False
+
         # Smart cookie detection strategy:
         # 1. For YouTube URLs: Try cookieless first (unless we know it failed before)
         # 2. If cookieless fails with bot detection, auto-retry with best browser
         # 3. For non-YouTube URLs: Use cookies if available
 
         cookies_from_browser = None
-        is_youtube = 'youtube.com' in url.lower() or 'youtu.be' in url.lower()
+        is_youtube = is_youtube_url(url)
 
         # Resolve 'auto' preference to actual browser
         resolved_browser = None
@@ -1176,20 +1187,26 @@ class MediaDownloaderApp(QMainWindow):
             resolved_browser = self.browser_preference
 
         if is_youtube:
-            # YouTube: Try cookieless first unless we've already failed
-            if self.cookieless_failed or resolved_browser:
-                # Either we know cookieless doesn't work, or user has set a browser preference
+            # YouTube authentication strategy:
+            # - 'auto' mode: always try cookieless first; only use cookies after a
+            #   bot-detection failure for this request (see on_fetch_error).
+            # - explicit browser preference: use that browser immediately.
+            # - 'none': never use cookies.
+            explicit_browser_chosen = self.browser_preference not in ('auto', 'none')
+            if self.cookieless_failed or explicit_browser_chosen:
+                # Either a prior bot-detection failure on this URL forced a retry,
+                # or the user explicitly selected a specific browser.
                 if resolved_browser:
                     cookies_from_browser = resolved_browser
                     browser_display = resolved_browser.title()
-                    if self.browser_preference == 'auto':
-                        self.status_label.setText(f"Auto-detected {browser_display}, fetching...")
-                    else:
+                    if explicit_browser_chosen:
                         self.status_label.setText(f"Fetching with {browser_display} authentication...")
+                    else:
+                        self.status_label.setText(f"Retrying with {browser_display} authentication...")
                 else:
                     self.status_label.setText("Fetching (no authentication)...")
             else:
-                # First attempt: try without cookies
+                # Auto or none mode on first attempt: go cookieless
                 self.status_label.setText("Fetching video information (no authentication)...")
         else:
             # Non-YouTube: Use cookies if we have a browser set
@@ -1208,6 +1225,9 @@ class MediaDownloaderApp(QMainWindow):
             url,
             cookies_from_browser=cookies_from_browser
         )
+        # Record the auth decision made for this fetch so start_download can
+        # mirror it exactly, preserving the Auto-mode privacy contract.
+        self._fetch_cookies_used = cookies_from_browser
         self.scraper_thread.finished.connect(self.on_videos_fetched)
         self.scraper_thread.error.connect(self.on_fetch_error)
         self.scraper_thread.start()
@@ -1267,7 +1287,7 @@ class MediaDownloaderApp(QMainWindow):
         # Cookie database not found errors
         if 'could not find' in error_lower and 'cookies database' in error_lower:
             # Extract browser name from error
-            for browser in ['firefox', 'chrome', 'brave', 'edge', 'chromium', 'opera', 'vivaldi', 'safari']:
+            for browser in ['firefox', 'chrome', 'brave', 'edge', 'chromium', 'opera', 'vivaldi']:
                 if browser in error_lower:
                     browser_display = browser.title()
 
@@ -1338,7 +1358,7 @@ class MediaDownloaderApp(QMainWindow):
                        'requested format is not available' in error.lower())
 
         url = self.url_input.text().strip()
-        is_youtube = 'youtube.com' in url.lower() or 'youtu.be' in url.lower()
+        is_youtube = is_youtube_url(url)
 
         # If YouTube bot detection and we haven't tried cookies yet
         if is_youtube and is_bot_error and not self.cookieless_failed:
@@ -1348,9 +1368,9 @@ class MediaDownloaderApp(QMainWindow):
             browsers_with_youtube = get_browsers_with_youtube_cookies()
 
             if browsers_with_youtube:
-                # Auto-retry with detected browser
+                # Auto-retry with detected browser — do NOT mutate browser_preference
+                # so the user's original setting is preserved for future requests.
                 browser = browsers_with_youtube[0]
-                self.browser_preference = browser
 
                 reply = QMessageBox.question(
                     self,
@@ -1363,11 +1383,20 @@ class MediaDownloaderApp(QMainWindow):
                 )
 
                 if reply == QMessageBox.Yes:
+                    # Temporarily override resolved_browser for this single retry by
+                    # storing it in a per-request attribute; fetch_videos reads
+                    # cookieless_failed and will pick up resolved_browser from
+                    # browser_preference — so we set it only for the retry call and
+                    # immediately restore the original value.
+                    original_preference = self.browser_preference
+                    self.browser_preference = browser
                     self.status_label.setText(f"Retrying with {browser} authentication...")
                     self.fetch_videos()  # Retry automatically
+                    self.browser_preference = original_preference  # Restore
                     return
                 else:
                     # User declined, show error
+                    self.cookieless_failed = False  # Reset so next fetch starts clean
                     self.fetch_btn.setEnabled(True)
                     self.status_label.setText("Authentication declined")
                     self.statusBar().showMessage("YouTube authentication required")
@@ -1458,7 +1487,21 @@ class MediaDownloaderApp(QMainWindow):
             # Advanced mode - use manual settings
             video_quality = self.quality_combo.currentText() if format_type == 'video' else None
             video_container = self.video_container_combo.currentText().lower() if format_type == 'video' else None
-            audio_codec = self.audio_codec_combo.currentText().lower().replace(' vorbis', '').replace(' ', '')  # Clean codec name
+            audio_codec_label = self.audio_codec_combo.currentText()
+            # Map UI labels to the codec names yt-dlp's FFmpegExtractAudio expects.
+            # String-munging cannot handle all cases (e.g. "OGG Vorbis" → "vorbis"),
+            # so use an explicit table instead.
+            _codec_map = {
+                'MP3': 'mp3',
+                'AAC': 'aac',
+                'FLAC': 'flac',
+                'Opus': 'opus',
+                'M4A': 'm4a',
+                'WAV': 'wav',
+                'ALAC': 'alac',
+                'OGG Vorbis': 'vorbis',
+            }
+            audio_codec = _codec_map.get(audio_codec_label, audio_codec_label.lower())
             audio_quality_text = self.audio_quality_combo.currentText()
             # Handle lossless vs bitrate
             if 'lossless' in audio_quality_text.lower():
@@ -1488,12 +1531,37 @@ class MediaDownloaderApp(QMainWindow):
         # Resolve output path to a canonical absolute path (guards against path traversal)
         output_path = str(pathlib.Path(self.output_path).resolve())
 
-        # Resolve 'auto' browser preference to actual browser name
-        resolved_browser = None
-        if self.browser_preference == 'auto':
-            resolved_browser = get_default_browser()
-        elif self.browser_preference != 'none':
-            resolved_browser = self.browser_preference
+        # Validate output directory before spinning up the background thread so
+        # filesystem problems are surfaced immediately as a clear, targeted error.
+        if not os.path.exists(output_path):
+            QMessageBox.critical(self, "Invalid Output Directory",
+                                 f"The output directory does not exist:\n{output_path}\n\n"
+                                 "Please choose a valid directory in the path selector.")
+            self.download_btn.setEnabled(True)
+            self.fetch_btn.setEnabled(True)
+            self.status_label.setText("Invalid output directory")
+            return
+        if not os.path.isdir(output_path):
+            QMessageBox.critical(self, "Invalid Output Directory",
+                                 f"The selected path is not a directory:\n{output_path}")
+            self.download_btn.setEnabled(True)
+            self.fetch_btn.setEnabled(True)
+            self.status_label.setText("Invalid output directory")
+            return
+        if not os.access(output_path, os.W_OK):
+            QMessageBox.critical(self, "Output Directory Not Writable",
+                                 f"Cannot write to the output directory:\n{output_path}\n\n"
+                                 "Check file permissions and try again.")
+            self.download_btn.setEnabled(True)
+            self.fetch_btn.setEnabled(True)
+            self.status_label.setText("Output directory not writable")
+            return
+
+        # Use the same browser cookies that were resolved during the fetch.
+        # This ensures downloads are authenticated if and only if the preceding
+        # fetch actually used authentication, preserving the Auto-mode privacy
+        # contract (cookieless unless bot-detection forced a retry).
+        resolved_browser = getattr(self, '_fetch_cookies_used', None)
 
         # Start download thread with browser cookies
         self.download_thread = DownloadThread(
@@ -1532,6 +1600,35 @@ class MediaDownloaderApp(QMainWindow):
         self.status_label.setText("Download failed")
         self.statusBar().showMessage("Download failed - check error message")
         QMessageBox.critical(self, "Error", error)
+
+    def closeEvent(self, event):
+        """Gracefully stop any running worker threads before closing."""
+        threads = []
+        if hasattr(self, 'scraper_thread') and self.scraper_thread is not None:
+            threads.append(self.scraper_thread)
+        if hasattr(self, 'download_thread') and self.download_thread is not None:
+            threads.append(self.download_thread)
+
+        running = [t for t in threads if t.isRunning()]
+        if running:
+            reply = QMessageBox.question(
+                self, "Exit",
+                "A download or fetch is still in progress. Exit anyway?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            if reply != QMessageBox.Yes:
+                event.ignore()
+                return
+
+        # Ask each thread to stop, then wait up to 3 s before forcing teardown.
+        for t in running:
+            t.quit()
+            if not t.wait(3000):
+                t.terminate()
+                t.wait(1000)
+
+        event.accept()
 
     def show_preferences(self):
         """Show preferences dialog"""

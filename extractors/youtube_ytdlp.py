@@ -45,10 +45,9 @@ class YouTubeExtractor(BaseExtractor):
             'allow_unplayable_formats': False,
         }
         
-        # Enable remote components for YouTube challenge solving (PO tokens)
-        # This requires Deno/Node.js to be installed
-        ydl_opts['remote_components'] = ['ejs:github']
-        
+        # PO token generation uses locally-installed Deno/Node.js; no remote
+        # components are loaded so no untrusted code is fetched at runtime.
+
         # Add browser cookies if specified
         if self.cookies_from_browser:
             ydl_opts['cookiesfrombrowser'] = (self.cookies_from_browser,)
@@ -145,9 +144,9 @@ class YouTubeExtractor(BaseExtractor):
             'allow_unplayable_formats': False,
         }
         
-        # Enable remote components for YouTube challenge solving (PO tokens)
-        ydl_opts['remote_components'] = ['ejs:github']
-        
+        # PO token generation uses locally-installed Deno/Node.js; no remote
+        # components are loaded so no untrusted code is fetched at runtime.
+
         # Add browser cookies if specified
         if self.cookies_from_browser:
             ydl_opts['cookiesfrombrowser'] = (self.cookies_from_browser,)
@@ -182,8 +181,11 @@ class YouTubeExtractor(BaseExtractor):
             
             if audio_filters:
                 ydl_opts['postprocessor_args'] = {
-                    'ffmpeg': ['-af', ','.join(audio_filters)]
+                    'extractaudio+ffmpeg_o': ['-af', ','.join(audio_filters)]
                 }
+            
+            # Metadata embedding (parity with BaseExtractor)
+            ydl_opts['postprocessors'].append({'key': 'FFmpegMetadata'})
         else:
             # Video download
             if video_quality and video_quality != 'Best':
