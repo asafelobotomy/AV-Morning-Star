@@ -1,5 +1,9 @@
 """
 Generic extractor for podcast pages that link to direct audio files.
+
+Parses HTML pages to discover direct-download audio links (mp3, m4a, ogg, etc.)
+and returns them as a list of standardised media-info dicts compatible with the
+rest of the extractor pipeline.
 """
 
 from html.parser import HTMLParser
@@ -59,6 +63,17 @@ class PodcastPageExtractor(BaseExtractor):
         return [self._build_item(audio_url) for audio_url in unique_audio_urls]
 
     def _fetch_html(self, url):
+        """Fetch the HTML content of *url* and return it as a decoded string.
+
+        Args:
+            url: The page URL to fetch.
+
+        Returns:
+            str: Decoded HTML content of the response.
+
+        Raises:
+            urllib.error.URLError: If the request fails.
+        """
         request = Request(
             url,
             headers={
@@ -72,12 +87,25 @@ class PodcastPageExtractor(BaseExtractor):
             return response.read().decode(charset, errors="replace")
 
     def _is_audio_url(self, url):
+        """Return True if *url* points directly to an audio file.
+
+        Detection is based on the file extension of the URL path only;
+        no network request is made.
+        """
         path = urlparse(url).path.lower()
         return path.endswith(
             (".mp3", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".flac")
         )
 
     def _build_item(self, audio_url):
+        """Build a standardised media-info dict for a single audio URL.
+
+        Args:
+            audio_url: Absolute URL of the audio file.
+
+        Returns:
+            dict: Keys ``url``, ``title``, ``duration``, ``uploader``.
+        """
         title = self._title_from_url(audio_url)
         return {
             "url": audio_url,
@@ -87,6 +115,12 @@ class PodcastPageExtractor(BaseExtractor):
         }
 
     def _title_from_url(self, audio_url):
+        """Derive a human-readable title from an audio file URL.
+
+        Strips the file extension and replaces underscores/hyphens with
+        spaces.  Returns ``'Podcast Audio'`` if no meaningful name can be
+        derived.
+        """
         path = urlparse(audio_url).path
         filename = path.rsplit("/", 1)[-1]
         if "." in filename:

@@ -4,9 +4,28 @@
 set -e
 
 APP_NAME="AV-Morning-Star"
-APP_VERSION="0.3.0"
+APP_VERSION=$(cat VERSION 2>/dev/null || echo "")
 BUILD_DIR="build"
 APPDIR="${BUILD_DIR}/${APP_NAME}.AppDir"
+
+# Validate that VERSION file and constants.py are in sync
+if [ -z "$APP_VERSION" ]; then
+    echo "ERROR: Could not read version from VERSION file"
+    exit 1
+fi
+CONSTANTS_VERSION=$(python3 -c \
+    "import re; m=re.search(r'APP_VERSION = \"([^\"]+)\"', open('constants.py').read()); print(m.group(1) if m else '')" \
+    2>/dev/null || echo "")
+if [ -z "$CONSTANTS_VERSION" ]; then
+    echo "ERROR: Could not read APP_VERSION from constants.py"
+    exit 1
+fi
+if [ "$APP_VERSION" != "$CONSTANTS_VERSION" ]; then
+    echo "ERROR: Version mismatch — VERSION file has '${APP_VERSION}' but constants.py has '${CONSTANTS_VERSION}'"
+    echo "Update both files to the same version before building."
+    exit 1
+fi
+echo "Version check passed: ${APP_VERSION}"
 
 echo "Building AV Morning Star AppImage..."
 

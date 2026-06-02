@@ -18,6 +18,9 @@
 - **[Architecture](ARCHITECTURE.md)** - Modular extractor system design
 - **[Project Structure](PROJECT_STRUCTURE.md)** - Complete project organization
 - **[Security Audit](SECURITY_AUDIT.md)** - Comprehensive technical security review
+- **[Build Summary](BUILD_SUMMARY.md)** - Latest AppImage build report
+- **[Constants Reference](CONSTANTS.md)** - Application constants and configuration
+- **[Extractor Coverage](EXTRACTORS_COVERAGE_ANALYSIS.md)** - Platform support analysis
 - **[Reorganization Notes](REORGANIZATION.md)** - v0.3.0 reorganization details
 
 ## 📖 Quick Links
@@ -121,6 +124,6 @@ Found an issue or want to improve documentation?
 
 ---
 
-**Last Updated**: February 3, 2026  
-**Documentation Version**: 0.3.0  
+**Last Updated**: February 3, 2026
+**Documentation Version**: 0.3.0
 **Maintained By**: AV Morning Star Project

@@ -16,19 +16,16 @@ python3 << 'PYEOF'
 try:
     import sys
     print(f"  Python version: {sys.version.split()[0]}")
-    
+
     import PyQt5
     print("  ✓ PyQt5 imported successfully")
-    
+
     import yt_dlp
     print("  ✓ yt-dlp imported successfully")
-    
-    import requests
-    print("  ✓ requests imported successfully")
-    
+
     import bs4
     print("  ✓ beautifulsoup4 imported successfully")
-    
+
     print("\nAll imports successful!")
 except ImportError as e:
     print(f"  ✗ Import failed: {e}")
@@ -61,7 +58,7 @@ try:
         'no_warnings': True,
         'skip_download': True,
     }
-    
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         # Use a known stable test URL
         info = ydl.extract_info('https://www.youtube.com/watch?v=jNQXAC9IVRw', download=False)
@@ -83,3 +80,13 @@ echo "If all tests passed, you can:"
 echo "  1. Run the app: ./start.sh"
 echo "  2. Build AppImage: ./build-appimage.sh"
 echo "========================================="
+
+echo ""
+
+# Test 4: Run unit tests
+echo "Test 4: Running unit tests..."
+if [ -d "tests" ]; then
+    python3 -m pytest tests/ -v 2>/dev/null || python3 -m unittest discover -s tests -v
+else
+    echo "  (no tests/ directory found — skipping)"
+fi

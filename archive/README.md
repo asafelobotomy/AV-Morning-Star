@@ -2,7 +2,7 @@
 
 This directory contains historical code, analysis reports, and deprecated implementations.
 
-**Last Updated:** February 5, 2026  
+**Last Updated:** June 2, 2026
 **Current Production Version:** 0.3.0
 
 ---
@@ -11,33 +11,44 @@ This directory contains historical code, analysis reports, and deprecated implem
 
 ```
 archive/
-├── README.md                      # This file
-├── backup/                        # Backup and alternative implementations
-│   └── youtube.py.backup          # Previous YouTube extractor implementation
-├── deprecated/                    # Legacy code that's no longer used
-│   ├── download_icon.py           # Icon download utility (superseded)
-│   ├── replace-icon.sh            # Icon replacement script (superseded)
-│   ├── test_codecs.py             # Legacy codec testing (replaced by test.sh)
-│   └── youtube_oauth.py           # OAuth2 approach (too complex)
-├── docs/                          # Historical development documentation
-│   ├── INNERTUBE_GUIDE.md         # Early InnerTube API research
-│   ├── YOUTUBE_FIX_IMPLEMENTATION.md
-│   ├── YOUTUBE_FIX_SOLUTION.md
-│   ├── YOUTUBE_FIX_SUMMARY.md
-│   ├── YOUTUBE_STATUS.md
-│   ├── OPTIMAL_SETUP_COMPLETE.md
-│   ├── READY_TO_USE.md
-│   └── NEXT_STEPS.txt
-├── reports/                       # Code analysis and review reports
-│   ├── CODE_REVIEW_REPORT.md      # Comprehensive code review (Feb 2026)
-│   ├── IMPLEMENTATION_REPORT.md   # Implementation of fixes (Feb 2026)
-│   ├── FINAL_VERIFICATION_REPORT.md # Final verification sweep (Feb 2026)
-│   ├── README_IMPROVEMENTS.md     # README enhancement details
-│   └── README_REVIEW_SUMMARY.md   # README review summary
-└── scripts/                       # Historical build and utility scripts
+├── README.md                        # This file
+│
+├── history/                         # Deprecated code — superseded by active modules
+│   ├── youtube_innertube.py         # Old YouTube InnerTube API extractor
+│   ├── youtube_oauth.py             # OAuth2 flow (replaced by browser cookie detection)
+│   ├── youtube.py.backup            # Backup of previous YouTube extractor
+│   ├── download_icon.py             # Icon download utility (superseded by create_icon.py)
+│   ├── replace-icon.sh              # Icon replacement script (superseded by build-appimage.sh)
+│   └── test_codecs.py               # Legacy codec tests (replaced by tests/ suite)
+│
+└── legacy/                          # Superseded documentation and reports
+    ├── release-notes.md             # Superseded by CHANGELOG.md
+    ├── REPOSITORY_ORGANIZATION.md   # Superseded by docs/PROJECT_STRUCTURE.md
+    ├── docs/                        # Historical development documentation
+    │   ├── INNERTUBE_GUIDE.md
+    │   ├── NEXT_STEPS.txt
+    │   ├── OPTIMAL_SETUP_COMPLETE.md
+    │   ├── READY_TO_USE.md
+    │   ├── YOUTUBE_FIX_IMPLEMENTATION.md
+    │   ├── YOUTUBE_FIX_SOLUTION.md
+    │   ├── YOUTUBE_FIX_SUMMARY.md
+    │   └── YOUTUBE_STATUS.md
+    └── reports/                     # Code analysis and review reports (Feb 2026)
+        ├── CODE_REVIEW_REPORT.md
+        ├── FINAL_VERIFICATION_REPORT.md
+        ├── IMPLEMENTATION_REPORT.md
+        ├── README_IMPROVEMENTS.md
+        └── README_REVIEW_SUMMARY.md
 ```
 
 ---
+
+## 🗒️ Notes
+
+- All files here are **preserved for reference only** — none are imported or run by the application.
+- Use `git log -- <path>` to inspect the history of any archived file.
+- The active application code lives in `extractors/`, `main.py`, `browser_utils.py`, and `constants.py`.
+
 
 ## 🔍 What's Inside Each Folder
 
@@ -135,7 +146,7 @@ Shows what approaches were tried, when they worked, and why they were replaced.
 ### 2. **Understanding Evolution**
 Documents how YouTube's anti-bot measures evolved and how we responded:
 - ✅ InnerTube API → bot detection ❌
-- ✅ OAuth2 → too complex ❌  
+- ✅ OAuth2 → too complex ❌
 - ✅ Browser cookies via yt-dlp → stable ✅
 
 ### 3. **Fallback Options**
@@ -241,5 +252,5 @@ For up-to-date information, see the main project documentation:
 
 ---
 
-**Last Updated**: February 3, 2026  
+**Last Updated**: February 3, 2026
 **Archive Created**: Version 0.3.0 reorganization

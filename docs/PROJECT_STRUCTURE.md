@@ -1,50 +1,74 @@
 # AV Morning Star - Project Structure
 
-**Version**: 0.3.0  
-**Last Updated**: February 3, 2026
+**Version**: 0.3.0
+**Last Updated**: June 2, 2026
 
 ## Root Directory
 
 ```
 AV-Morning-Star/
-├── main.py                          # Main application entry point
-├── browser_utils.py                 # Browser detection utilities
+├── main.py                          # Main PyQt5 application
+├── browser_utils.py                 # Browser detection and cookie utilities
+├── constants.py                     # Application constants and configuration
 ├── create_icon.py                   # Icon generator script
 ├── start.sh                         # Quick start script
-├── test.sh                          # Test script
-├── build-appimage.sh                # AppImage builder
-├── requirements.txt                 # Python dependencies
-├── VERSION                          # Version number file
+├── test.sh                          # Test runner (imports + unittest suite)
+├── build-appimage.sh                # AppImage builder (reads version from VERSION)
+├── requirements.txt                 # Python dependencies (4 packages)
+├── VERSION                          # Single source of version truth (0.3.0)
 ├── README.md                        # Main project documentation
-├── CHANGELOG.md                     # Version history
-├── av-morning-star.png              # App icon (PNG)
-├── av-morning-star.desktop          # Desktop entry file
+├── CHANGELOG.md                     # Version history and release notes
+├── av-morning-star.png              # Application icon (PNG)
+├── com.github.asafelobotomy.avmorningstar.desktop   # Desktop entry
+├── com.github.asafelobotomy.avmorningstar.appdata.xml  # AppStream metadata
+├── AV-Morning-Star-0.3.0-x86_64.AppImage.sha256    # Release checksum
+└── AV-Morning-Star-0.3.0-x86_64.AppImage.md5       # Release checksum
 │
 ├── extractors/                      # Modular platform extractors
-│   ├── __init__.py                  # Extractor factory
-│   ├── base.py                      # BaseExtractor (common interface)
+│   ├── __init__.py                  # Factory function: get_extractor()
+│   ├── base.py                      # BaseExtractor (common interface + filter constants)
 │   ├── youtube_ytdlp.py             # YouTube with PO token support
 │   ├── odysee.py                    # Odysee/LBRY platform
-│   └── generic.py                   # Fallback for 1000+ sites
+│   ├── generic.py                   # Fallback for 1000+ yt-dlp sites
+│   └── podcast_page.py              # Direct-download podcast pages
 │
-├── docs/                            # Documentation
+├── tests/                           # Automated test suite (unittest)
+│   ├── __init__.py
+│   ├── test_extractors.py           # Extractor and filter-chain tests
+│   └── test_browser_utils.py        # Browser detection tests
+│
+├── docs/                            # Project documentation
 │   ├── README.md                    # Documentation index
-│   ├── ARCHITECTURE.md              # Technical architecture
+│   ├── ARCHITECTURE.md              # Technical system design
 │   ├── AUTHENTICATION_GUIDE.md      # YouTube cookie auth guide
-│   ├── GETTING_STARTED.md           # Tutorial
+│   ├── BUILD_SUMMARY.md             # Latest AppImage build report
+│   ├── CONSTANTS.md                 # Application constants reference
+│   ├── EXTRACTORS_COVERAGE_ANALYSIS.md  # Platform coverage
+│   ├── GETTING_STARTED.md           # Beginner tutorial
+│   ├── ORGANIZATION_COMPLETE.md     # v0.3.0 reorganization record
 │   ├── PROJECT_STRUCTURE.md         # This file
-│   ├── REORGANIZATION.md            # v0.3.0 reorganization
-│   ├── SECURITY_AUDIT.md            # Security review
-│   ├── SECURITY_AND_PRIVACY.md      # User security guide
-│   └── SMART_BROWSER_DETECTION.md   # Browser detection feature
+│   ├── REORGANIZATION.md            # v0.3.0 reorganization notes
+│   ├── SECURITY_AUDIT.md            # 8000+ word security review
+│   ├── SECURITY_AND_PRIVACY.md      # User-friendly security guide
+│   ├── SMART_BROWSER_DETECTION.md   # Auto browser detection feature
+│   └── images/                      # Documentation images
 │
-├── archive/                         # Archived files
-│   ├── README.md                    # Archive documentation
-│   ├── docs/                        # Old development docs
-│   └── deprecated/                  # Deprecated code
+├── archive/                         # Historical and deprecated files
+│   ├── README.md                    # Archive index
+│   ├── history/                     # Deprecated code (superseded by active modules)
+│   │   ├── youtube_innertube.py     # Old InnerTube extractor
+│   │   ├── youtube_oauth.py         # Old OAuth2 flow
+│   │   ├── youtube.py.backup        # Backup of previous YouTube extractor
+│   │   ├── download_icon.py         # Superseded by create_icon.py
+│   │   ├── replace-icon.sh          # Superseded by build-appimage.sh
+│   │   └── test_codecs.py           # Superseded by tests/
+│   └── legacy/                      # Superseded documentation
+│       ├── release-notes.md         # Superseded by CHANGELOG.md
+│       ├── REPOSITORY_ORGANIZATION.md  # Superseded by this file
+│       ├── docs/                    # Historical development docs (InnerTube era)
+│       └── reports/                 # Feb 2026 code review reports
 │
-├── .venv/                           # Python virtual environment
-├── .github/                         # GitHub configuration
+├── .github/                         # GitHub / Copilot surface
 └── .gitignore                       # Git ignore rules
 ```
 
@@ -269,6 +293,6 @@ Potential improvements:
 
 ---
 
-For detailed technical information, see `ARCHITECTURE.md`.  
-For usage instructions, see `README.md`.  
+For detailed technical information, see `ARCHITECTURE.md`.
+For usage instructions, see `README.md`.
 For version changes, see `CHANGELOG.md`.

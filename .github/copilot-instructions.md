@@ -1,178 +1,112 @@
-# AV Morning Star - AI Coding Agent Instructions
+# AV-Morning-Star — Copilot Instructions
 
-## Project Overview
+> This project uses **xanadAssistant** to manage its Copilot surface files (agents, skills, hooks, prompts).
+> Lifecycle authority: `xanadAssistant.py` — use the `xanadLifecycle` agent for all xanadAssistant operations.
 
-AV Morning Star is a **PyQt5 desktop application** for downloading videos/audio from 1000+ sites using yt-dlp. Features modular extractor architecture, browser cookie authentication, and professional audio processing (normalization, denoising).
+## My Role
 
-## Architecture
+I work **in** AV-Morning-Star — implementing features, reviewing code, running tests, and maintaining the project's Copilot surface via xanadAssistant. Changes to agents, skills, mcp, and prompts go through `xanadAssistant.py update` rather than direct file edits to `.github/`.
 
-### Core Components
+## Key Commands
 
-**Main Application** ([main.py](../main.py)):
-- `URLScraperThread`: QThread fetching metadata via platform extractors
-- `DownloadThread`: QThread downloading with progress hooks  
-- `MediaDownloaderApp`: PyQt5 GUI with dual mode (Basic auto-config / Advanced manual settings)
-- `FlowLayout`: Custom wrapping layout for filename template tags
+| Task | Command |
+| ------ | --------- |
+| Run tests | `(not detected)` |
+| Drift preflight | `python3 scripts/drift_preflight.py` |
+| LOC gate | `python3 scripts/check_loc.py` |
+| Inspect Copilot install state | `python3 <xanad-root>/xanadAssistant.py inspect --workspace . --package-root <xanad-root> --json` |
+| Check for repair needs | `python3 <xanad-root>/xanadAssistant.py health-check --workspace . --package-root <xanad-root> --json` |
 
-**Extractor System** ([extractors/](../extractors/)):
-- `BaseExtractor`: Common interface for all platforms - defines `extract_info()`, `get_download_opts()`, audio/video option builders
-- `YouTubeExtractor` ([youtube_ytdlp.py](../extractors/youtube_ytdlp.py)): Handles YouTube's Proof of Origin tokens, browser cookies, bot detection. **Requires external JS runtime (Deno/Node.js 25+)** for PO token generation
-- `OdyseeExtractor`: Odysee/LBRY support
-- `GenericExtractor`: Fallback for 1000+ other sites
-- `get_extractor(url, cookies_from_browser=None)`: Factory function auto-selecting extractor by URL pattern
+## Lifecycle Operations
 
-**Authentication** ([browser_utils.py](../browser_utils.py)):
-- `detect_available_browsers()`: Scans for installed browsers by cookie file paths
-- `get_browsers_with_youtube_cookies()`: Checks which browsers have YouTube auth cookies (SAPISID/SSID/etc.)
-- `get_default_browser()`: Auto-selects best browser (priority: YouTube cookies → first available → None)
+Use the **xanadLifecycle** agent for all xanadAssistant operations. Trigger phrases:
 
-### Critical Data Flows
+| Trigger phrase | Operation |
+| --- | --- |
+| `"set up xanadAssistant"` | First-time install |
+| `"inspect workspace"` | Inspect current install state |
+| `"update xanadAssistant"` | Pull latest agents, skills, hooks, prompts |
+| `"run lifecycle check"` | Inspect + check; surface repair reasons |
+| `"repair install"` | Fix stale or broken managed files |
+| `"factory restore"` | Reset to clean managed state |
+| `"health check"` | Run xanadAssistant install-state health check |
+| `"run health check"` | Run xanadAssistant install-state health check |
 
-**Fetching Videos**:
-```
-User URL → URLScraperThread → get_extractor(url, browser) → 
-extractor.extract_info() → Returns list[{url, title, uploader, duration, ...}] →
-Displayed as checkboxes in GUI
-```
+Available prompts: `/setup` (install or refresh), `/bootstrap` (cold-start from bare workspace), `/update` (pull latest package files).
 
-**Downloading**:
-```
-Selected URLs → DownloadThread → For each URL:
-  get_extractor(url, browser) → extractor.get_download_opts() → 
-  yt_dlp.YoutubeDL(opts).download([url]) with progress_hook
-```
+Do not edit files under `.github/agents/`, `.github/skills/`, `.github/mcp/`, or `.github/prompts/` directly — these are managed by xanadAssistant. Use the `lifecycleAudit` skill to review state before proposing any lifecycle operation.
 
-**YouTube Authentication Flow** (as of Feb 2026):
-```
-browser_preference ('auto'/'firefox'/'chrome'/etc.) → 
-Resolve to actual browser → Extract cookies via yt-dlp.cookies → 
-Pass to yt-dlp as cookiesfrombrowser → YouTube accepts as logged-in user
-```
+**Conditional behaviors:**
+- **If `xanadTools` MCP is available** and can resolve a local xanadAssistant package root or a supported remote source, setup-oriented lifecycle operations may use its `lifecycle_inspect`, `lifecycle_check`, `lifecycle_interview`, `lifecycle_plan_setup`, `lifecycle_setup`, `lifecycle_update`, `lifecycle_repair`, and `lifecycle_factory_restore` tools instead of shelling out directly. If `xanadTools` MCP is unavailable, fall back to `xanadAssistant.py` directly.
+- **If `inspect` or `health-check` reports `package_name_mismatch` or `successor_cleanup_required`**, the workspace is being migrated from `copilot-instructions-template`; use `repair` or `update` so xanadAssistant can archive predecessor-owned files and install the current bundle atomically.
 
-## Critical Dependencies
+## Agent Routing
 
-- **FFmpeg**: Runtime requirement for audio extraction/video merging (NOT in requirements.txt - system package)
-- **Deno/Node.js 25+**: Required for YouTube Proof of Origin tokens (checked in [start.sh](../start.sh) lines 73-128). Alternatives: QuickJS, Bun
-- **yt-dlp**: Core downloader - avoid version pinning (rapidly evolves to counter bot detection)
-- **PyQt5**: GUI framework - prefer pip over system packages to avoid conflicts
+Route specialist work to the matching agent before acting directly. If a task involves work that maps to a specialist agent's domain, delegate that work to the specialist agent first and continue from the returned result. If a delegated agent cannot complete its task, handle the failure inline or surface it to the user before continuing.
 
-## Development Workflows
+When a request spans multiple specialist domains or the correct routing match is unclear, run `triage` first to get a classification and routing recommendation before acting.
 
-### Quick start
-```bash
-./start.sh  # Creates venv, installs deps, checks FFmpeg/Deno, runs app
-```
+See [AGENTS.md](../AGENTS.md) for the full routing table, roster, handoff rules, and trigger phrases. That file is loaded automatically as an instruction source, so routing guidance is always in context.
 
-### Testing
-```bash
-./test.sh  # Validates imports + FFmpeg + yt-dlp against known YouTube video
-```
+## Coding Conventions
 
-### Building AppImage
-```bash
-./build-appimage.sh  # PyInstaller → AppDir → AppImage (requires appimagetool)
-# Critical: Uses --collect-all yt_dlp to bundle all site extractors
-```
+- Language: **Python** · Package manager: **pip**
+- **Testing**: Write tests alongside every code change.
+- Read before modifying — never edit a file whose current content you have not read in this task
+- No silent error swallowing
 
-### Adding a New Platform
+## PDCA + Test Scope
 
-1. **Create extractor** in `extractors/myplatform.py`:
-```python
-from .base import BaseExtractor
+Plan → Do → Check → Act on every non-trivial change.
 
-class MyPlatformExtractor(BaseExtractor):
-    def __init__(self, url):
-        super().__init__(url)
-        self.platform_name = "MyPlatform"
-    
-    def get_download_opts(self, ...):
-        opts = super().get_download_opts(...)
-        opts['my_custom_option'] = 'value'  # Platform-specific tweaks
-        return opts
-```
+- Before commit, merge, or push in this repository, run `python3 scripts/drift_preflight.py`.
+- Default: run the single test module or test class that directly covers the changed code (see `tests.instructions.md` for the full test-scope policy)
+- Broaden to the full suite at task completion and before merging
 
-2. **Register in factory** ([extractors/__init__.py](../extractors/__init__.py)):
-```python
-def get_extractor(url, cookies_from_browser=None):
-    if 'myplatform.com' in url.lower():
-        return MyPlatformExtractor(url)
-    # ... existing checks
-```
+## Operating Modes
 
-**No changes to main.py needed** - extractor system is plug-and-play.
+**Implement** (default): plan → implement → test.
+**Review**: read-only; state findings before proposing fixes.
+**Refactor**: no behaviour changes; tests pass before and after.
+**Response style**: Balanced — code with brief explanation. · **Ambiguity**: Act then tell — make a reasonable choice and explain it. · **Tone**: Professional — concise, neutral, precise.
 
-## Project Conventions
+## Memory
 
-### Code Organization
-- **Modular extractors, monolithic UI**: Platform logic in `extractors/`, all GUI in `main.py` (intentional simplicity)
-- **Threading**: ALL I/O in QThread subclasses. Use PyQt signals/slots for thread-safe communication (never modify GUI from worker threads)
-- **Error handling**: GUI errors → QMessageBox, thread errors → pyqtSignal(str) → QMessageBox in main thread
+Memory provides workspace-specific rules and cached facts; use it when available, not as lifecycle authority.
 
-### Audio Processing (Advanced Features)
-Audio filters in [base.py](../extractors/base.py) `_get_audio_opts()`:
-- **Normalization**: `loudnorm=I=-16:LRA=11:TP=-1.5` (EBU R128 broadcast standard)
-- **Dynamic normalization**: `dynaudnorm=p=0.95:m=10:s=12:g=5` (alternative for varying volume)
-- **Denoising**: `afftdn=nf=-20` (FFT-based noise floor removal)
-- Filters chain via `postprocessor_args`: `['-af', ','.join(audio_filters)]`
+### Memory MCP server
 
-### Format Selection Patterns
-Video quality format strings ([base.py](../extractors/base.py) lines 363-379):
-```python
-'bestvideo[height<=1080]+bestaudio/bestvideo*+bestaudio/best'  
-# Primary: exact height limit + Fallback: any video + audio + Fallback: single best format
-```
-Always include multiple fallbacks - single format specs fail when unavailable.
+When hooks are enabled, a `memory` MCP server is available. Each specialist agent's instruction file defines when and how to use it. The pattern used by every agent is:
 
-### Progress Tracking
-yt-dlp progress hook dictionary has version-dependent keys:
-```python
-def progress_hook(self, d):
-    percent = 0
-    # Try multiple extraction methods (order matters)
-    if '_percent_str' in d:
-        percent = float(d['_percent_str'].replace('%', ''))
-    elif 'downloaded_bytes' in d and 'total_bytes' in d:
-        percent = (d['downloaded_bytes'] / d['total_bytes']) * 100
-    # ... more fallbacks
-```
+1. **Conditionally** call `memory_dump(agent="<agent-name>", task_hint="<one-sentence task description>")` at the start of each task **when the task involves workspace-specific work** (commands, file edits, paths, tool versions, conventions). Skip the dump for trivial, purely-conversational, or read-only informational tasks that require no workspace context.
+2. If `summary.has_data` is `false`, skip memory-dependent steps — memory is empty for this agent.
+3. Follow all returned **rules** unconditionally for the rest of the task.
+4. Use `fact.age_hours`, `fact.is_fresh`, and `fact.is_stale` to assess fact freshness directly — no separate `elapsed()` call is needed for basic freshness checks. Call `elapsed()` only when precise age in seconds matters.
+5. When you discover workspace-specific facts, call `memory_set(agent="<agent-name>", key=..., value=..., retention=...)` before finishing. Use `retention="short_term"` for task-scoped discoveries (auto-expires in 8 h); use `retention="long_term"` for durable project facts (language, build system, conventions).
+6. If the `memory` server is unavailable, emit one visible note ("⚠️ Memory MCP unavailable: [reason]") then continue without it.
 
-## Common Pitfalls
+## Skills and Agents
 
-1. **YouTube downloads fail**: Missing Deno/Node.js (PO token generation). Check [start.sh](../start.sh) warnings or run `deno --version`
-2. **"Sign in to confirm" errors**: Browser cookies not found. User must be logged into YouTube in selected browser. Set `browser_preference='auto'` for smart detection
-3. **Format not available**: Used single format spec without fallbacks. Always use `format1/format2/format3` pattern
-4. **AppImage missing extractors**: Forgot `--collect-all yt_dlp` in PyInstaller spec ([build-appimage.sh](../build-appimage.sh) line 36)
-5. **GUI freezes**: Blocking operation in main thread. Move to QThread with signals
-6. **Checkbox state desync**: Modified `self.checkboxes` without updating `self.videos_list` or vice versa
+See `## Agent Routing` for the authoritative routing table; this section is a quick-reference index.
 
-## YouTube-Specific Implementation
+### Skills
 
-### Bot Detection Handling ([main.py](../main.py) lines 467-533)
-Smart retry logic:
-1. First attempt: Cookieless (works for most public videos)
-2. On bot error: Auto-detect browser with YouTube cookies
-3. Prompt user: "Retry with {browser}?" 
-4. Set `self.cookieless_failed = True` to skip cookieless on next fetch
+- `lifecycleAudit` — loaded on demand; run before any lifecycle operation
+- `agenticReview` — loaded on demand; evaluate or improve Copilot surface files
+- `ciPreflight` — loaded on demand; run CI-equivalent checks before push
+- `testing` — loaded on demand; run targeted or full tests through workspace-declared test apparatus
 
-### User-Friendly Cookie Errors ([main.py](../main.py) lines 401-459)
-Parse yt-dlp exceptions into actionable messages:
-- "could not find cookies database" → "Browser not installed, try Auto mode"
-- "database corrupt" → "Restart browser and retry"
-- "permission denied" → "Close browser (may lock cookie files)"
+### Agents
 
-## Key Files
-
-- [main.py](../main.py): Application (1300+ lines with FlowLayout, PreferencesDialog, filename template builder)
-- [extractors/base.py](../extractors/base.py): Common extraction logic (521 lines)
-- [extractors/youtube_ytdlp.py](../extractors/youtube_ytdlp.py): YouTube with PO token support (204 lines)
-- [browser_utils.py](../browser_utils.py): Browser detection/cookie utilities (116 lines)
-- [start.sh](../start.sh): Entry point with dependency checks
-- [AUTHENTICATION_GUIDE.md](../AUTHENTICATION_GUIDE.md): User-facing YouTube auth docs
-
-## When Modifying Code
-
-- **New platform**: Create extractor in `extractors/`, register in `__init__.py`. See [ARCHITECTURE.md](../ARCHITECTURE.md) lines 100-147
-- **UI changes**: Modify `MediaDownloaderApp.init_ui()`. Maintain QGroupBox structure for consistency
-- **Download options**: Edit `BaseExtractor._get_video_opts()` or `_get_audio_opts()` for global changes, override in platform extractor for platform-specific
-- **Authentication**: Extend `browser_utils.py` for new browsers, add to `detect_available_browsers()` mapping
-- **Filename template**: Tags mapped in `MediaDownloaderApp.build_filename_template()` to yt-dlp variables like `%(title)s`, `%(uploader)s`
+- `cleaner` — review for archive/cleanup candidates; prune stale artefacts, caches, archives, and dead files
+- `commit` — git operations, commit messages, staging, push, pull, PR work
+- `debugger` — diagnose failures and isolate root causes before implementation
+- `deps` — scan dependencies, audit packages, check for vulnerabilities, install/update/repair/remove
+- `docs` — write and update documentation, migration guides, and technical walkthroughs
+- `explore` — broad read-only codebase exploration and architecture lookup
+- `organise` — move files, regroup folders, fix broken paths (subagent-only)
+- `planner` — produce scoped execution plans for multi-step work before implementation
+- `researcher` — gather source-backed external constraints before implementation or review
+- `review` — code, architecture, security, correctness, and regression-risk review; handles codebase audits
+- `triage` — first-pass complexity assessment; classify and route before acting (subagent-only)
+- `xanadLifecycle` — handles all `setup`, `inspect`, `interview`, `health-check`, `health-report`, `plan`, `update`, `repair`, `factory-restore`, and **health check** requests
