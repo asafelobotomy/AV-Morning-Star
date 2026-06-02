@@ -3,7 +3,6 @@
 Simple script to create a basic icon for the application
 """
 from PIL import Image, ImageDraw, ImageFont
-import os
 
 def create_icon():
     # Create a 256x256 image with a gradient background
@@ -27,7 +26,7 @@ def create_icon():
     # Add text
     try:
         font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
-    except:
+    except (OSError, IOError):
         font = ImageFont.load_default()
     
     text = "AV ⭐"

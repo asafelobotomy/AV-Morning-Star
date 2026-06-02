@@ -23,6 +23,10 @@ from extractors.base import (
     AUDIO_LOUDNORM_FILTER,
     AUDIO_DYNAUDNORM_FILTER,
 )
+from extractors.generic import GenericExtractor
+from extractors.odysee import OdyseeExtractor
+from extractors.youtube_ytdlp import YouTubeExtractor
+from extractors import get_extractor
 
 
 # ---------------------------------------------------------------------------
@@ -245,6 +249,146 @@ class TestBaseExtractorOptions(unittest.TestCase):
     def test_no_audio_filters_no_postprocessor_args(self):
         opts = self.extractor._get_audio_opts("mp3", "192", False, False, False, False)
         self.assertNotIn("postprocessor_args", opts)
+
+
+# ---------------------------------------------------------------------------
+# GenericExtractor — SSL and security option overrides
+# ---------------------------------------------------------------------------
+
+class TestGenericExtractor(unittest.TestCase):
+    """GenericExtractor enforces safe SSL defaults on top of base options."""
+
+    def setUp(self):
+        self.extractor = GenericExtractor("http://example.com/video")
+
+    def test_platform_name_is_generic(self):
+        self.assertEqual(self.extractor.platform_name, "Generic")
+
+    def test_fetch_opts_nocheckcertificate_is_false(self):
+        opts = self.extractor.get_fetch_opts()
+        self.assertFalse(opts.get("nocheckcertificate"))
+
+    def test_fetch_opts_prefer_insecure_is_false(self):
+        opts = self.extractor.get_fetch_opts()
+        self.assertFalse(opts.get("prefer_insecure"))
+
+    def test_download_opts_nocheckcertificate_is_false(self):
+        opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
+        self.assertFalse(opts.get("nocheckcertificate"))
+
+    def test_download_opts_prefer_insecure_is_false(self):
+        opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
+        self.assertFalse(opts.get("prefer_insecure"))
+
+    def test_download_opts_has_outtmpl(self):
+        opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
+        self.assertIn("outtmpl", opts)
+
+
+# ---------------------------------------------------------------------------
+# OdyseeExtractor — passthrough behaviour
+# ---------------------------------------------------------------------------
+
+class TestOdyseeExtractor(unittest.TestCase):
+    """OdyseeExtractor delegates fully to base without overriding options."""
+
+    def setUp(self):
+        self.extractor = OdyseeExtractor("https://odysee.com/@channel/video")
+
+    def test_platform_name_is_odysee(self):
+        self.assertEqual(self.extractor.platform_name, "Odysee")
+
+    def test_fetch_opts_returns_dict(self):
+        opts = self.extractor.get_fetch_opts()
+        self.assertIsInstance(opts, dict)
+
+    def test_fetch_opts_skip_download_set(self):
+        opts = self.extractor.get_fetch_opts()
+        self.assertTrue(opts.get("skip_download"))
+
+    def test_download_opts_returns_dict(self):
+        opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
+        self.assertIsInstance(opts, dict)
+
+    def test_download_opts_has_outtmpl(self):
+        opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
+        self.assertIn("outtmpl", opts)
+
+
+# ---------------------------------------------------------------------------
+# YouTubeExtractor — download option construction
+# ---------------------------------------------------------------------------
+
+class TestYouTubeExtractor(unittest.TestCase):
+    """YouTubeExtractor builds correct yt-dlp opts (no network calls made)."""
+
+    def setUp(self):
+        self.extractor = YouTubeExtractor("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+
+    def test_platform_name_is_youtube(self):
+        self.assertEqual(self.extractor.platform_name, "YouTube")
+
+    def test_default_cookies_from_browser_is_none(self):
+        self.assertIsNone(self.extractor.cookies_from_browser)
+
+    def test_cookies_stored_when_provided(self):
+        ext = YouTubeExtractor("https://www.youtube.com/watch?v=x", cookies_from_browser="firefox")
+        self.assertEqual(ext.cookies_from_browser, "firefox")
+
+    def test_download_opts_has_outtmpl(self):
+        opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
+        self.assertIn("outtmpl", opts)
+
+    def test_download_opts_audio_sets_format_bestaudio(self):
+        opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "audio")
+        self.assertIn("bestaudio", opts.get("format", ""))
+
+    def test_download_opts_no_cookies_key_when_browser_is_none(self):
+        opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
+        self.assertNotIn("cookiesfrombrowser", opts)
+
+    def test_download_opts_cookies_key_present_when_browser_set(self):
+        ext = YouTubeExtractor("https://www.youtube.com/watch?v=x", cookies_from_browser="brave")
+        opts = ext.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
+        self.assertIn("cookiesfrombrowser", opts)
+        self.assertEqual(opts["cookiesfrombrowser"][0], "brave")
+
+
+# ---------------------------------------------------------------------------
+# get_extractor factory — URL routing
+# ---------------------------------------------------------------------------
+
+class TestGetExtractorFactory(unittest.TestCase):
+    """get_extractor routes URLs to the correct extractor class."""
+
+    def test_youtube_com_url_returns_youtube_extractor(self):
+        ext = get_extractor("https://www.youtube.com/watch?v=abc123")
+        self.assertIsInstance(ext, YouTubeExtractor)
+
+    def test_youtu_be_short_url_returns_youtube_extractor(self):
+        ext = get_extractor("https://youtu.be/abc123")
+        self.assertIsInstance(ext, YouTubeExtractor)
+
+    def test_odysee_url_returns_odysee_extractor(self):
+        ext = get_extractor("https://odysee.com/@channel/video")
+        self.assertIsInstance(ext, OdyseeExtractor)
+
+    def test_lbry_tv_url_returns_odysee_extractor(self):
+        ext = get_extractor("https://lbry.tv/@channel/video")
+        self.assertIsInstance(ext, OdyseeExtractor)
+
+    def test_generic_url_returns_generic_extractor(self):
+        ext = get_extractor("https://vimeo.com/123456789")
+        self.assertIsInstance(ext, GenericExtractor)
+
+    def test_youtube_with_cookies_passed_through(self):
+        ext = get_extractor("https://www.youtube.com/watch?v=abc", cookies_from_browser="firefox")
+        self.assertIsInstance(ext, YouTubeExtractor)
+        self.assertEqual(ext.cookies_from_browser, "firefox")
+
+    def test_generic_extractor_has_no_cookies_attribute(self):
+        ext = get_extractor("https://vimeo.com/123456789")
+        self.assertIsInstance(ext, GenericExtractor)
 
 
 if __name__ == "__main__":
