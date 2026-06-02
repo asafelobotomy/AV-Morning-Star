@@ -1,0 +1,199 @@
+{
+  "servers": {
+    "xanadTools": {
+      "type": "stdio",
+      "command": "uvx",
+      "env": {
+        "CLAUDE_TMPDIR": "${userHome}/.cache/uv",
+        "TMPDIR": "${userHome}/.cache/uv"
+      },
+      "args": [
+        "--from",
+        "mcp[cli]==1.27.1",
+        "mcp",
+        "run",
+        "${workspaceFolder}/.github/mcp/scripts/xanadWorkspaceMcp.py"
+      ]
+    },
+    "workspaceTesting": {
+      "type": "stdio",
+      "command": "uvx",
+      "env": {
+        "CLAUDE_TMPDIR": "${userHome}/.cache/uv",
+        "TMPDIR": "${userHome}/.cache/uv"
+      },
+      "args": [
+        "--from",
+        "mcp[cli]==1.27.1",
+        "mcp",
+        "run",
+        "${workspaceFolder}/.github/mcp/scripts/workspaceTestingMcp.py"
+      ]
+    },
+    "git": {
+      "type": "stdio",
+      "command": "uvx",
+      "env": {
+        "CLAUDE_TMPDIR": "${userHome}/.cache/uv",
+        "TMPDIR": "${userHome}/.cache/uv"
+      },
+      "args": [
+        "--from",
+        "mcp[cli]==1.27.1",
+        "mcp",
+        "run",
+        "${workspaceFolder}/.github/mcp/scripts/gitMcp.py"
+      ]
+    },
+    "web": {
+      "type": "stdio",
+      "command": "uvx",
+      "env": {
+        "CLAUDE_TMPDIR": "${userHome}/.cache/uv",
+        "TMPDIR": "${userHome}/.cache/uv"
+      },
+      "args": [
+        "--with",
+        "httpx",
+        "--with",
+        "markdownify",
+        "--with",
+        "beautifulsoup4",
+        "--from",
+        "mcp[cli]==1.27.1",
+        "mcp",
+        "run",
+        "${workspaceFolder}/.github/mcp/scripts/webMcp.py"
+      ]
+    },
+    "devDocs": {
+      "type": "stdio",
+      "command": "uvx",
+      "env": {
+        "CLAUDE_TMPDIR": "${userHome}/.cache/uv",
+        "TMPDIR": "${userHome}/.cache/uv"
+      },
+      "args": [
+        "--with",
+        "httpx",
+        "--with",
+        "beautifulsoup4",
+        "--from",
+        "mcp[cli]==1.27.1",
+        "mcp",
+        "run",
+        "${workspaceFolder}/.github/mcp/scripts/devDocsMcp.py"
+      ]
+    },
+    "time": {
+      "type": "stdio",
+      "command": "uvx",
+      "env": {
+        "CLAUDE_TMPDIR": "${userHome}/.cache/uv",
+        "TMPDIR": "${userHome}/.cache/uv"
+      },
+      "args": [
+        "--from",
+        "mcp[cli]==1.27.1",
+        "mcp",
+        "run",
+        "${workspaceFolder}/.github/mcp/scripts/timeMcp.py"
+      ]
+    },
+    "memory": {
+      "type": "stdio",
+      "command": "uvx",
+      "env": {
+        "CLAUDE_TMPDIR": "${userHome}/.cache/uv",
+        "TMPDIR": "${userHome}/.cache/uv",
+        "WORKSPACE_ROOT": "${workspaceFolder}"
+      },
+      "args": [
+        "--from",
+        "mcp[cli]==1.27.1",
+        "mcp",
+        "run",
+        "${workspaceFolder}/.github/mcp/scripts/memoryMcp.py"
+      ]
+    },
+    "security": {
+      "type": "stdio",
+      "command": "uvx",
+      "env": {
+        "CLAUDE_TMPDIR": "${userHome}/.cache/uv",
+        "TMPDIR": "${userHome}/.cache/uv"
+      },
+      "args": [
+        "--from",
+        "mcp[cli]==1.27.1",
+        "mcp",
+        "run",
+        "${workspaceFolder}/.github/mcp/scripts/securityMcp.py"
+      ]
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "uvx",
+      "env": {
+        "CLAUDE_TMPDIR": "${userHome}/.cache/uv",
+        "TMPDIR": "${userHome}/.cache/uv",
+        "FS_ALLOWED_ROOT": "${workspaceFolder}"
+      },
+      "args": [
+        "--from",
+        "mcp[cli]==1.27.1",
+        "mcp",
+        "run",
+        "${workspaceFolder}/.github/mcp/scripts/fsMcp.py"
+      ]
+    },
+    "sequential-thinking": {
+      "type": "stdio",
+      "command": "uvx",
+      "env": {
+        "CLAUDE_TMPDIR": "${userHome}/.cache/uv",
+        "TMPDIR": "${userHome}/.cache/uv"
+      },
+      "args": [
+        "--from",
+        "mcp[cli]==1.27.1",
+        "mcp",
+        "run",
+        "${workspaceFolder}/.github/mcp/scripts/sequentialThinkingMcp.py"
+      ]
+    },
+    "github": {
+      "type": "stdio",
+      "command": "uvx",
+      "env": {
+        "CLAUDE_TMPDIR": "${userHome}/.cache/uv",
+        "TMPDIR": "${userHome}/.cache/uv",
+        "GITHUB_TOKEN": "${env:GITHUB_TOKEN}"
+      },
+      "args": [
+        "--from",
+        "mcp[cli]==1.27.1",
+        "mcp",
+        "run",
+        "${workspaceFolder}/.github/mcp/scripts/githubMcp.py"
+      ],
+      "disabled": true
+    },
+    "sqlite": {
+      "type": "stdio",
+      "command": "uvx",
+      "env": {
+        "CLAUDE_TMPDIR": "${userHome}/.cache/uv",
+        "TMPDIR": "${userHome}/.cache/uv"
+      },
+      "args": [
+        "--from",
+        "mcp[cli]==1.27.1",
+        "mcp",
+        "run",
+        "${workspaceFolder}/.github/mcp/scripts/sqliteMcp.py"
+      ],
+      "disabled": true
+    }
+  }
+}
