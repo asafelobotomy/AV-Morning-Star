@@ -145,18 +145,27 @@ class URLScraperThread(QThread):
 
     def run(self):
         try:
+            if self.isInterruptionRequested():
+                return
+
             # Get the appropriate extractor for this URL with browser cookies
             extractor = get_extractor(
                 self.url,
                 cookies_from_browser=self.cookies_from_browser
             )
 
+            if self.isInterruptionRequested():
+                return
+
             # Extract video information
             videos = extractor.extract_info()
-            self.finished.emit(videos)
+
+            if not self.isInterruptionRequested():
+                self.finished.emit(videos)
 
         except Exception as e:
-            self.error.emit(f"Error scraping URL: {str(e)}")
+            if not self.isInterruptionRequested():
+                self.error.emit(f"Error scraping URL: {str(e)}")
 
 
 class DownloadThread(QThread):
@@ -194,6 +203,10 @@ class DownloadThread(QThread):
         self.denoise_video_audio = denoise_video_audio
 
     def progress_hook(self, d):
+        # Abort immediately if cancellation was requested between progress events.
+        if self.isInterruptionRequested():
+            raise Exception("Download cancelled")
+
         if d['status'] == 'downloading':
             # Try to get percentage from different possible keys
             percent = 0
@@ -237,6 +250,9 @@ class DownloadThread(QThread):
         failed_urls = []
 
         for idx, url in enumerate(self.urls, 1):
+            # Stop cleanly if the main thread requested cancellation.
+            if self.isInterruptionRequested():
+                break
             try:
                 # Get selected browser for authentication (passed from main window)
                 # For downloads, we'll use the same browser that was used for fetching
@@ -277,11 +293,25 @@ class DownloadThread(QThread):
                 successful += 1
 
             except Exception as e:
+                # If the exception came from our own cancellation hook, stop
+                # iterating without recording it as a failure.
+                if self.isInterruptionRequested():
+                    break
                 failed += 1
                 failed_urls.append((url, str(e)))
                 # Continue with next download instead of stopping
                 self.progress.emit(f'Failed {idx}/{len(self.urls)}, continuing...', 0)
                 continue
+
+        # Cancellation takes priority — emit a neutral status and return without
+        # showing success/failure dialogs which would be misleading.
+        if self.isInterruptionRequested():
+            self.finished.emit(
+                f"Download cancelled. "
+                f"{successful} completed before cancellation."
+                if successful else "Download cancelled."
+            )
+            return
 
         # Generate summary message
         if failed == 0:
@@ -838,7 +868,7 @@ class MediaDownloaderApp(QMainWindow):
             'website': 'Website',
             'id': 'Video ID',
             'upload_date': 'Upload Date',
-            'download_date': 'Download Date',
+            'download_date': 'Timestamp',
             'duration': 'Duration',
             'ext': 'Extension'
         }
@@ -975,7 +1005,7 @@ class MediaDownloaderApp(QMainWindow):
             'website': 'YouTube',
             'id': 'dQw4w9WgXcQ',
             'upload_date': '20260115',
-            'download_date': '20260202',
+            'download_date': '1749000000',
             'duration': '03-45-20',
             'ext': 'mp4'
         }
@@ -1164,6 +1194,10 @@ class MediaDownloaderApp(QMainWindow):
             QMessageBox.warning(self, "Error", "Please enter a valid URL starting with http:// or https://")
             return
 
+        # Prevent re-entrant fetch while a scrape is already in flight.
+        if hasattr(self, 'scraper_thread') and self.scraper_thread is not None and self.scraper_thread.isRunning():
+            return
+
         # Reset per-request state so each new user-initiated fetch starts clean.
         # on_fetch_error sets this True then immediately calls fetch_videos() for the
         # bot-detection retry; that retry call relies on explicit_browser_chosen (not
@@ -1209,8 +1243,9 @@ class MediaDownloaderApp(QMainWindow):
                 # Auto or none mode on first attempt: go cookieless
                 self.status_label.setText("Fetching video information (no authentication)...")
         else:
-            # Non-YouTube: Use cookies if we have a browser set
-            if resolved_browser:
+            # Non-YouTube: only use cookies when the user explicitly chose a browser.
+            # Auto-forwarding cookies to arbitrary sites is an unnecessary privacy risk.
+            if self.browser_preference not in ('auto', 'none') and resolved_browser:
                 cookies_from_browser = resolved_browser
 
         self.statusBar().showMessage("Connecting to URL...")
@@ -1392,6 +1427,10 @@ class MediaDownloaderApp(QMainWindow):
                     self.browser_preference = browser
                     self.status_label.setText(f"Retrying with {browser} authentication...")
                     self.fetch_videos()  # Retry automatically
+                    # Re-assert the flag now that fetch_videos() has reset it.
+                    # This prevents on_fetch_error from re-prompting if the retry
+                    # itself also triggers a bot-detection failure.
+                    self.cookieless_failed = True
                     self.browser_preference = original_preference  # Restore
                     return
                 else:
@@ -1431,7 +1470,9 @@ class MediaDownloaderApp(QMainWindow):
                 QMessageBox.warning(self, "Authentication Required", msg)
                 return
 
-        # Not a bot error, or already tried cookies - show error
+        # Not a bot error, or already tried cookies - show error.
+        # Reset the retry flag so the next fresh user request starts cookieless again.
+        self.cookieless_failed = False
         self.fetch_btn.setEnabled(True)
         self.status_label.setText("Error fetching videos")
         self.statusBar().showMessage("Failed to fetch videos")
@@ -1621,12 +1662,27 @@ class MediaDownloaderApp(QMainWindow):
                 event.ignore()
                 return
 
-        # Ask each thread to stop, then wait up to 3 s before forcing teardown.
+        # Ask each thread to stop cooperatively, then wait for a clean exit.
+        # We never call terminate() — forced teardown while yt-dlp is active
+        # can leave partial files and undefined interpreter state.
         for t in running:
-            t.quit()
-            if not t.wait(3000):
-                t.terminate()
-                t.wait(1000)
+            t.requestInterruption()
+
+        still_running = []
+        for t in running:
+            if not t.wait(5000):
+                still_running.append(t)
+
+        if still_running:
+            # A thread did not stop in time; keep the window open so the user
+            # can try again or wait longer rather than closing over a live thread.
+            QMessageBox.warning(
+                self, "Still stopping",
+                "A background task is taking longer than expected to stop.\n"
+                "Please wait a moment and try closing again.",
+            )
+            event.ignore()
+            return
 
         event.accept()
 

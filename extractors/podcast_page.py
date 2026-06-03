@@ -49,7 +49,12 @@ class PodcastPageExtractor(BaseExtractor):
         for link in parser.links:
             if not self._is_audio_url(link):
                 continue
-            audio_urls.append(urljoin(self.url, link))
+            resolved = urljoin(self.url, link)
+            # Only allow http/https media links; reject file:, javascript:, ftp:, etc.
+            scheme = urlparse(resolved).scheme
+            if scheme not in ("http", "https"):
+                continue
+            audio_urls.append(resolved)
 
         # Deduplicate while preserving order
         seen = set()
@@ -62,8 +67,16 @@ class PodcastPageExtractor(BaseExtractor):
 
         return [self._build_item(audio_url) for audio_url in unique_audio_urls]
 
+    # Maximum response body size accepted from a podcast page (5 MiB).
+    _MAX_FETCH_BYTES = 5 * 1024 * 1024
+
     def _fetch_html(self, url):
         """Fetch the HTML content of *url* and return it as a decoded string.
+
+        Only HTTP and HTTPS schemes are permitted.  Responses that report a
+        non-HTML content type or exceed ``_MAX_FETCH_BYTES`` are rejected to
+        prevent local memory exhaustion from arbitrarily large or non-HTML
+        responses.
 
         Args:
             url: The page URL to fetch.
@@ -72,8 +85,14 @@ class PodcastPageExtractor(BaseExtractor):
             str: Decoded HTML content of the response.
 
         Raises:
+            ValueError: If the URL scheme is not http/https, the content type
+                is not HTML-like, or the response body exceeds the size cap.
             urllib.error.URLError: If the request fails.
         """
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError(f"Unsupported URL scheme '{parsed.scheme}': only http/https are allowed")
+
         request = Request(
             url,
             headers={
@@ -83,8 +102,32 @@ class PodcastPageExtractor(BaseExtractor):
             },
         )
         with urlopen(request, timeout=30) as response:
+            content_type = response.headers.get_content_type() or ""
+            if not content_type.startswith(("text/html", "application/xhtml")):
+                raise ValueError(
+                    f"Unexpected content type '{content_type}': expected HTML"
+                )
+            # Guard against very large responses before reading into memory.
+            content_length = response.headers.get("Content-Length")
+            if content_length is not None:
+                try:
+                    cl_int = int(content_length)
+                    if cl_int > self._MAX_FETCH_BYTES:
+                        raise ValueError(
+                            f"Response too large ({cl_int} bytes); "
+                            f"limit is {self._MAX_FETCH_BYTES} bytes"
+                        )
+                except ValueError as exc:
+                    # Propagate our own size-limit error; ignore malformed headers.
+                    if "limit is" in str(exc):
+                        raise
+            body = response.read(self._MAX_FETCH_BYTES + 1)
+            if len(body) > self._MAX_FETCH_BYTES:
+                raise ValueError(
+                    f"Response body exceeds {self._MAX_FETCH_BYTES} bytes"
+                )
             charset = response.headers.get_content_charset() or "utf-8"
-            return response.read().decode(charset, errors="replace")
+            return body.decode(charset, errors="replace")
 
     def _is_audio_url(self, url):
         """Return True if *url* points directly to an audio file.

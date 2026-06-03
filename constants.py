@@ -56,6 +56,7 @@ GROUP_AVAILABLE_VIDEOS = "Available Videos/Audio"
 GROUP_FILENAME_TEMPLATE = "Filename Template"
 GROUP_DOWNLOAD_OPTIONS = "Download Options"
 GROUP_PROGRESS = "Progress"
+GROUP_AUTHENTICATION = "Authentication"
 
 # ===== INPUT PLACEHOLDERS =====
 PLACEHOLDER_URL = "Enter video URL or channel/playlist URL..."
@@ -191,7 +192,7 @@ FILENAME_TAGS = {
     TAG_WEBSITE: 'Website',
     TAG_ID: 'Video ID',
     TAG_UPLOAD_DATE: 'Upload Date',
-    TAG_DOWNLOAD_DATE: 'Download Date',
+    TAG_DOWNLOAD_DATE: 'Timestamp',
     TAG_DURATION: 'Duration',
     TAG_EXT: 'Extension'
 }

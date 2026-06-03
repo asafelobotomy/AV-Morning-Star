@@ -178,6 +178,116 @@ class TestPodcastPageExtractorExtractInfo(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["url"], "http://example.com/ep.mp3")
 
+    @patch("extractors.podcast_page.urlopen")
+    def test_hostile_scheme_links_excluded(self, mock_urlopen):
+        """Extracted links with non-http(s) schemes must be silently dropped."""
+        html = b"""
+        <html><body>
+          <a href="file:///etc/passwd.mp3">Hostile file</a>
+          <a href="ftp://evil.example/ep.mp3">Hostile ftp</a>
+          <a href="/safe/ep.mp3">Safe</a>
+        </body></html>
+        """
+        resp = MagicMock()
+        resp.headers.get_content_type.return_value = "text/html"
+        resp.headers.get.return_value = None
+        resp.headers.get_content_charset.return_value = "utf-8"
+        resp.read.return_value = html
+        resp.__enter__ = lambda s: s
+        resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = resp
+        results = PodcastPageExtractor("http://example.com/").extract_info()
+        urls = [r["url"] for r in results]
+        self.assertNotIn("file:///etc/passwd.mp3", urls)
+        self.assertNotIn("ftp://evil.example/ep.mp3", urls)
+        self.assertIn("http://example.com/safe/ep.mp3", urls)
+
+
+# ---------------------------------------------------------------------------
+# PodcastPageExtractor — _fetch_html security checks
+# ---------------------------------------------------------------------------
+
+class TestPodcastFetchHtmlSecurity(unittest.TestCase):
+    """_fetch_html must reject unsafe schemes, wrong content types, and large bodies."""
+
+    def setUp(self):
+        self.extractor = PodcastPageExtractor("http://example.com/feed")
+
+    def test_non_http_scheme_raises(self):
+        with self.assertRaises(ValueError, msg="ftp:// should be rejected"):
+            self.extractor._fetch_html("ftp://example.com/feed.html")
+
+    def test_file_scheme_raises(self):
+        with self.assertRaises(ValueError, msg="file:// should be rejected"):
+            self.extractor._fetch_html("file:///etc/passwd")
+
+    @patch("extractors.podcast_page.urlopen")
+    def test_non_html_content_type_raises(self, mock_urlopen):
+        resp = MagicMock()
+        resp.headers.get_content_type.return_value = "application/octet-stream"
+        resp.headers.get.return_value = None
+        resp.read.return_value = b""
+        resp.__enter__ = lambda s: s
+        resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = resp
+        with self.assertRaises(ValueError, msg="non-HTML content type should be rejected"):
+            self.extractor._fetch_html("http://example.com/feed")
+
+    @patch("extractors.podcast_page.urlopen")
+    def test_oversized_content_length_header_raises(self, mock_urlopen):
+        resp = MagicMock()
+        resp.headers.get_content_type.return_value = "text/html"
+        resp.headers.get.return_value = str(6 * 1024 * 1024)  # 6 MiB > 5 MiB cap
+        resp.read.return_value = b"<html></html>"
+        resp.__enter__ = lambda s: s
+        resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = resp
+        with self.assertRaises(ValueError, msg="Content-Length exceeding cap should be rejected"):
+            self.extractor._fetch_html("http://example.com/feed")
+
+    @patch("extractors.podcast_page.urlopen")
+    def test_oversized_body_raises(self, mock_urlopen):
+        big_body = b"x" * (5 * 1024 * 1024 + 1)
+        resp = MagicMock()
+        resp.headers.get_content_type.return_value = "text/html"
+        resp.headers.get.return_value = None
+        resp.headers.get_content_charset.return_value = "utf-8"
+        resp.read.return_value = big_body
+        resp.__enter__ = lambda s: s
+        resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = resp
+        with self.assertRaises(ValueError, msg="Body exceeding cap should be rejected"):
+            self.extractor._fetch_html("http://example.com/feed")
+
+    @patch("extractors.podcast_page.urlopen")
+    def test_valid_html_response_returns_string(self, mock_urlopen):
+        body = b"<html><body><a href='/ep.mp3'>Ep</a></body></html>"
+        resp = MagicMock()
+        resp.headers.get_content_type.return_value = "text/html; charset=utf-8"
+        resp.headers.get.return_value = None
+        resp.headers.get_content_charset.return_value = "utf-8"
+        resp.read.return_value = body
+        resp.__enter__ = lambda s: s
+        resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = resp
+        result = self.extractor._fetch_html("http://example.com/feed")
+        self.assertIn("<html>", result)
+
+    @patch("extractors.podcast_page.urlopen")
+    def test_malformed_content_length_header_does_not_raise(self, mock_urlopen):
+        """A non-numeric Content-Length must be silently ignored, not crash."""
+        body = b"<html><body></body></html>"
+        resp = MagicMock()
+        resp.headers.get_content_type.return_value = "text/html"
+        resp.headers.get.return_value = "not-a-number"
+        resp.headers.get_content_charset.return_value = "utf-8"
+        resp.read.return_value = body
+        resp.__enter__ = lambda s: s
+        resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = resp
+        result = self.extractor._fetch_html("http://example.com/feed")
+        self.assertIn("<html>", result)
+
 
 # ---------------------------------------------------------------------------
 # BaseExtractor — yt-dlp option building
@@ -363,6 +473,39 @@ class TestYouTubeExtractor(unittest.TestCase):
         opts = ext.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
         self.assertIn("cookiesfrombrowser", opts)
         self.assertEqual(opts["cookiesfrombrowser"][0], "brave")
+
+    # --- Subtitle embedding parity with BaseExtractor ---
+
+    def test_video_download_with_subs_sets_embedsubtitles(self):
+        opts = self.extractor.get_download_opts(
+            "/tmp", "%(title)s.%(ext)s", "video", download_subs=True
+        )
+        self.assertTrue(opts.get("embedsubtitles"), "embedsubtitles must be True for video+subs")
+
+    def test_audio_download_with_subs_does_not_set_embedsubtitles(self):
+        opts = self.extractor.get_download_opts(
+            "/tmp", "%(title)s.%(ext)s", "audio", download_subs=True
+        )
+        self.assertFalse(opts.get("embedsubtitles", False))
+
+    def test_video_download_without_subs_does_not_set_embedsubtitles(self):
+        opts = self.extractor.get_download_opts(
+            "/tmp", "%(title)s.%(ext)s", "video", download_subs=False
+        )
+        self.assertFalse(opts.get("embedsubtitles", False))
+
+    def test_subtitle_parity_with_base_extractor(self):
+        """YouTubeExtractor subtitle options must match BaseExtractor for video+subs."""
+        base = BaseExtractor("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        base_opts = base.get_download_opts("/tmp", "%(title)s.%(ext)s", "video", download_subs=True)
+        yt_opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "video", download_subs=True)
+        for key in ("writesubtitles", "writeautomaticsub", "embedsubtitles"):
+            with self.subTest(key=key):
+                self.assertEqual(
+                    yt_opts.get(key),
+                    base_opts.get(key),
+                    f"YouTube and BaseExtractor disagree on '{key}'",
+                )
 
 
 # ---------------------------------------------------------------------------

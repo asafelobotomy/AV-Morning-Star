@@ -9,7 +9,15 @@ echo ""
 # Check if Python is installed
 if ! command -v python3 &> /dev/null; then
     echo "Error: Python 3 is not installed!"
-    echo "Please install Python 3.7 or higher."
+    echo "Please install Python 3.10 or higher."
+    exit 1
+fi
+
+# Verify Python version is at least 3.10
+PY_OK=$(python3 -c "import sys; print(sys.version_info >= (3, 10))" 2>/dev/null)
+if [ "$PY_OK" != "True" ]; then
+    echo "Error: Python 3.10 or higher is required."
+    echo "Your version: $(python3 --version 2>&1)"
     exit 1
 fi
 

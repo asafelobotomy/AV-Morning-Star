@@ -9,7 +9,7 @@
       },
       "args": [
         "--from",
-        "mcp[cli]==1.27.1",
+        "mcp[cli]==1.27.2",
         "mcp",
         "run",
         "${workspaceFolder}/.github/mcp/scripts/xanadWorkspaceMcp.py"
@@ -24,7 +24,7 @@
       },
       "args": [
         "--from",
-        "mcp[cli]==1.27.1",
+        "mcp[cli]==1.27.2",
         "mcp",
         "run",
         "${workspaceFolder}/.github/mcp/scripts/workspaceTestingMcp.py"
@@ -39,7 +39,7 @@
       },
       "args": [
         "--from",
-        "mcp[cli]==1.27.1",
+        "mcp[cli]==1.27.2",
         "mcp",
         "run",
         "${workspaceFolder}/.github/mcp/scripts/gitMcp.py"
@@ -60,7 +60,7 @@
         "--with",
         "beautifulsoup4",
         "--from",
-        "mcp[cli]==1.27.1",
+        "mcp[cli]==1.27.2",
         "mcp",
         "run",
         "${workspaceFolder}/.github/mcp/scripts/webMcp.py"
@@ -79,7 +79,7 @@
         "--with",
         "beautifulsoup4",
         "--from",
-        "mcp[cli]==1.27.1",
+        "mcp[cli]==1.27.2",
         "mcp",
         "run",
         "${workspaceFolder}/.github/mcp/scripts/devDocsMcp.py"
@@ -94,7 +94,7 @@
       },
       "args": [
         "--from",
-        "mcp[cli]==1.27.1",
+        "mcp[cli]==1.27.2",
         "mcp",
         "run",
         "${workspaceFolder}/.github/mcp/scripts/timeMcp.py"
@@ -110,7 +110,7 @@
       },
       "args": [
         "--from",
-        "mcp[cli]==1.27.1",
+        "mcp[cli]==1.27.2",
         "mcp",
         "run",
         "${workspaceFolder}/.github/mcp/scripts/memoryMcp.py"
@@ -125,7 +125,7 @@
       },
       "args": [
         "--from",
-        "mcp[cli]==1.27.1",
+        "mcp[cli]==1.27.2",
         "mcp",
         "run",
         "${workspaceFolder}/.github/mcp/scripts/securityMcp.py"
@@ -141,7 +141,7 @@
       },
       "args": [
         "--from",
-        "mcp[cli]==1.27.1",
+        "mcp[cli]==1.27.2",
         "mcp",
         "run",
         "${workspaceFolder}/.github/mcp/scripts/fsMcp.py"
@@ -156,7 +156,7 @@
       },
       "args": [
         "--from",
-        "mcp[cli]==1.27.1",
+        "mcp[cli]==1.27.2",
         "mcp",
         "run",
         "${workspaceFolder}/.github/mcp/scripts/sequentialThinkingMcp.py"
@@ -172,7 +172,7 @@
       },
       "args": [
         "--from",
-        "mcp[cli]==1.27.1",
+        "mcp[cli]==1.27.2",
         "mcp",
         "run",
         "${workspaceFolder}/.github/mcp/scripts/githubMcp.py"
@@ -188,7 +188,7 @@
       },
       "args": [
         "--from",
-        "mcp[cli]==1.27.1",
+        "mcp[cli]==1.27.2",
         "mcp",
         "run",
         "${workspaceFolder}/.github/mcp/scripts/sqliteMcp.py"

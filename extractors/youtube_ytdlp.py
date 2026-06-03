@@ -17,11 +17,11 @@ from .base import BaseExtractor
 
 class YouTubeExtractor(BaseExtractor):
     """YouTube video extractor using yt-dlp backend"""
-    
+
     def __init__(self, url, cookies_from_browser=None):
         """
         Initialize YouTube extractor with yt-dlp backend
-        
+
         Args:
             url: YouTube video/playlist/channel URL
             cookies_from_browser: Browser name to extract cookies from (e.g., 'firefox', 'chrome', 'brave')
@@ -29,11 +29,11 @@ class YouTubeExtractor(BaseExtractor):
         super().__init__(url)
         self.platform_name = "YouTube"
         self.cookies_from_browser = cookies_from_browser
-        
+
     def extract_info(self):
         """
         Extract video information from YouTube URL
-        
+
         Returns:
             List of dicts with video info: [{'title': ..., 'url': ..., 'uploader': ..., 'duration': ...}, ...]
         """
@@ -44,14 +44,14 @@ class YouTubeExtractor(BaseExtractor):
             'skip_download': True,
             'allow_unplayable_formats': False,
         }
-        
+
         # PO token generation uses locally-installed Deno/Node.js; no remote
         # components are loaded so no untrusted code is fetched at runtime.
 
         # Add browser cookies if specified
         if self.cookies_from_browser:
             ydl_opts['cookiesfrombrowser'] = (self.cookies_from_browser,)
-        
+
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(self.url, download=False)
@@ -77,19 +77,19 @@ class YouTubeExtractor(BaseExtractor):
                           f"2. Update yt-dlp: pip install --upgrade yt-dlp\n"
                           f"3. Ensure Deno is installed: deno --version\n"
                           f"4. Try a different browser in Preferences")
-    
+
     def _convert_to_standard_format(self, info):
         """
         Convert yt-dlp info dict to our standard format
-        
+
         Args:
             info: yt-dlp info dict
-            
+
         Returns:
             List of video dicts in our standard format
         """
         videos = []
-        
+
         # Handle playlist/channel (multiple videos)
         if 'entries' in info:
             for entry in info['entries']:
@@ -98,16 +98,16 @@ class YouTubeExtractor(BaseExtractor):
         # Handle single video
         else:
             videos.append(self._format_single_video(info))
-        
+
         return videos
-    
+
     def _format_single_video(self, entry):
         """
         Format a single video entry to our standard format
-        
+
         Args:
             entry: Single video info dict from yt-dlp
-            
+
         Returns:
             Dict with standardized video info
         """
@@ -122,10 +122,10 @@ class YouTubeExtractor(BaseExtractor):
             'upload_date': entry.get('upload_date'),
             'id': entry.get('id'),
         }
-    
-    def get_download_opts(self, output_path, filename_template, format_type, 
+
+    def get_download_opts(self, output_path, filename_template, format_type,
                          video_quality=None, audio_codec='mp3', audio_quality='192',
-                         download_subs=False, embed_thumbnail=False, 
+                         download_subs=False, embed_thumbnail=False,
                          normalize_audio=False, denoise_audio=False,
                          dynamic_normalization=False, video_container='mp4',
                          denoise_video=False, stabilize_video=False,
@@ -133,7 +133,7 @@ class YouTubeExtractor(BaseExtractor):
                          denoise_video_audio=False):
         """
         Get yt-dlp download options
-        
+
         Returns:
             Dict of yt-dlp options for downloading
         """
@@ -143,14 +143,14 @@ class YouTubeExtractor(BaseExtractor):
             'no_warnings': False,
             'allow_unplayable_formats': False,
         }
-        
+
         # PO token generation uses locally-installed Deno/Node.js; no remote
         # components are loaded so no untrusted code is fetched at runtime.
 
         # Add browser cookies if specified
         if self.cookies_from_browser:
             ydl_opts['cookiesfrombrowser'] = (self.cookies_from_browser,)
-        
+
         # Format selection
         if format_type == 'audio':
             ydl_opts['format'] = 'bestaudio/best'
@@ -159,31 +159,31 @@ class YouTubeExtractor(BaseExtractor):
                 'preferredcodec': audio_codec.lower(),
                 'preferredquality': audio_quality,
             }]
-            
+
             # Add thumbnail embedding for audio
             if embed_thumbnail:
                 ydl_opts['postprocessors'].append({
                     'key': 'EmbedThumbnail',
                 })
                 ydl_opts['writethumbnail'] = True
-            
+
             # Audio enhancement filters
             audio_filters = []
-            
+
             if denoise_audio:
                 audio_filters.append('afftdn=nf=-20:nr=15:tn=1')
-            
+
             if normalize_audio:
                 if dynamic_normalization:
                     audio_filters.append('dynaudnorm=p=0.95:m=10:s=12:g=5')
                 else:
                     audio_filters.append('loudnorm=I=-16:LRA=11:TP=-1.5,aresample=48000')
-            
+
             if audio_filters:
                 ydl_opts['postprocessor_args'] = {
                     'extractaudio+ffmpeg_o': ['-af', ','.join(audio_filters)]
                 }
-            
+
             # Metadata embedding (parity with BaseExtractor)
             ydl_opts['postprocessors'].append({'key': 'FFmpegMetadata'})
         else:
@@ -202,37 +202,37 @@ class YouTubeExtractor(BaseExtractor):
                 ydl_opts['format'] = f'bestvideo[height<={height}]+bestaudio/best[height<={height}]'
             else:
                 ydl_opts['format'] = 'bestvideo+bestaudio/best'
-            
+
             # Set video container format
             ydl_opts['merge_output_format'] = video_container
-            
+
             # Video enhancement filters
             video_filters = []
             audio_filters = []
-            
+
             if denoise_video:
                 video_filters.append('hqdn3d=4:3:6:4.5')
-            
+
             if stabilize_video:
                 video_filters.append('deshake')
-            
+
             if sharpen_video:
                 video_filters.append('unsharp=5:5:0.8:5:5:0.4')
-            
+
             if denoise_video_audio:
                 audio_filters.append('afftdn=nf=-20:nr=15:tn=1')
-            
+
             if normalize_video_audio:
                 audio_filters.append('loudnorm=I=-16:LRA=11:TP=-1.5,aresample=48000')
-            
+
             # Apply filters if any are enabled
             if video_filters or audio_filters:
                 # Initialize postprocessors list
                 ydl_opts['postprocessors'] = ydl_opts.get('postprocessors', [])
-                
+
                 # Determine codec based on container format
                 container_lower = video_container.lower()
-                
+
                 # Container-specific codec settings
                 if container_lower == 'webm':
                     video_codec = 'libvpx-vp9'
@@ -259,33 +259,35 @@ class YouTubeExtractor(BaseExtractor):
                     audio_codec_out = 'aac'
                     codec_args = ['-c:v', video_codec, '-preset', 'medium', '-crf', '18',
                                   '-c:a', audio_codec_out, '-b:a', '192k']
-                
+
                 # Add video convertor postprocessor
                 ydl_opts['postprocessors'].append({
                     'key': 'FFmpegVideoConvertor',
                     'preferedformat': video_container.lower(),
                 })
-                
+
                 # Build FFmpeg arguments
                 ffmpeg_args = []
-                
+
                 if video_filters:
                     ffmpeg_args.extend(['-vf', ','.join(video_filters)])
-                
+
                 if audio_filters:
                     ffmpeg_args.extend(['-af', ','.join(audio_filters)])
-                
+
                 # Add codec-specific encoding settings
                 ffmpeg_args.extend(codec_args)
-                
+
                 ydl_opts['postprocessor_args'] = {
                     'videoconvertor': ffmpeg_args
                 }
-        
+
         # Subtitle download
         if download_subs:
             ydl_opts['writesubtitles'] = True
             ydl_opts['writeautomaticsub'] = True
             ydl_opts['subtitleslangs'] = ['en', 'en-US']
-        
+            if format_type == 'video':
+                ydl_opts['embedsubtitles'] = True
+
         return ydl_opts

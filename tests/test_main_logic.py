@@ -418,23 +418,48 @@ class TestCloseEvent(unittest.TestCase):
             mock_mb.No = 0x10000
             mock_mb.question.return_value = mock_mb.Yes
             app.closeEvent(event)
-        mock_thread.quit.assert_called_once()
+        mock_thread.requestInterruption.assert_called_once()
+        mock_thread.terminate.assert_not_called()
         event.accept.assert_called_once()
 
-    def test_thread_terminate_called_if_wait_times_out(self):
+    def test_thread_not_force_terminated_when_wait_times_out(self):
+        """On timeout the window stays open (event.ignore) and terminate() is never called."""
         app = self._make_app()
         mock_thread = MagicMock()
         mock_thread.isRunning.return_value = True
-        mock_thread.wait.return_value = False  # does not stop in time
+        mock_thread.wait.return_value = False  # does not stop within timeout
         app.download_thread = mock_thread
         event = self._make_event()
         with patch('main.QMessageBox') as mock_mb:
             mock_mb.Yes = 0x4000
             mock_mb.No = 0x10000
             mock_mb.question.return_value = mock_mb.Yes
+            mock_mb.Warning = MagicMock()
+            mock_mb.warning = MagicMock()
             app.closeEvent(event)
-        mock_thread.terminate.assert_called_once()
-        event.accept.assert_called_once()
+        mock_thread.requestInterruption.assert_called_once()
+        mock_thread.terminate.assert_not_called()
+        # Window must NOT close when a thread is still running after timeout.
+        event.ignore.assert_called_once()
+        event.accept.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# PreferencesDialog — GROUP_AUTHENTICATION constant must exist (NameError guard)
+# ---------------------------------------------------------------------------
+
+class TestPreferencesDialogSmoke(unittest.TestCase):
+    """GROUP_AUTHENTICATION must be defined in constants so PreferencesDialog doesn't NameError."""
+
+    def test_group_authentication_constant_exists(self):
+        """GROUP_AUTHENTICATION must be defined in constants and be a non-empty string."""
+        import constants
+        self.assertTrue(
+            hasattr(constants, 'GROUP_AUTHENTICATION'),
+            "constants.GROUP_AUTHENTICATION is missing — PreferencesDialog will raise NameError",
+        )
+        self.assertIsInstance(constants.GROUP_AUTHENTICATION, str)
+        self.assertTrue(constants.GROUP_AUTHENTICATION, "GROUP_AUTHENTICATION must be non-empty")
 
 
 if __name__ == '__main__':

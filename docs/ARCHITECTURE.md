@@ -8,7 +8,7 @@ AV Morning Star uses a **modular extractor architecture** that separates platfor
 
 ### 1. Main Application (`main.py`)
 - **URLScraperThread**: Fetches video metadata using platform extractors
-- **DownloadThread**: Downloads videos/audio using platform extractors  
+- **DownloadThread**: Downloads videos/audio using platform extractors
 - **MediaDownloaderApp**: PyQt5 GUI with all UI components
 
 ### 2. Extractor System (`extractors/`)
@@ -111,47 +111,41 @@ Create `extractors/twitch.py`:
 from .base import BaseExtractor
 
 class TwitchExtractor(BaseExtractor):
-    def __init__(self, url):
+    def __init__(self, url, cookies_from_browser=None):
         super().__init__(url)
         self.platform_name = "Twitch"
-    
-    def get_fetch_opts(self):
-        opts = super().get_fetch_opts()
-        # Add Twitch-specific options
-        opts['twitch_api_key'] = 'your_key_here'
-        return opts
-    
-    def get_download_opts(self, output_path, filename_template, ...):
-        opts = super().get_download_opts(...)
-        # Add Twitch-specific download options
-        opts['twitch_api_key'] = 'your_key_here'
-        return opts
+        self.cookies_from_browser = cookies_from_browser
+
+    # Override get_fetch_opts or get_download_opts only if Twitch requires
+    # platform-specific yt-dlp options on top of what BaseExtractor provides.
+    # Most platforms need no overrides at all — GenericExtractor is the proof.
 ```
 
 ### 2. Register in Factory
 
-Edit `extractors/__init__.py`:
+Edit `extractors/__init__.py` — use the existing `_hostname()` helper and a
+frozen set of allowed hostnames.  **Never use substring matching** on the raw
+URL string; always route on the parsed hostname to prevent userinfo-confusion
+attacks (e.g. `https://youtube.com@evil.example/`).
 
 ```python
 from .twitch import TwitchExtractor
 
-def get_extractor(url, cookies_from_browser=None):
-    from urllib.parse import urlparse
-    hostname = urlparse(url).hostname or ''
-    
-    if 'youtube.com' in hostname or hostname == 'youtu.be':
-        return YouTubeExtractor(url, cookies_from_browser)
-    elif 'odysee.com' in hostname or 'lbry.tv' in hostname:
-        return OdyseeExtractor(url, cookies_from_browser)
-    elif 'twitch.tv' in hostname:  # Add this
-        return TwitchExtractor(url, cookies_from_browser)
-    else:
-        return GenericExtractor(url, cookies_from_browser)
+# Add a hostname set alongside the existing ones.
+_TWITCH_HOSTS = {'twitch.tv', 'www.twitch.tv'}
+
+# Inside get_extractor(), add a branch before the generic fallback:
+elif host in _TWITCH_HOSTS:
+    return TwitchExtractor(url, cookies_from_browser=cookies_from_browser)
 ```
 
 ### 3. Test
 
 No changes needed to `main.py` - the extractor system handles everything!
+
+Add a test class in `tests/test_extractors.py` that asserts
+`get_extractor("https://twitch.tv/...")` returns a `TwitchExtractor` and
+that your option dict contains the keys you expect.
 
 ## Platform-Specific Features
 
@@ -302,6 +296,6 @@ Potential improvements to the extractor system:
 
 ---
 
-**Version**: 0.3.0  
-**Last Updated**: June 2, 2026  
+**Version**: 0.3.0
+**Last Updated**: June 2, 2026
 **Maintainer**: AV Morning Star Team

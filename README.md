@@ -10,7 +10,7 @@
 
 [![Release](https://img.shields.io/github/v/release/asafelobotomy/AV-Morning-Star)](https://github.com/asafelobotomy/AV-Morning-Star/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-Linux-lightgrey.svg)](https://github.com/asafelobotomy/AV-Morning-Star)
 
 **Version 0.3.0** | Built with PyQt5 & yt-dlp | [📖 Full Documentation](docs/README.md)
@@ -112,7 +112,7 @@ Powered by **yt-dlp (2026.3.17+)** with support for:
 ### 📦 System Dependencies
 | Requirement | Purpose | Status |
 |-------------|---------|--------|
-| **Python 3.7+** | Application runtime | Required |
+| **Python 3.10+** | Application runtime | Required |
 | **FFmpeg** | Audio/video processing | Required |
 | **Deno** or **Node.js 25+** | YouTube PO token generation | Recommended (YouTube downloads) |
 
@@ -309,7 +309,7 @@ Customize output filenames by clicking tags to add or remove them:
 | **Website** | "YouTube" | Platform name |
 | **ID** | "dQw4w9WgXcQ" | Unique video ID |
 | **Upload Date** | "20260203" | Original upload date |
-| **Download Date** | "20260203" | When downloaded |
+| **Timestamp** | "1749000000" | Unix epoch at download time |
 | **Duration** | "03:45:20" | Video length |
 | **Extension** | "mp4" | Auto file extension |
 
