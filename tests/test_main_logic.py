@@ -55,6 +55,7 @@ sys.modules['yt_dlp.utils'] = _yt_dlp_utils
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import main as _main  # noqa: E402  (must come after stubs)
+import themes as _themes  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -460,6 +461,46 @@ class TestPreferencesDialogSmoke(unittest.TestCase):
         )
         self.assertIsInstance(constants.GROUP_AUTHENTICATION, str)
         self.assertTrue(constants.GROUP_AUTHENTICATION, "GROUP_AUTHENTICATION must be non-empty")
+
+
+# ---------------------------------------------------------------------------
+# Theme module
+# ---------------------------------------------------------------------------
+
+class TestThemes(unittest.TestCase):
+    """themes.py must provide complete, consistent theme definitions."""
+
+    def test_both_themes_present(self):
+        self.assertIn("dark", _themes.THEMES)
+        self.assertIn("light", _themes.THEMES)
+
+    def test_each_theme_has_stylesheet_and_vars(self):
+        for name, theme in _themes.THEMES.items():
+            with self.subTest(theme=name):
+                self.assertIn("stylesheet", theme, f"{name} missing 'stylesheet'")
+                self.assertIn("vars", theme, f"{name} missing 'vars'")
+
+    def test_stylesheet_is_non_empty_string(self):
+        for name, theme in _themes.THEMES.items():
+            with self.subTest(theme=name):
+                self.assertIsInstance(theme["stylesheet"], str)
+                self.assertGreater(len(theme["stylesheet"]), 0)
+
+    def test_vars_contain_required_keys(self):
+        required = {
+            "tag_selected_bg", "tag_selected_fg", "tag_selected_hover",
+            "tag_avail_bg", "tag_avail_fg", "tag_avail_border",
+            "tag_avail_hover_bg", "tag_avail_hover_bd",
+            "frame_bg", "frame_border", "preview_fg",
+            "notice_fg", "notice_bg",
+        }
+        for name, theme in _themes.THEMES.items():
+            with self.subTest(theme=name):
+                missing = required - theme["vars"].keys()
+                self.assertEqual(missing, set(), f"{name} vars missing keys: {missing}")
+
+    def test_default_theme_is_valid(self):
+        self.assertIn(_themes.DEFAULT_THEME, _themes.THEMES)
 
 
 if __name__ == '__main__':

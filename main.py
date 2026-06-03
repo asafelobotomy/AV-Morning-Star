@@ -10,6 +10,7 @@ import pathlib
 
 # Import application constants
 from constants import *
+from themes import THEMES, DEFAULT_THEME
 
 # Suppress Qt Wayland warnings
 os.environ['QT_LOGGING_RULES'] = 'qt.qpa.wayland=false'
@@ -388,7 +389,7 @@ class PreferencesDialog(QDialog):
             "<b>Important:</b> Make sure you're logged into YouTube in the selected browser before downloading."
         )
         instructions.setWordWrap(True)
-        instructions.setStyleSheet("QLabel { color: #ff8800; font-size: 9pt; margin-top: 10px; background-color: #2a2a2a; padding: 8px; border-radius: 4px; }")
+        instructions.setObjectName("auth_instructions")
         auth_layout.addWidget(instructions)
 
         auth_group.setLayout(auth_layout)
@@ -456,7 +457,11 @@ class MediaDownloaderApp(QMainWindow):
         # Track if we've tried cookieless and it failed
         self.cookieless_failed = False
 
+        # Theme ("dark" or "light"); applied after UI is built
+        self.current_theme = DEFAULT_THEME
+
         self.init_ui()
+        self.apply_theme(self.current_theme)
 
     def init_ui(self):
         self.setWindowTitle(MAIN_WINDOW_TITLE)
@@ -469,6 +474,13 @@ class MediaDownloaderApp(QMainWindow):
 
         # Create menu bar
         menubar = self.menuBar()
+
+        # View menu
+        view_menu = menubar.addMenu("View")
+        self.dark_mode_action = view_menu.addAction("Dark Mode")
+        self.dark_mode_action.setCheckable(True)
+        self.dark_mode_action.setChecked(self.current_theme == "dark")
+        self.dark_mode_action.triggered.connect(self._on_theme_toggle)
 
         # Tools menu
         tools_menu = menubar.addMenu(MENU_TOOLS)
@@ -585,11 +597,11 @@ class MediaDownloaderApp(QMainWindow):
 
         # Frame for selected tags with wrapping
         selected_frame = QWidget()
-        selected_frame.setStyleSheet("QWidget { background-color: #2d2d2d; border: 2px solid #444; border-radius: 5px; padding: 5px; }")
         selected_frame.setSizePolicy(QWidget().sizePolicy().Expanding, QWidget().sizePolicy().Minimum)
         self.selected_tags_layout = FlowLayout(selected_frame)
         self.selected_tags_layout.setSpacing(10)
         filename_layout.addWidget(selected_frame)
+        self._selected_frame = selected_frame
 
         filename_layout.addSpacing(10)
 
@@ -599,11 +611,11 @@ class MediaDownloaderApp(QMainWindow):
 
         # Frame for available tags with wrapping
         available_frame = QWidget()
-        available_frame.setStyleSheet("QWidget { background-color: #2d2d2d; border: 2px solid #444; border-radius: 5px; padding: 5px; }")
         available_frame.setSizePolicy(QWidget().sizePolicy().Expanding, QWidget().sizePolicy().Minimum)
         self.available_tags_layout = FlowLayout(available_frame)
         self.available_tags_layout.setSpacing(10)
         filename_layout.addWidget(available_frame)
+        self._available_frame = available_frame
 
         filename_layout.addSpacing(10)
 
@@ -611,7 +623,7 @@ class MediaDownloaderApp(QMainWindow):
         preview_layout = QVBoxLayout()
         preview_layout.addWidget(QLabel("Preview:"))
         self.filename_preview = QLabel("")
-        self.filename_preview.setStyleSheet("QLabel { font-family: monospace; color: #00ff00; font-weight: bold; }")
+        self.filename_preview.setStyleSheet("QLabel { font-family: monospace; font-weight: bold; }")
         self.filename_preview.setWordWrap(True)
         self.filename_preview.setMaximumHeight(60)
         preview_layout.addWidget(self.filename_preview)
@@ -890,19 +902,20 @@ class MediaDownloaderApp(QMainWindow):
         if is_selected:
             # Selected tag - blue button that can be clicked to remove
             btn = QPushButton(display_text)
-            btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #4a9eff;
-                    color: white;
+            v = THEMES[self.current_theme]["vars"]
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {v['tag_selected_bg']};
+                    color: {v['tag_selected_fg']};
                     border: none;
                     border-radius: 12px;
                     padding: 6px 12px;
                     font-weight: bold;
                     font-size: 11px;
-                }
-                QPushButton:hover {
-                    background-color: #ff4444;
-                }
+                }}
+                QPushButton:hover {{
+                    background-color: {v['tag_selected_hover']};
+                }}
             """)
             btn.setFixedHeight(26)
             btn.setMinimumWidth(80)
@@ -914,20 +927,21 @@ class MediaDownloaderApp(QMainWindow):
         else:
             # Available tag (clickable to add)
             btn = QPushButton(display_text)
-            btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #555;
-                    color: white;
-                    border: 2px solid #777;
+            v = THEMES[self.current_theme]["vars"]
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {v['tag_avail_bg']};
+                    color: {v['tag_avail_fg']};
+                    border: 2px solid {v['tag_avail_border']};
                     border-radius: 12px;
                     padding: 6px 12px;
                     font-weight: bold;
                     font-size: 11px;
-                }
-                QPushButton:hover {
-                    background-color: #666;
-                    border-color: #4a9eff;
-                }
+                }}
+                QPushButton:hover {{
+                    background-color: {v['tag_avail_hover_bg']};
+                    border-color: {v['tag_avail_hover_bd']};
+                }}
             """)
             btn.setFixedHeight(26)
             btn.setMinimumWidth(80)  # Minimum width to prevent truncation
@@ -1705,12 +1719,61 @@ class MediaDownloaderApp(QMainWindow):
         msg.setIcon(QMessageBox.Information)
         msg.exec_()
 
+    # ------------------------------------------------------------------
+    # Theme helpers
+    # ------------------------------------------------------------------
+
+    def _on_theme_toggle(self, checked):
+        """Called when the View > Dark Mode menu item is toggled."""
+        self.apply_theme("dark" if checked else "light")
+
+    def apply_theme(self, theme_name):
+        """Apply *theme_name* ('dark' or 'light') to the whole application."""
+        from themes import THEMES
+        theme = THEMES.get(theme_name, THEMES["dark"])
+        self.current_theme = theme_name
+
+        # Apply global QSS
+        QApplication.instance().setStyleSheet(theme["stylesheet"])
+
+        # Sync the menu checkbox without re-triggering the signal
+        if hasattr(self, "dark_mode_action"):
+            self.dark_mode_action.blockSignals(True)
+            self.dark_mode_action.setChecked(theme_name == "dark")
+            self.dark_mode_action.blockSignals(False)
+
+        # Update dynamically-styled widgets that QSS can't reach cleanly
+        v = theme["vars"]
+        if hasattr(self, "_selected_frame"):
+            self._selected_frame.setStyleSheet(
+                f"QWidget {{ background-color: {v['frame_bg']}; "
+                f"border: 2px solid {v['frame_border']}; "
+                f"border-radius: 5px; padding: 5px; }}"
+            )
+        if hasattr(self, "_available_frame"):
+            self._available_frame.setStyleSheet(
+                f"QWidget {{ background-color: {v['frame_bg']}; "
+                f"border: 2px solid {v['frame_border']}; "
+                f"border-radius: 5px; padding: 5px; }}"
+            )
+        if hasattr(self, "filename_preview"):
+            self.filename_preview.setStyleSheet(
+                f"QLabel {{ font-family: monospace; color: {v['preview_fg']}; font-weight: bold; }}"
+            )
+
+        # Rebuild tag buttons so they pick up the new colours
+        if hasattr(self, "refresh_tag_buttons"):
+            self.refresh_tag_buttons()
+
 
 def main():
     # Set WM_CLASS before creating QApplication (critical for KDE/Wayland)
     os.environ['RESOURCE_NAME'] = 'av-morning-star'
 
     app = QApplication(sys.argv)
+
+    # Use Fusion style as the base so our QSS has consistent rendering across DEs
+    app.setStyle("Fusion")
 
     # Set application name and icon for desktop environments
     app.setApplicationName("av-morning-star")
