@@ -488,16 +488,28 @@ class TestThemes(unittest.TestCase):
 
     def test_vars_contain_required_keys(self):
         required = {
+            "accent",
             "tag_selected_bg", "tag_selected_fg", "tag_selected_hover",
             "tag_avail_bg", "tag_avail_fg", "tag_avail_border",
             "tag_avail_hover_bg", "tag_avail_hover_bd",
             "frame_bg", "frame_border", "preview_fg",
-            "notice_fg", "notice_bg",
+            "notice_fg", "notice_bg", "notice_border",
+            "scroll_bg",
         }
         for name, theme in _themes.THEMES.items():
             with self.subTest(theme=name):
                 missing = required - theme["vars"].keys()
                 self.assertEqual(missing, set(), f"{name} vars missing keys: {missing}")
+
+    def test_auth_instructions_rule_in_both_stylesheets(self):
+        """Both themes must contain a QSS rule for the auth_instructions notice box."""
+        for name, theme in _themes.THEMES.items():
+            with self.subTest(theme=name):
+                self.assertIn(
+                    "auth_instructions",
+                    theme["stylesheet"],
+                    f"{name} stylesheet missing QLabel#auth_instructions rule",
+                )
 
     def test_default_theme_is_valid(self):
         self.assertIn(_themes.DEFAULT_THEME, _themes.THEMES)

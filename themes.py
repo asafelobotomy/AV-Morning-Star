@@ -12,6 +12,7 @@ Each theme is a dict with two keys:
 # ---------------------------------------------------------------------------
 DARK = {
     "vars": {
+        "accent":             "#4a9eff",
         "tag_selected_bg":    "#4a9eff",
         "tag_selected_fg":    "#ffffff",
         "tag_selected_hover": "#ff4444",
@@ -25,6 +26,8 @@ DARK = {
         "preview_fg":         "#00ff00",
         "notice_fg":          "#ff8800",
         "notice_bg":          "#2a2a2a",
+        "notice_border":      "#664400",
+        "scroll_bg":          "#1e1e1e",
     },
     "stylesheet": """
 /* ── Global ── */
@@ -207,6 +210,36 @@ QToolTip {
     border: 1px solid #555;
     padding: 4px;
 }
+
+/* ── Scroll area viewport ── */
+QAbstractScrollArea {
+    background-color: #1e1e1e;
+}
+QAbstractScrollArea > QWidget {
+    background-color: #1e1e1e;
+}
+
+/* ── Menu separator ── */
+QMenu::separator {
+    height: 1px;
+    background-color: #444;
+    margin: 3px 6px;
+}
+
+/* ── Status bar items — suppress Fusion border ── */
+QStatusBar::item {
+    border: none;
+}
+
+/* ── Notice / callout label (PreferencesDialog auth_instructions) ── */
+QLabel#auth_instructions {
+    color: #ff8800;
+    background-color: #2a2a2a;
+    border: 1px solid #664400;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 9pt;
+}
 """,
 }
 
@@ -215,6 +248,7 @@ QToolTip {
 # ---------------------------------------------------------------------------
 LIGHT = {
     "vars": {
+        "accent":             "#2979ff",
         "tag_selected_bg":    "#2979ff",
         "tag_selected_fg":    "#ffffff",
         "tag_selected_hover": "#d32f2f",
@@ -228,6 +262,8 @@ LIGHT = {
         "preview_fg":         "#1b5e20",
         "notice_fg":          "#e65100",
         "notice_bg":          "#fff3e0",
+        "notice_border":      "#ffcc80",
+        "scroll_bg":          "#f0f0f0",
     },
     "stylesheet": """
 /* ── Global ── */
@@ -320,6 +356,8 @@ QComboBox {
     border: 1px solid #bdbdbd;
     border-radius: 4px;
     padding: 4px 6px;
+    selection-background-color: #2979ff;
+    selection-color: #ffffff;
 }
 QComboBox::drop-down {
     border: none;
@@ -410,6 +448,36 @@ QToolTip {
     color: #212121;
     border: 1px solid #bdbdbd;
     padding: 4px;
+}
+
+/* ── Scroll area viewport ── */
+QAbstractScrollArea {
+    background-color: #f0f0f0;
+}
+QAbstractScrollArea > QWidget {
+    background-color: #f0f0f0;
+}
+
+/* ── Menu separator ── */
+QMenu::separator {
+    height: 1px;
+    background-color: #bdbdbd;
+    margin: 3px 6px;
+}
+
+/* ── Status bar items — suppress Fusion border ── */
+QStatusBar::item {
+    border: none;
+}
+
+/* ── Notice / callout label (PreferencesDialog auth_instructions) ── */
+QLabel#auth_instructions {
+    color: #e65100;
+    background-color: #fff3e0;
+    border: 1px solid #ffcc80;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 9pt;
 }
 """,
 }

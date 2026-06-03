@@ -359,7 +359,6 @@ class PreferencesDialog(QDialog):
             "Simply select the browser where you're logged into YouTube."
         )
         main_desc.setWordWrap(True)
-        main_desc.setStyleSheet("QLabel { font-size: 10pt; margin-bottom: 15px; }")
         auth_layout.addWidget(main_desc)
 
         # Browser selector
