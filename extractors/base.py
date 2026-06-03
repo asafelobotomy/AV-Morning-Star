@@ -261,12 +261,12 @@ class BaseExtractor:
             elif container_lower == 'mov':
                 video_codec = 'libx264'
                 audio_codec_out = 'aac'
-                codec_args = ['-c:v', video_codec, '-preset', 'medium', '-crf', '18',
+                codec_args = ['-c:v', video_codec, '-preset', 'medium', '-crf', '22',
                               '-c:a', audio_codec_out, '-b:a', '192k']
             else:  # mp4, mkv, and default
                 video_codec = 'libx264'
                 audio_codec_out = 'aac'
-                codec_args = ['-c:v', video_codec, '-preset', 'medium', '-crf', '18',
+                codec_args = ['-c:v', video_codec, '-preset', 'medium', '-crf', '22',
                               '-c:a', audio_codec_out, '-b:a', '192k']
 
             # Add video convertor postprocessor
@@ -351,7 +351,8 @@ class BaseExtractor:
                 audio_filters.append(AUDIO_DYNAUDNORM_FILTER)
             else:
                 # loudnorm: EBU R128 loudness normalization (broadcast standard)
-                # This is the professional standard for audio normalization.
+                # Single-pass estimation — targets -16 LUFS but may vary ±1-2 LU;
+                # true compliance requires a two-pass measurement workflow.
                 # Enhanced with aresample to fix sample rate issues (FFmpeg wiki recommendation):
                 # - I (-16): Integrated loudness at -16 LUFS (broadcast standard)
                 # - LRA (11): Loudness range of 11 LU (preserves natural dynamics)

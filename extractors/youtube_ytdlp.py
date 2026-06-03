@@ -132,162 +132,30 @@ class YouTubeExtractor(BaseExtractor):
                          sharpen_video=False, normalize_video_audio=False,
                          denoise_video_audio=False):
         """
-        Get yt-dlp download options
+        Get yt-dlp download options, delegating all audio/video processing to
+        BaseExtractor and adding YouTube-specific settings (cookies,
+        allow_unplayable_formats).
 
         Returns:
             Dict of yt-dlp options for downloading
         """
-        ydl_opts = {
-            'outtmpl': f'{output_path}/{filename_template}',
-            'quiet': False,
-            'no_warnings': False,
-            'allow_unplayable_formats': False,
-        }
-
         # PO token generation uses locally-installed Deno/Node.js; no remote
         # components are loaded so no untrusted code is fetched at runtime.
+        ydl_opts = super().get_download_opts(
+            output_path, filename_template, format_type,
+            video_quality=video_quality, audio_codec=audio_codec,
+            audio_quality=audio_quality, download_subs=download_subs,
+            embed_thumbnail=embed_thumbnail, normalize_audio=normalize_audio,
+            denoise_audio=denoise_audio, dynamic_normalization=dynamic_normalization,
+            video_container=video_container, denoise_video=denoise_video,
+            stabilize_video=stabilize_video, sharpen_video=sharpen_video,
+            normalize_video_audio=normalize_video_audio,
+            denoise_video_audio=denoise_video_audio,
+        )
 
-        # Add browser cookies if specified
+        # YouTube-specific additions
+        ydl_opts['allow_unplayable_formats'] = False
         if self.cookies_from_browser:
             ydl_opts['cookiesfrombrowser'] = (self.cookies_from_browser,)
-
-        # Format selection
-        if format_type == 'audio':
-            ydl_opts['format'] = 'bestaudio/best'
-            ydl_opts['postprocessors'] = [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': audio_codec.lower(),
-                'preferredquality': audio_quality,
-            }]
-
-            # Add thumbnail embedding for audio
-            if embed_thumbnail:
-                ydl_opts['postprocessors'].append({
-                    'key': 'EmbedThumbnail',
-                })
-                ydl_opts['writethumbnail'] = True
-
-            # Audio enhancement filters
-            audio_filters = []
-
-            if denoise_audio:
-                audio_filters.append('afftdn=nf=-20:nr=15:tn=1')
-
-            if normalize_audio:
-                if dynamic_normalization:
-                    audio_filters.append('dynaudnorm=p=0.95:m=10:s=12:g=5')
-                else:
-                    audio_filters.append('loudnorm=I=-16:LRA=11:TP=-1.5,aresample=48000')
-
-            if audio_filters:
-                ydl_opts['postprocessor_args'] = {
-                    'extractaudio+ffmpeg_o': ['-af', ','.join(audio_filters)]
-                }
-
-            # Metadata embedding (parity with BaseExtractor)
-            ydl_opts['postprocessors'].append({'key': 'FFmpegMetadata'})
-        else:
-            # Video download
-            if video_quality and video_quality != 'Best':
-                # Extract resolution (e.g., "1080p" -> "1080")
-                quality_map = {
-                    '4K (2160p)': '2160',
-                    '1440p': '1440',
-                    '1080p': '1080',
-                    '720p': '720',
-                    '480p': '480',
-                    '360p': '360',
-                }
-                height = quality_map.get(video_quality, '1080')
-                ydl_opts['format'] = f'bestvideo[height<={height}]+bestaudio/best[height<={height}]'
-            else:
-                ydl_opts['format'] = 'bestvideo+bestaudio/best'
-
-            # Set video container format
-            ydl_opts['merge_output_format'] = video_container
-
-            # Video enhancement filters
-            video_filters = []
-            audio_filters = []
-
-            if denoise_video:
-                video_filters.append('hqdn3d=4:3:6:4.5')
-
-            if stabilize_video:
-                video_filters.append('deshake')
-
-            if sharpen_video:
-                video_filters.append('unsharp=5:5:0.8:5:5:0.4')
-
-            if denoise_video_audio:
-                audio_filters.append('afftdn=nf=-20:nr=15:tn=1')
-
-            if normalize_video_audio:
-                audio_filters.append('loudnorm=I=-16:LRA=11:TP=-1.5,aresample=48000')
-
-            # Apply filters if any are enabled
-            if video_filters or audio_filters:
-                # Initialize postprocessors list
-                ydl_opts['postprocessors'] = ydl_opts.get('postprocessors', [])
-
-                # Determine codec based on container format
-                container_lower = video_container.lower()
-
-                # Container-specific codec settings
-                if container_lower == 'webm':
-                    video_codec = 'libvpx-vp9'
-                    audio_codec_out = 'libopus'
-                    codec_args = ['-c:v', video_codec, '-crf', '30', '-b:v', '0',
-                                  '-c:a', audio_codec_out, '-b:a', '192k']
-                elif container_lower == 'avi':
-                    video_codec = 'mpeg4'
-                    audio_codec_out = 'mp3'
-                    codec_args = ['-c:v', video_codec, '-q:v', '3',
-                                  '-c:a', audio_codec_out, '-b:a', '192k']
-                elif container_lower == 'flv':
-                    video_codec = 'flv1'
-                    audio_codec_out = 'mp3'
-                    codec_args = ['-c:v', video_codec, '-q:v', '3',
-                                  '-c:a', audio_codec_out, '-b:a', '192k']
-                elif container_lower == 'mov':
-                    video_codec = 'libx264'
-                    audio_codec_out = 'aac'
-                    codec_args = ['-c:v', video_codec, '-preset', 'medium', '-crf', '18',
-                                  '-c:a', audio_codec_out, '-b:a', '192k']
-                else:  # mp4, mkv, and default
-                    video_codec = 'libx264'
-                    audio_codec_out = 'aac'
-                    codec_args = ['-c:v', video_codec, '-preset', 'medium', '-crf', '18',
-                                  '-c:a', audio_codec_out, '-b:a', '192k']
-
-                # Add video convertor postprocessor
-                ydl_opts['postprocessors'].append({
-                    'key': 'FFmpegVideoConvertor',
-                    'preferedformat': video_container.lower(),
-                })
-
-                # Build FFmpeg arguments
-                ffmpeg_args = []
-
-                if video_filters:
-                    ffmpeg_args.extend(['-vf', ','.join(video_filters)])
-
-                if audio_filters:
-                    ffmpeg_args.extend(['-af', ','.join(audio_filters)])
-
-                # Add codec-specific encoding settings
-                ffmpeg_args.extend(codec_args)
-
-                ydl_opts['postprocessor_args'] = {
-                    'videoconvertor': ffmpeg_args
-                }
-
-        # Subtitle download
-        if download_subs:
-            ydl_opts['writesubtitles'] = True
-            ydl_opts['writeautomaticsub'] = True
-            ydl_opts['subtitleslangs'] = ['en', 'en-US']
-            if format_type == 'video':
-                ydl_opts['embedsubtitles'] = True
 
         return ydl_opts

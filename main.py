@@ -703,9 +703,9 @@ class MediaDownloaderApp(QMainWindow):
         self.video_stabilize_checkbox = QCheckBox("Stabilize Video")
         self.video_stabilize_checkbox.setChecked(False)
         self.video_stabilize_checkbox.setToolTip(
-            "Reduce camera shake using deshake filter.\n"
+            "Reduce camera shake using deshake filter (single-pass).\n"
             "Uses 32px search range with edge mirroring.\n"
-            "Best for: handheld footage, action cameras\n"
+            "Best for: mild handheld shake; severe shake may need vidstab.\n"
             "Note: May add processing time"
         )
         video_enhance_layout.addWidget(self.video_stabilize_checkbox)
@@ -1114,9 +1114,9 @@ class MediaDownloaderApp(QMainWindow):
                 "Best for: grainy footage, low-light recordings"
             ),
             self.video_stabilize_checkbox: (
-                "Reduce camera shake using deshake filter.\n"
+                "Reduce camera shake using deshake filter (single-pass).\n"
                 "Uses 32px search range with edge mirroring.\n"
-                "Best for: handheld footage, action cameras\n"
+                "Best for: mild handheld shake; severe shake may need vidstab.\n"
                 "Note: May add processing time"
             ),
             self.video_sharpen_checkbox: (
@@ -1528,7 +1528,7 @@ class MediaDownloaderApp(QMainWindow):
             audio_quality = '320'  # Highest quality
             download_subs = False
             embed_thumbnail = True if format_type == 'audio' else False  # Always embed for audio
-            normalize_audio = True if format_type == 'audio' else False  # Auto-normalize audio
+            normalize_audio = False
             dynamic_normalization = False  # Use standard EBU R128
             denoise_audio = False  # Don't denoise by default
             # Video enhancement (off in basic mode)
