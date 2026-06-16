@@ -20,10 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Browser detection improved**: Scans Firefox profiles for `cookies.sqlite` and Chromium `Profile *` directories.
 - **Node.js requirement aligned**: Documentation and `start.sh` now consistently require Node.js 22+ LTS.
 - **docs/SECURITY_AUDIT.md refreshed** to match current defaults and pinned dependencies.
+- **Workspace cleanup**: Removed `archive/`, stale meta-docs, and unused MCP dev dependencies.
 
 ### Fixed
 - **closeEvent handler**: Uses cooperative `requestInterruption()` (never `terminate()`).
 - **yt-dlp security**: Bumped to 2026.6.9 (CVE-2026-50019, CVE-2026-50023, CVE-2026-50574, GHSA-69qj-pvh9-c5wg).
+
+### Removed
+- **`archive/`**: Deprecated InnerTube/OAuth code and historical dev reports (available in git history).
+- **Stale docs**: `ORGANIZATION_COMPLETE.md`, `REORGANIZATION.md`, `BUILD_SUMMARY.md`, `EXTRACTORS_COVERAGE_ANALYSIS.md`.
+- **`requirements-dev.txt`**: MCP CLI tooling no longer used by the project.
 
 ## [0.3.0] - 2026-02-03
 
