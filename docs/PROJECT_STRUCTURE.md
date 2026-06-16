@@ -213,7 +213,7 @@ AV-Morning-Star/
 **requirements.txt**
 ```
 PyQt5==5.15.11
-yt-dlp==2026.3.17
+yt-dlp==2026.6.9
 Pillow==12.2.0
 ```
 
@@ -242,7 +242,7 @@ Pinned lockfile with 5 runtime packages: pillow, PyQt5, PyQt5-Qt5, PyQt5_sip, yt
 
 **Python Packages:**
 - PyQt5==5.15.11: GUI framework
-- yt-dlp==2026.3.17: Video downloading engine
+- yt-dlp==2026.6.9: Video downloading engine
 - Pillow==12.2.0: Image processing
 
 **Development-Only:**

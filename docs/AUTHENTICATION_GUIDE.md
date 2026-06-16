@@ -23,7 +23,7 @@ As of February 2026, YouTube has implemented bot protection that blocks both yt-
 ## Current Status (June 2026)
 
 ### yt-dlp Backend (Primary)
-- **Library**: yt-dlp 2026.3.17
+- **Library**: yt-dlp 2026.6.9
 - **Status**: Active — browser cookies passed natively for authentication
 - **How to use**:
   ```python
@@ -225,4 +225,4 @@ for video in videos:
 ---
 
 **Last Updated**: June 2026  
-**Compatible with**: yt-dlp 2026.3.17
+**Compatible with**: yt-dlp 2026.6.9

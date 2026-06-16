@@ -267,7 +267,7 @@ raise Exception(
 - ✅ Installed from official PyPI
 - ✅ Virtual environment isolation
 
-**Best Practice:** Pin yt-dlp version in requirements.txt (currently: `yt-dlp==2026.3.17`)
+**Best Practice:** Pin yt-dlp version in requirements.txt (currently: `yt-dlp==2026.6.9`)
 
 **Recommendation:** Consider pinning exact version for production deployments
 
@@ -514,7 +514,7 @@ yt-dlp>=2023.0.0
 
 **Recommended for Production:**
 ```txt
-yt-dlp==2026.3.17  # Already pinned in requirements.txt
+yt-dlp==2026.6.9  # Already pinned in requirements.txt
 ```
 
 **Benefit:** Protection against malicious updates (very unlikely but possible)

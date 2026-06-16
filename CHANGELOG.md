@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **closeEvent handler**: Uses cooperative `requestInterruption()` (never `terminate()`).
+- **yt-dlp security**: Bumped to 2026.6.9 (CVE-2026-50019, CVE-2026-50023, CVE-2026-50574, GHSA-69qj-pvh9-c5wg).
 
 ## [0.3.0] - 2026-02-03
 

@@ -27,7 +27,7 @@ This script reads the version from the `VERSION` file, creates an AppDir, packag
 | Package | Version | Purpose |
 |---------|---------|---------|
 | PyQt5 | 5.15.11 | GUI framework |
-| yt-dlp | 2026.3.17 | Video downloading engine |
+| yt-dlp | 2026.6.9 | Video downloading engine |
 | Pillow | 12.2.0 | Image processing |
 
 ### JavaScript Runtime (Optional)
