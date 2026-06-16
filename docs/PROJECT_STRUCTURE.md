@@ -253,7 +253,7 @@ Pinned lockfile with 5 runtime packages: pillow, PyQt5, PyQt5-Qt5, PyQt5_sip, yt
 - Deno (recommended): JavaScript runtime for YouTube
 
 **Optional:**
-- Node.js 25+ (alternative to Deno)
+- Node.js 22+ LTS (alternative to Deno)
 - QuickJS (alternative JS runtime)
 - Bun (alternative JS runtime)
 

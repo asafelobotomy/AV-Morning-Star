@@ -14,11 +14,12 @@
 
 ### ✅ How Browser Authentication Works
 
-1. **You select your browser** (Brave, Firefox, Chrome, etc.)
-2. **We read cookies from your browser's encrypted database** (read-only)
-3. **Cookies are used in memory only** (never written to our files)
-4. **Cookies are sent to YouTube over HTTPS** (same as normal browsing)
-5. **After download, cookies are discarded** (nothing persists)
+1. **Auto mode (default):** Tries without cookies first. If YouTube requests authentication, the app asks for your consent before reading any browser cookies.
+2. **Explicit browser:** You select your browser (Brave, Firefox, Chrome, etc.) in Preferences.
+3. **We read cookies from your browser's encrypted database** (read-only) only when needed.
+4. **Cookies are used in memory only** (never written to our files).
+5. **Cookies are sent to YouTube over HTTPS** (same as normal browsing).
+6. **After download, cookies are discarded** (nothing persists in the app).
 
 **Think of it like:** Using browser cookies is like showing your library card to check out a book. We don't make a copy of your card - we just show the librarian (YouTube) your existing card.
 

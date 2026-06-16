@@ -1,8 +1,8 @@
 # Security Audit - Browser Cookie Authentication
 
-**Date:** February 3, 2026  
-**Scope:** YouTube authentication via browser cookies  
-**Status:** ✅ SECURE - No critical vulnerabilities found
+**Date:** June 16, 2026  
+**Scope:** Full application (authentication, threading, preferences, build)  
+**Status:** ✅ SECURE — No critical vulnerabilities found
 
 ---
 
@@ -267,7 +267,7 @@ raise Exception(
 - ✅ Installed from official PyPI
 - ✅ Virtual environment isolation
 
-**Best Practice:** Pin yt-dlp version in requirements.txt (currently: `yt-dlp>=2023.0.0`)
+**Best Practice:** Pin yt-dlp version in requirements.txt (currently: `yt-dlp==2026.3.17`)
 
 **Recommendation:** Consider pinning exact version for production deployments
 
@@ -383,19 +383,9 @@ f"Technical details: {error_msg[:200]}"  # ✅ Truncated
 
 ---
 
-### Section 4: Browser Preference Storage
+### Privacy Fix (June 2026)
 
-**File:** `main.py` - `MediaDownloaderApp.__init__()`
-
-```python
-self.browser_preference = 'brave'  # ✅ String literal only
-```
-
-**Security Assessment:** ✅ **SECURE**
-- Stored in memory only (class attribute)
-- Lost when app closes
-- No persistence to disk
-- No encryption needed (no sensitive data)
+Auto mode previously called `get_default_browser()` on every fetch, which probed cookie stores even during cookieless-first attempts. This was corrected: cookie databases are now read only when the user selects an explicit browser or confirms the bot-detection retry prompt in `on_fetch_error()`.
 
 ---
 
@@ -524,18 +514,14 @@ yt-dlp>=2023.0.0
 
 **Recommended for Production:**
 ```txt
-yt-dlp==2026.3.17  # Pin exact version
+yt-dlp==2026.3.17  # Already pinned in requirements.txt
 ```
 
 **Benefit:** Protection against malicious updates (very unlikely but possible)
 
 #### 2. Add Security Documentation for Users
 
-Create `SECURITY.md` with:
-- How cookies are used
-- What data is never stored
-- How to verify the app is secure
-- What to do if concerned about privacy
+`SECURITY.md` at the repository root documents responsible disclosure and user-facing security practices.
 
 #### 3. Optional: Implement Cookie-less Mode
 
@@ -698,14 +684,12 @@ If distributing as AppImage/binary:
 
 ## Audit Metadata
 
-**Auditor:** GitHub Copilot (AI Assistant)  
-**Date:** February 3, 2026  
-**Version Reviewed:** Current (main branch)  
-**Scope:** Complete cookie authentication system  
-**Method:** Code review, threat modeling, dependency analysis  
-**Tools Used:** grep, static analysis, yt-dlp source review  
-**Duration:** Comprehensive review  
-
+**Auditor:** Project maintainers (post-audit remediation)  
+**Date:** June 16, 2026  
+**Version Reviewed:** 0.4.0 (main branch)  
+**Scope:** Authentication, preferences, threading, dependencies, CI  
+**Method:** Code review, threat modeling, dependency analysis, unit tests (133 passing)  
+**Tools Used:** unittest, pip-audit (CI), static analysis  
 **Next Audit Recommended:** 6 months or after major yt-dlp updates
 
 ---

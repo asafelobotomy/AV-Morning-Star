@@ -8,13 +8,14 @@ Covers:
 
 import os
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
 # Ensure the workspace root is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from browser_utils import detect_available_browsers, get_default_browser
+from browser_utils import detect_available_browsers, get_default_browser, _has_chromium_cookies, _has_firefox_cookies
 
 
 class TestDetectAvailableBrowsers(unittest.TestCase):
@@ -34,6 +35,21 @@ class TestDetectAvailableBrowsers(unittest.TestCase):
     def test_no_duplicates(self):
         result = detect_available_browsers()
         self.assertEqual(len(result), len(set(result)), "Duplicate browser names in result")
+
+    def test_detects_chromium_profile_cookies(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            profile = os.path.join(tmp, 'Profile 1')
+            os.makedirs(profile)
+            open(os.path.join(profile, 'Cookies'), 'w').close()
+            self.assertTrue(_has_chromium_cookies(tmp))
+
+    def test_detects_firefox_profile_cookies(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            profile = os.path.join(tmp, 'abc.default-release')
+            os.makedirs(profile)
+            open(os.path.join(profile, 'cookies.sqlite'), 'w').close()
+            with patch('browser_utils._FIREFOX_ROOTS', [tmp]):
+                self.assertTrue(_has_firefox_cookies())
 
 
 class TestGetDefaultBrowser(unittest.TestCase):

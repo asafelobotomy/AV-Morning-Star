@@ -9,7 +9,7 @@
 [![Release](https://img.shields.io/github/v/release/asafelobotomy/AV-Morning-Star?style=flat-square)](https://github.com/asafelobotomy/AV-Morning-Star/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-122%20passing-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/tests-133%20passing-brightgreen?style=flat-square)](#)
 [![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-lightgrey?style=flat-square)](#)
 
 [**⬇ Download AppImage**](https://github.com/asafelobotomy/AV-Morning-Star/releases/latest) · [Documentation](docs/README.md) · [Report a Bug](https://github.com/asafelobotomy/AV-Morning-Star/issues)
@@ -171,6 +171,9 @@ For most videos no login is needed. When YouTube requires authentication:
 ```
 AV-Morning-Star/
 ├── main.py                  # GUI application (PyQt5)
+├── threads.py               # URLScraperThread and DownloadThread workers
+├── dialogs.py               # Preferences and other dialogs
+├── settings.py              # Persistent user preferences (QSettings)
 ├── themes.py                # Dark + Light theme definitions (QSS)
 ├── constants.py             # Shared string constants
 ├── browser_utils.py         # Browser cookie detection
@@ -182,7 +185,7 @@ AV-Morning-Star/
 │   └── generic.py           # Fallback (1000+ sites via yt-dlp)
 ├── scripts/
 │   └── build-appimage.sh    # Reproducible AppImage build
-├── tests/                   # 122 unit tests (unittest)
+├── tests/                   # 133 unit tests (unittest)
 └── packaging/               # .desktop and AppStream metadata
 ```
 
@@ -203,7 +206,7 @@ AV-Morning-Star/
 | No telemetry | Zero analytics, no network calls except to the download target |
 | Open source | Inspect the code at any time |
 
-See [docs/SECURITY_AND_PRIVACY.md](docs/SECURITY_AND_PRIVACY.md) and [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) for full detail.
+See [docs/SECURITY_AND_PRIVACY.md](docs/SECURITY_AND_PRIVACY.md), [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md), and [SECURITY.md](SECURITY.md) for full detail.
 
 ---
 

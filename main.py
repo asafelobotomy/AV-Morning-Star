@@ -10,7 +10,7 @@ import pathlib
 
 # Import application constants
 from constants import *
-from themes import THEMES, DEFAULT_THEME
+from themes import THEMES
 
 # Suppress Qt Wayland warnings
 os.environ['QT_LOGGING_RULES'] = 'qt.qpa.wayland=false'
@@ -25,17 +25,25 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QPushButton, QLineEdit, QLabel,
                              QComboBox, QProgressBar,
                              QCheckBox, QScrollArea, QGroupBox, QMessageBox,
-                             QFileDialog, QSplashScreen, QGridLayout,
-                             QDialog)
-from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
+                             QFileDialog, QSplashScreen, QGridLayout)
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QIcon, QFont, QPixmap, QPainter, QPainterPath
-import yt_dlp
 
 # Import our modular extractors
-from extractors import get_extractor, is_youtube_url
+from extractors import is_youtube_url
 
 # Import browser detection utilities
-from browser_utils import detect_available_browsers, get_browsers_with_youtube_cookies, get_default_browser
+from browser_utils import detect_available_browsers, get_browsers_with_youtube_cookies
+
+from threads import URLScraperThread, DownloadThread
+from dialogs import PreferencesDialog
+from settings import (
+    load_browser_preference,
+    load_output_path,
+    load_theme,
+    save_output_path,
+    save_theme,
+)
 
 
 class FlowLayout(QVBoxLayout):
@@ -134,330 +142,21 @@ def make_circular_pixmap(pixmap):
     return circular
 
 
-class URLScraperThread(QThread):
-    """Thread for scraping video URLs from a page using platform-specific extractors"""
-    finished = pyqtSignal(list)
-    error = pyqtSignal(str)
-
-    def __init__(self, url, cookies_from_browser=None):
-        super().__init__()
-        self.url = url
-        self.cookies_from_browser = cookies_from_browser
-
-    def run(self):
-        try:
-            if self.isInterruptionRequested():
-                return
-
-            # Get the appropriate extractor for this URL with browser cookies
-            extractor = get_extractor(
-                self.url,
-                cookies_from_browser=self.cookies_from_browser
-            )
-
-            if self.isInterruptionRequested():
-                return
-
-            # Extract video information
-            videos = extractor.extract_info()
-
-            if not self.isInterruptionRequested():
-                self.finished.emit(videos)
-
-        except Exception as e:
-            if not self.isInterruptionRequested():
-                self.error.emit(f"Error scraping URL: {str(e)}")
-
-
-class DownloadThread(QThread):
-    """Thread for downloading videos/audio using platform-specific extractors"""
-    progress = pyqtSignal(str, int)
-    finished = pyqtSignal(str)
-    error = pyqtSignal(str)
-
-    def __init__(self, urls, output_path, format_type, video_quality=None,
-                 audio_codec='mp3', audio_quality='192', download_subs=False,
-                 embed_thumbnail=False, normalize_audio=False, denoise_audio=False,
-                 dynamic_normalization=False, filename_template=None, cookies_from_browser=None,
-                 video_container='mp4', denoise_video=False, stabilize_video=False,
-                 sharpen_video=False, normalize_video_audio=False, denoise_video_audio=False):
-        super().__init__()
-        self.urls = urls
-        self.output_path = output_path
-        self.format_type = format_type
-        self.video_quality = video_quality
-        self.video_container = video_container
-        self.audio_codec = audio_codec
-        self.audio_quality = audio_quality
-        self.download_subs = download_subs
-        self.embed_thumbnail = embed_thumbnail
-        self.normalize_audio = normalize_audio
-        self.denoise_audio = denoise_audio
-        self.dynamic_normalization = dynamic_normalization
-        self.filename_template = filename_template or '%(title)s.%(ext)s'
-        self.cookies_from_browser = cookies_from_browser
-        # Video enhancement options
-        self.denoise_video = denoise_video
-        self.stabilize_video = stabilize_video
-        self.sharpen_video = sharpen_video
-        self.normalize_video_audio = normalize_video_audio
-        self.denoise_video_audio = denoise_video_audio
-
-    def progress_hook(self, d):
-        # Abort immediately if cancellation was requested between progress events.
-        if self.isInterruptionRequested():
-            raise Exception("Download cancelled")
-
-        if d['status'] == 'downloading':
-            # Try to get percentage from different possible keys
-            percent = 0
-
-            # Method 1: Check for _percent_str
-            if '_percent_str' in d:
-                try:
-                    percent_str = d['_percent_str'].strip().replace('%', '')
-                    percent = float(percent_str)
-                except (ValueError, AttributeError):
-                    pass
-
-            # Method 2: Calculate from downloaded/total bytes
-            if percent == 0 and 'downloaded_bytes' in d and 'total_bytes' in d and d['total_bytes']:
-                try:
-                    percent = (d['downloaded_bytes'] / d['total_bytes']) * 100
-                except (ZeroDivisionError, TypeError):
-                    pass
-
-            # Method 3: Use estimated total bytes
-            if percent == 0 and 'downloaded_bytes' in d and 'total_bytes_estimate' in d and d['total_bytes_estimate']:
-                try:
-                    percent = (d['downloaded_bytes'] / d['total_bytes_estimate']) * 100
-                except (ZeroDivisionError, TypeError):
-                    pass
-
-            # Get filename
-            filename = d.get('filename', d.get('_filename', 'Downloading...'))
-            if filename and len(filename) > 50:
-                filename = '...' + filename[-47:]
-
-            # Emit progress update
-            self.progress.emit(filename, max(0, min(100, int(percent))))
-
-        elif d['status'] == 'finished':
-            self.progress.emit('Post-processing...', 100)
-
-    def run(self):
-        successful = 0
-        failed = 0
-        failed_urls = []
-
-        for idx, url in enumerate(self.urls, 1):
-            # Stop cleanly if the main thread requested cancellation.
-            if self.isInterruptionRequested():
-                break
-            try:
-                # Get selected browser for authentication (passed from main window)
-                # For downloads, we'll use the same browser that was used for fetching
-                # This could be enhanced to store the browser choice per URL
-
-                # Get platform-specific extractor with browser cookies
-                extractor = get_extractor(url, cookies_from_browser=self.cookies_from_browser)
-
-                # Get platform-specific download options
-                ydl_opts = extractor.get_download_opts(
-                    self.output_path,
-                    self.filename_template,
-                    self.format_type,
-                    self.video_quality,
-                    self.audio_codec,
-                    self.audio_quality,
-                    self.download_subs,
-                    self.embed_thumbnail,
-                    self.normalize_audio,
-                    self.denoise_audio,
-                    self.dynamic_normalization,
-                    self.video_container,
-                    self.denoise_video,
-                    self.stabilize_video,
-                    self.sharpen_video,
-                    self.normalize_video_audio,
-                    self.denoise_video_audio
-                )
-
-                # Add progress hook
-                ydl_opts['progress_hooks'] = [self.progress_hook]
-
-                self.progress.emit(f'Downloading {idx}/{len(self.urls)}...', 0)
-
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([url])
-
-                successful += 1
-
-            except Exception as e:
-                # If the exception came from our own cancellation hook, stop
-                # iterating without recording it as a failure.
-                if self.isInterruptionRequested():
-                    break
-                failed += 1
-                failed_urls.append((url, str(e)))
-                # Continue with next download instead of stopping
-                self.progress.emit(f'Failed {idx}/{len(self.urls)}, continuing...', 0)
-                continue
-
-        # Cancellation takes priority — emit a neutral status and return without
-        # showing success/failure dialogs which would be misleading.
-        if self.isInterruptionRequested():
-            self.finished.emit(
-                f"Download cancelled. "
-                f"{successful} completed before cancellation."
-                if successful else "Download cancelled."
-            )
-            return
-
-        # Generate summary message
-        if failed == 0:
-            self.finished.emit(f"All {successful} downloads completed successfully!")
-        elif successful == 0:
-            error_msg = f"All {failed} downloads failed.\n\nErrors:\n"
-            for url, err in failed_urls[:3]:  # Show first 3 errors
-                error_msg += f"- {err[:100]}...\n"
-            self.error.emit(error_msg)
-        else:
-            message = f"Completed with mixed results:\n✓ {successful} succeeded\n✗ {failed} failed"
-            if failed_urls:
-                message += f"\n\nFirst error: {failed_urls[0][1][:150]}"
-            self.finished.emit(message)
-
-
-class PreferencesDialog(QDialog):
-    """Preferences dialog for application settings"""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle(PREFERENCES_WINDOW_TITLE)
-        self.setMinimumSize(PREFERENCES_WINDOW_MIN_WIDTH, PREFERENCES_WINDOW_MIN_HEIGHT)
-        self.setModal(True)
-
-        # Get parent's current settings
-        self.parent_app = parent
-
-        layout = QVBoxLayout(self)
-
-        # Title
-        title = QLabel("Preferences")
-        title.setFont(QFont("Arial", 14, QFont.Bold))
-        layout.addWidget(title)
-
-        layout.addSpacing(20)
-
-        # Authentication section
-        auth_group = QGroupBox(GROUP_AUTHENTICATION)
-        auth_layout = QVBoxLayout()
-
-        # Main description
-        main_desc = QLabel(
-            "To download YouTube videos, AV Morning Star can use your browser's login session.\n"
-            "Simply select the browser where you're logged into YouTube."
-        )
-        main_desc.setWordWrap(True)
-        auth_layout.addWidget(main_desc)
-
-        # Browser selector
-        browser_layout = QHBoxLayout()
-        browser_layout.addWidget(QLabel("Authentication:"))
-
-        self.browser_combo = QComboBox()
-        self.browser_combo.addItems([
-            "Auto (Recommended)",
-            "None (No authentication)",
-            "Firefox",
-            "Chrome",
-            "Brave",
-            "Edge",
-            "Chromium",
-            "Opera",
-            "Vivaldi"
-        ])
-        self.browser_combo.setToolTip("Auto mode automatically finds the best browser with YouTube login")
-        browser_layout.addWidget(self.browser_combo)
-        browser_layout.addStretch()
-
-        auth_layout.addLayout(browser_layout)
-
-        # Instructions
-        instructions = QLabel(
-            "<b>Important:</b> Make sure you're logged into YouTube in the selected browser before downloading."
-        )
-        instructions.setWordWrap(True)
-        instructions.setObjectName("auth_instructions")
-        auth_layout.addWidget(instructions)
-
-        auth_group.setLayout(auth_layout)
-        layout.addWidget(auth_group)
-
-        layout.addStretch()
-
-        # Buttons
-        button_layout = QHBoxLayout()
-        button_layout.addStretch()
-
-        cancel_btn = QPushButton(BTN_CANCEL)
-        cancel_btn.clicked.connect(self.close)
-        button_layout.addWidget(cancel_btn)
-
-        save_btn = QPushButton(BTN_SAVE)
-        save_btn.clicked.connect(self.save_preferences)
-        save_btn.setDefault(True)
-        button_layout.addWidget(save_btn)
-
-        layout.addLayout(button_layout)
-
-        # Load current settings
-        if parent:
-            current_browser = getattr(parent, 'browser_preference', 'auto')
-            browser_map = {
-                'auto': 0,
-                'none': 1,
-                'firefox': 2,
-                'chrome': 3,
-                'brave': 4,
-                'edge': 5,
-                'chromium': 6,
-                'opera': 7,
-                'vivaldi': 8
-            }
-            self.browser_combo.setCurrentIndex(browser_map.get(current_browser, 0))
-
-    def save_preferences(self):
-        """Save preferences and close dialog"""
-        if self.parent_app:
-            browser_text = self.browser_combo.currentText()
-            if "Auto" in browser_text:
-                self.parent_app.browser_preference = 'auto'
-            elif "None" in browser_text:
-                self.parent_app.browser_preference = 'none'
-            else:
-                # Extract browser name (e.g., "Firefox" -> "firefox")
-                self.parent_app.browser_preference = browser_text.lower()
-        self.close()
-
-
 class MediaDownloaderApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.videos_list = []
         self.checkboxes = []
-        self.output_path = os.path.expanduser(DEFAULT_OUTPUT_DIR)
+        self.output_path = os.path.expanduser(load_output_path())
         self.mode = MODE_BASIC  # Default to basic mode
         self.filename_template = DEFAULT_FILENAME_TAGS.copy()  # Default template
 
-        # Default to Auto mode (will detect best browser at runtime)
-        self.browser_preference = DEFAULT_BROWSER_PREFERENCE
+        self.browser_preference = load_browser_preference()
 
         # Track if we've tried cookieless and it failed
         self.cookieless_failed = False
 
-        # Theme ("dark" or "light"); applied after UI is built
-        self.current_theme = DEFAULT_THEME
+        self.current_theme = load_theme()
 
         self.init_ui()
         self.apply_theme(self.current_theme)
@@ -1226,11 +925,10 @@ class MediaDownloaderApp(QMainWindow):
         cookies_from_browser = None
         is_youtube = is_youtube_url(url)
 
-        # Resolve 'auto' preference to actual browser
+        # Resolve explicit browser preference only — never probe cookie stores here.
+        # Auto mode defers cookie reads until on_fetch_error prompts the user.
         resolved_browser = None
-        if self.browser_preference == 'auto':
-            resolved_browser = get_default_browser()
-        elif self.browser_preference != 'none':
+        if self.browser_preference not in ('auto', 'none'):
             resolved_browser = self.browser_preference
 
         if is_youtube:
@@ -1286,6 +984,7 @@ class MediaDownloaderApp(QMainWindow):
         if directory:
             self.output_path = directory
             self.path_label.setText(self.output_path)
+            save_output_path(directory)
 
     def clear_videos_list(self):
         """Clear the videos list"""
@@ -1347,20 +1046,15 @@ class MediaDownloaderApp(QMainWindow):
                             f"❌ {browser_display} cookies not found\n\n"
                             f"The selected browser ({browser_display}) doesn't appear to be installed "
                             f"or doesn't have cookies on this system.\n\n"
-                            f"Available browsers with YouTube login:\n"
+                            f"Installed browsers on this system:\n"
                         )
 
-                        # List browsers with YouTube cookies
-                        yt_browsers = get_browsers_with_youtube_cookies()
-                        if yt_browsers:
-                            for b in yt_browsers:
-                                msg += f"  ✓ {b.title()}\n"
-                            msg += f"\n💡 Recommendation: Set authentication to 'Auto (Recommended)' "
-                            msg += f"in Tools > Preferences, and I'll automatically use {yt_browsers[0].title()}."
-                        else:
-                            msg += f"  (None detected with YouTube login)\n\n"
-                            msg += f"💡 Recommendation: Sign into YouTube in one of your browsers, "
-                            msg += f"then use 'Auto (Recommended)' mode."
+                        for b in available:
+                            msg += f"  • {b.title()}\n"
+                        msg += (
+                            f"\n💡 Recommendation: Sign into YouTube in one of these browsers, "
+                            f"then use 'Auto (Recommended)' mode in Tools > Preferences."
+                        )
                     else:
                         msg = (
                             f"❌ {browser_display} not found\n\n"
@@ -1402,8 +1096,11 @@ class MediaDownloaderApp(QMainWindow):
         user_friendly_error = self.parse_cookie_error(error)
 
         # Check if this is a YouTube bot detection error
-        is_bot_error = ('bot' in error.lower() or 'sign in to confirm' in error.lower() or
-                       'requested format is not available' in error.lower())
+        error_lower = error.lower()
+        is_bot_error = (
+            'sign in to confirm' in error_lower
+            or ('bot' in error_lower and 'youtube' in error_lower)
+        )
 
         url = self.url_input.text().strip()
         is_youtube = is_youtube_url(url)
@@ -1731,6 +1428,7 @@ class MediaDownloaderApp(QMainWindow):
         from themes import THEMES
         theme = THEMES.get(theme_name, THEMES["dark"])
         self.current_theme = theme_name
+        save_theme(theme_name)
 
         # Apply global QSS
         QApplication.instance().setStyleSheet(theme["stylesheet"])

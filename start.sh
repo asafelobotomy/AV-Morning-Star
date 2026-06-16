@@ -86,11 +86,11 @@ if command -v deno &> /dev/null; then
     JS_RUNTIME_FOUND=true
 elif command -v node &> /dev/null; then
     NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
-    if [ "$NODE_VERSION" -ge 25 ]; then
+    if [ "$NODE_VERSION" -ge 22 ]; then
         echo "✓ Node.js $NODE_VERSION is installed (supported)"
         JS_RUNTIME_FOUND=true
     else
-        echo "⚠ Node.js version is too old (need v25+)"
+        echo "⚠ Node.js version is too old (need v22+ LTS)"
     fi
 elif command -v qjs &> /dev/null; then
     echo "✓ QuickJS is installed (basic support)"
@@ -121,7 +121,7 @@ if [ "$JS_RUNTIME_FOUND" = false ]; then
     echo "  macOS (brew):   brew install deno"
     echo ""
     echo "Alternatives:"
-    echo "  - Node.js 25+: https://nodejs.org/"
+    echo "  - Node.js 22+ LTS: https://nodejs.org/"
     echo "  - QuickJS: sudo apt install quickjs (or build from source)"
     echo ""
     echo "After installing, add Deno to your PATH and restart this script."

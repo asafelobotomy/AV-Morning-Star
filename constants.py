@@ -307,10 +307,6 @@ DOC_CHANGELOG = "CHANGELOG.md"
 URL_YOUTUBE = "https://www.youtube.com"
 URL_GITHUB_REPO = "https://github.com/asafelobotomy/AV-Morning-Star"
 
-# ===== REGEX PATTERNS =====
-PATTERN_YOUTUBE_URL = r'(youtube\.com|youtu\.be)'
-PATTERN_ODYSEE_URL = r'(odysee\.com|lbry\.tv)'
-
 # ===== EMOJI/SYMBOLS (for consistency) =====
 SYMBOL_CHECK = "✓"
 SYMBOL_CROSS = "✗"

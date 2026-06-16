@@ -6,10 +6,15 @@ AV Morning Star uses a **modular extractor architecture** that separates platfor
 
 ## Architecture Components
 
-### 1. Main Application (`main.py`)
-- **URLScraperThread**: Fetches video metadata using platform extractors
-- **DownloadThread**: Downloads videos/audio using platform extractors
-- **MediaDownloaderApp**: PyQt5 GUI with all UI components
+### 1. Main Application
+
+| Module | Role |
+|--------|------|
+| `main.py` | PyQt5 GUI (`MediaDownloaderApp`) and application entry point |
+| `threads.py` | `URLScraperThread` and `DownloadThread` worker threads |
+| `dialogs.py` | Preferences and other modal dialogs |
+| `settings.py` | Persistent user preferences via QSettings (auth mode, theme, output path) |
+| `browser_utils.py` | Browser detection and YouTube cookie helpers |
 
 ### 2. Extractor System (`extractors/`)
 

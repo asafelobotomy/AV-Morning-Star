@@ -27,7 +27,7 @@ for _cn in ['QApplication', 'QMainWindow', 'QWidget', 'QVBoxLayout',
     setattr(_qtwidgets, _cn, _fake_qt_class(_cn))
 
 _qtcore = types.ModuleType('PyQt5.QtCore')
-for _cn in ['QThread', 'QTimer']:
+for _cn in ['QThread', 'QTimer', 'QSettings']:
     setattr(_qtcore, _cn, _fake_qt_class(_cn))
 _qtcore.pyqtSignal = lambda *a, **kw: MagicMock()
 _qtcore.Qt = MagicMock()
@@ -227,8 +227,7 @@ class TestFetchVideosAuthPolicy(unittest.TestCase):
             start = MagicMock()
 
         with patch('main.URLScraperThread', FakeThread):
-            with patch('main.get_default_browser', return_value='firefox'):
-                app.fetch_videos()
+            app.fetch_videos()
 
     # Auto mode — first attempt should be cookieless for YouTube
     def test_auto_mode_youtube_first_attempt_is_cookieless(self):
@@ -265,13 +264,6 @@ class TestFetchVideosAuthPolicy(unittest.TestCase):
         """youtube.com@evil.example must not be classified as YouTube."""
         app = self._make_app(browser_pref='auto', cookieless_failed=False)
         captured = {}
-        # In auto mode with no cookieless failure, a *real* YouTube URL gets no
-        # cookies. For this hostile URL the extractor factory will route it as
-        # non-YouTube (generic), so auto mode will pass get_default_browser()
-        # cookies (non-YouTube path). The key assertion is that the is_youtube_url
-        # check returns False — proven by the extractor test suite; here we verify
-        # fetch_videos never treats it as YouTube by confirming no special
-        # "Fetching video information (no authentication)..." YouTube message is set.
         app.url_input.text.return_value = 'https://youtube.com@evil.example/watch?v=abc'
 
         class FakeThread:
@@ -283,16 +275,24 @@ class TestFetchVideosAuthPolicy(unittest.TestCase):
             start = MagicMock()
 
         with patch('main.URLScraperThread', FakeThread):
-            with patch('main.get_default_browser', return_value='firefox'):
-                app.fetch_videos()
+            app.fetch_videos()
 
-        # The status message should NOT contain the YouTube-specific cookieless text
+        self.assertIsNone(captured['cookies'])
         youtube_cookieless_msg = "Fetching video information (no authentication)..."
         calls = [str(c) for c in app.status_label.setText.call_args_list]
         self.assertFalse(
             any(youtube_cookieless_msg in c for c in calls),
-            "Hostile URL was misclassified as YouTube"
+            "Hostile URL was misclassified as YouTube",
         )
+
+    def test_auto_mode_does_not_probe_cookie_stores(self):
+        """Auto mode first fetch must not read browser cookie databases."""
+        app = self._make_app(browser_pref='auto', cookieless_failed=False)
+        captured = {}
+
+        with patch('main.get_browsers_with_youtube_cookies') as mock_yt_cookies:
+            self._run_fetch(app, 'https://www.youtube.com/watch?v=abc', captured)
+            mock_yt_cookies.assert_not_called()
 
     # fetch stores the auth decision for start_download to mirror
     def test_fetch_stores_cookies_used_on_app(self):

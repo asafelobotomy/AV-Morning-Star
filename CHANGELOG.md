@@ -8,15 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **closeEvent handler**: `MediaDownloaderApp` now prompts the user if a download thread is running on window close; waits up to 3 seconds then terminates the thread gracefully.
-- **Test suite expanded to 103 tests**: New tests cover main application logic (`tests/test_main_logic.py`).
+- **GitHub Actions CI**: Runs unit tests and `pip-audit` on Python 3.10–3.12.
+- **Persistent preferences**: Auth mode, theme, and output directory saved via QSettings.
+- **SECURITY.md**: Responsible disclosure policy and user security summary.
+- **Module split**: `threads.py`, `dialogs.py`, and `settings.py` extracted from `main.py`.
+- **Test suite expanded to 133 tests**: Settings persistence and browser profile detection.
 
 ### Changed
-- **Audio codec mapping**: Explicit label→yt-dlp codec dictionary introduced; OGG Vorbis label now correctly maps to `"vorbis"` for yt-dlp.
-- **Dependency split**: `mcp[cli]` moved to `requirements-dev.txt`; runtime `requirements.txt` now contains PyQt5, yt-dlp, and Pillow only.
-- **Lockfile trimmed**: `requirements-lock.txt` pinned to 5 runtime packages (pillow, PyQt5, PyQt5-Qt5, PyQt5_sip, yt-dlp).
-- **start.sh**: Hash sentinel is now written only after a successful `pip install`, preventing partial-install false-positives.
-- **Security/privacy docs corrected**: Removed inaccurate Deno sandbox and ejs:github claims; updated cookie transmission description.
+- **Privacy fix**: Auto mode no longer probes browser cookie stores on every fetch; cookies are read only after user consent on bot-detection retry (or when a specific browser is selected).
+- **Bot-error detection narrowed**: Removed `"requested format is not available"` from auth-retry triggers to avoid false authentication prompts.
+- **Browser detection improved**: Scans Firefox profiles for `cookies.sqlite` and Chromium `Profile *` directories.
+- **Node.js requirement aligned**: Documentation and `start.sh` now consistently require Node.js 22+ LTS.
+- **docs/SECURITY_AUDIT.md refreshed** to match current defaults and pinned dependencies.
+
+### Fixed
+- **closeEvent handler**: Uses cooperative `requestInterruption()` (never `terminate()`).
 
 ## [0.3.0] - 2026-02-03
 

@@ -307,20 +307,14 @@ youtube_browsers = get_browsers_with_youtube_cookies()
 ```
 
 #### `get_default_browser()`
-Returns the best browser to use based on detection.
+Returns the best browser when cookies are needed (e.g. after user confirms a bot-detection retry).
 
 **Priority:**
 1. Browser with YouTube cookies
 2. Any available browser
-3. 'none' (cookieless)
+3. `'none'` (cookieless)
 
-**Returns:** `str` - browser name or 'none'
-
-**Example:**
-```python
-default = get_default_browser()
-# 'brave'  # Automatically selected Brave
-```
+**Note:** This function reads cookie stores. Do not call it during cookieless-first fetches — `fetch_videos()` in Auto mode defers cookie reads until `on_fetch_error()` prompts the user.
 
 ## Migration Guide
 
@@ -352,9 +346,8 @@ self.browser_preference = 'firefox'
 
 **New approach:**
 ```python
-# Auto-detected
-from browser_utils import get_default_browser
-self.browser_preference = get_default_browser()
+# Auto mode — cookieless first; cookies only after user consent
+self.browser_preference = 'auto'  # persisted via QSettings in settings.py
 ```
 
 ## Future Enhancements
