@@ -6,6 +6,8 @@ import os
 
 import yt_dlp
 
+from lyrics.detector import is_youtube_music_url
+
 from .extract_errors import format_extract_error
 from .ffmpeg_filters import (
     AUDIO_DENOISE_FILTER,
@@ -74,6 +76,7 @@ class BaseExtractor:
         sharpen_video=False,
         normalize_video_audio=False,
         denoise_video_audio=False,
+        fetch_lyrics=False,
     ):
         opts = self.get_base_ydl_opts()
         opts.update({
@@ -94,6 +97,14 @@ class BaseExtractor:
             opts['subtitlesformat'] = 'srt/vtt/best'
             if format_type == 'video':
                 opts['embedsubtitles'] = True
+
+        # YouTube Music subtitle tracks are the song lyrics in LRC/ELRC format.
+        # Requesting them here lets yt-dlp write the .lrc file alongside the
+        # audio as a first-class native extraction — no external API needed.
+        if fetch_lyrics and format_type == 'audio' and is_youtube_music_url(self.url):
+            opts['writesubtitles'] = True
+            opts['subtitlesformat'] = 'lrc/elrc/txt'
+            opts['subtitleslangs'] = ['orig', 'en']
 
         if format_type == 'audio':
             opts.update(build_audio_opts(

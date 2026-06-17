@@ -135,7 +135,7 @@ class YouTubeExtractor(BaseExtractor):
                          dynamic_normalization=False, video_container='mp4',
                          denoise_video=False, stabilize_video=False,
                          sharpen_video=False, normalize_video_audio=False,
-                         denoise_video_audio=False):
+                         denoise_video_audio=False, fetch_lyrics=False):
         """
         Get yt-dlp download options, delegating all audio/video processing to
         BaseExtractor and adding YouTube-specific settings (cookies,
@@ -156,6 +156,7 @@ class YouTubeExtractor(BaseExtractor):
             stabilize_video=stabilize_video, sharpen_video=sharpen_video,
             normalize_video_audio=normalize_video_audio,
             denoise_video_audio=denoise_video_audio,
+            fetch_lyrics=fetch_lyrics,
         )
 
         # YouTube-specific additions

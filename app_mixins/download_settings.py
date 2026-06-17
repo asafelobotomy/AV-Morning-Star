@@ -35,6 +35,8 @@ def collect_download_settings(app, format_type):
             'sharpen_video': False,
             'normalize_video_audio': False,
             'denoise_video_audio': False,
+            'fetch_lyrics': False,
+            'save_lrc': False,
         }
 
     audio_codec_label = app.audio_codec_combo.currentText()
@@ -60,6 +62,8 @@ def collect_download_settings(app, format_type):
         'sharpen_video': app.video_sharpen_checkbox.isChecked() if is_video else False,
         'normalize_video_audio': app.video_normalize_audio_checkbox.isChecked() if is_video else False,
         'denoise_video_audio': app.video_denoise_audio_checkbox.isChecked() if is_video else False,
+        'fetch_lyrics': app.embed_lyrics_checkbox.isChecked() if not is_video else False,
+        'save_lrc': app.save_lrc_checkbox.isChecked() if not is_video else False,
     }
 
 

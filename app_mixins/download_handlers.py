@@ -73,6 +73,8 @@ class DownloadHandlersMixin:
             sharpen_video=settings['sharpen_video'],
             normalize_video_audio=settings['normalize_video_audio'],
             denoise_video_audio=settings['denoise_video_audio'],
+            fetch_lyrics_flag=settings['fetch_lyrics'],
+            save_lrc=settings['save_lrc'],
         )
         self.download_thread.progress.connect(self.on_download_progress)
         self.download_thread.finished.connect(self.on_download_finished)

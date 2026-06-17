@@ -1,10 +1,13 @@
 """Background worker threads for metadata fetching and downloads."""
 
+import os
+from pathlib import Path
 
 import yt_dlp
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from extractors import get_extractor
+from lyrics import embed_lyrics, fetch_lyrics, is_music_track, save_lrc_file
 
 
 class URLScraperThread(QThread):
@@ -69,6 +72,8 @@ class DownloadThread(QThread):
         sharpen_video=False,
         normalize_video_audio=False,
         denoise_video_audio=False,
+        fetch_lyrics_flag=False,
+        save_lrc=False,
     ):
         super().__init__()
         self.urls = urls
@@ -90,6 +95,8 @@ class DownloadThread(QThread):
         self.sharpen_video = sharpen_video
         self.normalize_video_audio = normalize_video_audio
         self.denoise_video_audio = denoise_video_audio
+        self.fetch_lyrics_flag = fetch_lyrics_flag
+        self.save_lrc = save_lrc
 
     def progress_hook(self, d):
         if self.isInterruptionRequested():
@@ -126,6 +133,72 @@ class DownloadThread(QThread):
         elif d['status'] == 'finished':
             self.progress.emit('Post-processing...', 100)
 
+    def _get_filepath(self, info: dict) -> str | None:
+        """Return the final post-processed file path from a yt-dlp info dict."""
+        requested = info.get('requested_downloads') or []
+        if requested:
+            return requested[0].get('filepath')
+        return info.get('filepath') or info.get('_filename')
+
+    def _find_lrc_sidecar(self, audio_filepath: str) -> str | None:
+        """Return the path of a .lrc file written alongside *audio_filepath*, if any.
+
+        yt-dlp names subtitle files as ``{stem}.{lang}.lrc``; we scan the
+        parent directory for any ``.lrc`` file whose stem starts with the
+        audio file stem to handle language-code suffixes robustly.
+        """
+        audio_path = Path(audio_filepath)
+        stem = audio_path.stem
+        parent = audio_path.parent
+        try:
+            for candidate in parent.iterdir():
+                if candidate.suffix == '.lrc' and candidate.stem.startswith(stem):
+                    return str(candidate)
+        except OSError:
+            pass
+        return None
+
+    def _handle_lyrics(self, url: str, info: dict, audio_filepath: str) -> None:
+        """Fetch and embed lyrics for a completed audio download."""
+        if not self.fetch_lyrics_flag:
+            return
+        if not is_music_track(info):
+            return
+
+        synced: str | None = None
+        plain: str | None = None
+
+        # Phase 1 — use the .lrc sidecar that yt-dlp wrote for YouTube Music.
+        lrc_path = self._find_lrc_sidecar(audio_filepath)
+        if lrc_path:
+            try:
+                synced = Path(lrc_path).read_text(encoding='utf-8')
+                if not self.save_lrc:
+                    os.remove(lrc_path)
+            except OSError:
+                synced = None
+
+        # Phase 2 — LRCLIB API for all other platforms (or as a fallback).
+        if not synced and not plain:
+            track = info.get('track') or info.get('title') or ''
+            artist = (
+                info.get('artist')
+                or info.get('creator')
+                or info.get('uploader')
+                or ''
+            )
+            album = info.get('album') or ''
+            duration = info.get('duration')
+            synced, plain = fetch_lyrics(track, artist, album, duration)
+
+        if not synced and not plain:
+            return
+
+        embed_lyrics(audio_filepath, synced_lrc=synced, plain_text=plain)
+
+        if self.save_lrc and synced and not lrc_path:
+            save_lrc_file(audio_filepath, synced)
+
     def run(self):
         successful = 0
         failed = 0
@@ -155,6 +228,7 @@ class DownloadThread(QThread):
                     self.sharpen_video,
                     self.normalize_video_audio,
                     self.denoise_video_audio,
+                    fetch_lyrics=self.fetch_lyrics_flag,
                 )
 
                 ydl_opts['progress_hooks'] = [self.progress_hook]
@@ -162,7 +236,13 @@ class DownloadThread(QThread):
                 self.progress.emit(f'Downloading {idx}/{len(self.urls)}...', 0)
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([url])
+                    info = ydl.extract_info(url, download=True)
+
+                if self.format_type == 'audio' and info:
+                    filepath = self._get_filepath(info)
+                    if filepath:
+                        self.progress.emit('Fetching lyrics...', 100)
+                        self._handle_lyrics(url, info, filepath)
 
                 successful += 1
 

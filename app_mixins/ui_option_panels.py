@@ -108,6 +108,31 @@ def build_audio_options(app, options_layout):
     audio_format_layout.addWidget(app.embed_thumbnail_checkbox, 0, 4)
     audio_options_layout.addLayout(audio_format_layout)
 
+    lyrics_layout = QHBoxLayout()
+    lyrics_layout.setSpacing(15)
+    app.embed_lyrics_checkbox = QCheckBox("Search & Embed Lyrics")
+    app.embed_lyrics_checkbox.setToolTip(
+        "Search LRCLIB for time-synced lyrics and embed them in the file.\n"
+        "  • MP3  → USLT (plain) + SYLT (synced) ID3 tags\n"
+        "  • FLAC / OGG / Opus → LYRICS Vorbis comment\n"
+        "  • M4A / ALAC → iTunes ©lyr atom\n"
+        "YouTube Music: lyrics are fetched directly from subtitle tracks.\n"
+        "Other sources: LRCLIB free API (no account required).\n"
+        "Only applied when the download is detected as a music track."
+    )
+    lyrics_layout.addWidget(app.embed_lyrics_checkbox)
+
+    app.save_lrc_checkbox = QCheckBox("Save .lrc file")
+    app.save_lrc_checkbox.setToolTip(
+        "Save a .lrc sidecar file alongside the audio.\n"
+        "Useful for media players that display synced lyrics from external files\n"
+        "(e.g. Foobar2000, Strawberry, Lyrion Music Server).\n"
+        "Requires 'Search & Embed Lyrics' to be enabled."
+    )
+    lyrics_layout.addWidget(app.save_lrc_checkbox)
+    lyrics_layout.addStretch()
+    audio_options_layout.addLayout(lyrics_layout)
+
     audio_enhance_layout = QHBoxLayout()
     audio_enhance_layout.setSpacing(15)
     app.normalize_audio_checkbox = QCheckBox("Normalize Audio (EBU R128)")
