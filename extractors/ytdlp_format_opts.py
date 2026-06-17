@@ -63,19 +63,30 @@ def build_video_opts(
     opts['postprocessors'] = opts.get('postprocessors', [])
     container_lower = video_container.lower()
 
-    if container_lower == 'webm':
-        codec_args = ['-c:v', 'libvpx-vp9', '-crf', '30', '-b:v', '0',
-                      '-c:a', 'libopus', '-b:a', '192k']
-    elif container_lower == 'avi':
-        codec_args = ['-c:v', 'mpeg4', '-q:v', '3', '-c:a', 'mp3', '-b:a', '192k']
-    elif container_lower == 'flv':
-        codec_args = ['-c:v', 'flv1', '-q:v', '3', '-c:a', 'mp3', '-b:a', '192k']
-    elif container_lower == 'mov':
-        codec_args = ['-c:v', 'libx264', '-preset', 'medium', '-crf', '22',
-                      '-c:a', 'aac', '-b:a', '192k']
+    # Build per-stream codec args: only re-encode a stream when a filter actually
+    # touches it.  Re-encoding a stream with no filter wastes time and causes an
+    # unnecessary generation loss (lossy → encode → lossy).
+    if video_filters:
+        if container_lower == 'webm':
+            video_codec_args = ['-c:v', 'libvpx-vp9', '-crf', '30', '-b:v', '0']
+        elif container_lower == 'avi':
+            video_codec_args = ['-c:v', 'mpeg4', '-q:v', '3']
+        elif container_lower == 'flv':
+            video_codec_args = ['-c:v', 'flv1', '-q:v', '3']
+        else:  # mp4, mkv, mov
+            video_codec_args = ['-c:v', 'libx264', '-preset', 'medium', '-crf', '22']
     else:
-        codec_args = ['-c:v', 'libx264', '-preset', 'medium', '-crf', '22',
-                      '-c:a', 'aac', '-b:a', '192k']
+        video_codec_args = ['-c:v', 'copy']
+
+    if audio_filters:
+        if container_lower == 'webm':
+            audio_codec_args = ['-c:a', 'libopus', '-b:a', '192k']
+        elif container_lower in ('avi', 'flv'):
+            audio_codec_args = ['-c:a', 'mp3', '-b:a', '192k']
+        else:  # mp4, mkv, mov
+            audio_codec_args = ['-c:a', 'aac', '-b:a', '192k']
+    else:
+        audio_codec_args = ['-c:a', 'copy']
 
     opts['postprocessors'].append({
         'key': 'FFmpegVideoConvertor',
@@ -87,7 +98,8 @@ def build_video_opts(
         ffmpeg_args.extend(['-vf', ','.join(video_filters)])
     if audio_filters:
         ffmpeg_args.extend(['-af', ','.join(audio_filters)])
-    ffmpeg_args.extend(codec_args)
+    ffmpeg_args.extend(video_codec_args)
+    ffmpeg_args.extend(audio_codec_args)
 
     opts['postprocessor_args'] = {'videoconvertor': ffmpeg_args}
     return opts
@@ -125,9 +137,12 @@ def build_audio_opts(
             'extractaudio+ffmpeg_o': ['-af', ','.join(audio_filters)],
         }
 
+    # Metadata must be written before the thumbnail is embedded so that tag
+    # fields (title, artist, album, etc.) are already present when artwork is
+    # injected.  This matches yt-dlp's own canonical postprocessor ordering.
+    opts['postprocessors'].append({'key': 'FFmpegMetadata'})
     if embed_thumbnail:
         opts['postprocessors'].append({'key': 'EmbedThumbnail'})
         opts['writethumbnail'] = True
 
-    opts['postprocessors'].append({'key': 'FFmpegMetadata'})
     return opts

@@ -89,6 +89,9 @@ class BaseExtractor:
             opts['writesubtitles'] = True
             opts['writeautomaticsub'] = True
             opts['subtitleslangs'] = ['en', 'en-US']
+            # SRT embeds cleanly into MP4/MKV; fall back through VTT to
+            # whatever the site offers if SRT is unavailable.
+            opts['subtitlesformat'] = 'srt/vtt/best'
             if format_type == 'video':
                 opts['embedsubtitles'] = True
 

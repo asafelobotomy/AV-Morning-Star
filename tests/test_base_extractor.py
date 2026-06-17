@@ -101,6 +101,64 @@ class TestBaseExtractorOptions(unittest.TestCase):
         opts = build_video_opts("1080p")
         self.assertNotIn("postprocessor_args", opts)
 
+    # --- Codec stream copy when only one stream has a filter ---
+
+    def _get_video_convertor_args(self, **kwargs):
+        opts = build_video_opts("1080p", **kwargs)
+        return opts.get("postprocessor_args", {}).get("videoconvertor", [])
+
+    def test_video_only_filter_copies_audio_stream(self):
+        """When only a video filter is active the audio stream must be copied."""
+        args = self._get_video_convertor_args(denoise_video=True)
+        self.assertIn("-c:a", args)
+        self.assertEqual(args[args.index("-c:a") + 1], "copy")
+
+    def test_audio_only_filter_copies_video_stream(self):
+        """When only an audio filter is active the video stream must be copied."""
+        args = self._get_video_convertor_args(normalize_video_audio=True)
+        self.assertIn("-c:v", args)
+        self.assertEqual(args[args.index("-c:v") + 1], "copy")
+
+    def test_both_filters_encode_both_streams(self):
+        """When both stream types have filters, both are re-encoded (not copied)."""
+        args = self._get_video_convertor_args(denoise_video=True, normalize_video_audio=True)
+        self.assertIn("-c:v", args)
+        self.assertNotEqual(args[args.index("-c:v") + 1], "copy")
+        self.assertIn("-c:a", args)
+        self.assertNotEqual(args[args.index("-c:a") + 1], "copy")
+
+    def test_webm_video_filter_uses_vp9(self):
+        args = self._get_video_convertor_args(video_container="webm", denoise_video=True)
+        self.assertIn("-c:v", args)
+        self.assertEqual(args[args.index("-c:v") + 1], "libvpx-vp9")
+
+    def test_webm_audio_filter_copies_video(self):
+        args = self._get_video_convertor_args(video_container="webm", normalize_video_audio=True)
+        self.assertIn("-c:v", args)
+        self.assertEqual(args[args.index("-c:v") + 1], "copy")
+        self.assertIn("-c:a", args)
+        self.assertEqual(args[args.index("-c:a") + 1], "libopus")
+
+    # --- Audio postprocessor ordering ---
+
+    def test_audio_metadata_before_thumbnail(self):
+        """FFmpegMetadata must appear before EmbedThumbnail in the pipeline."""
+        opts = build_audio_opts("mp3", "192", embed_thumbnail=True,
+                                normalize_audio=False, denoise_audio=False,
+                                dynamic_normalization=False)
+        keys = [pp["key"] for pp in opts["postprocessors"]]
+        self.assertIn("FFmpegMetadata", keys)
+        self.assertIn("EmbedThumbnail", keys)
+        self.assertLess(keys.index("FFmpegMetadata"), keys.index("EmbedThumbnail"))
+
+    def test_audio_metadata_present_without_thumbnail(self):
+        opts = build_audio_opts("mp3", "192", embed_thumbnail=False,
+                                normalize_audio=False, denoise_audio=False,
+                                dynamic_normalization=False)
+        keys = [pp["key"] for pp in opts["postprocessors"]]
+        self.assertIn("FFmpegMetadata", keys)
+        self.assertNotIn("EmbedThumbnail", keys)
+
     # --- Audio filter chains ---
 
     def _get_audio_postprocessor_args(self, normalize=False, denoise=False, dynamic=False):
