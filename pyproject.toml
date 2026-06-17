@@ -8,3 +8,7 @@ select = ["E", "F", "W", "I"]
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["E402"]
 "main.py" = ["E402"]  # PyQt imports after PATH / QT env setup
+
+[tool.av-morning-star.loc]
+warn = 200
+fail = 400

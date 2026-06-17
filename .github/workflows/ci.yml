@@ -30,6 +30,9 @@ jobs:
       - name: Lint
         run: ruff check .
 
+      - name: Check file size (LOC)
+        run: python scripts/check_loc.py --warn 200 --fail 400
+
       - name: Run unit tests
         run: python -m unittest discover -s tests -p "test_*.py" -v
 

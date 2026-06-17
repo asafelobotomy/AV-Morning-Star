@@ -21,6 +21,10 @@ print("  ✓ yt-dlp")
 PYEOF
 
 echo ""
+echo "Checking file size limits..."
+python3 scripts/check_loc.py --warn 200 --fail 400
+
+echo ""
 echo "Running unit tests..."
 python3 -m unittest discover -s tests -p "test_*.py" -v
 
