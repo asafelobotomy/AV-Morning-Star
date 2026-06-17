@@ -78,3 +78,59 @@ class TestPlatformNameForUrl(unittest.TestCase):
     def test_subdomain_of_known_host(self):
         # player.vimeo.com → Vimeo
         self.assertEqual(self._name("https://player.vimeo.com/video/123"), "Vimeo")
+
+    # --- New sites added after yt-dlp supported-sites review ---
+
+    def test_niconico(self):
+        self.assertEqual(self._name("https://www.nicovideo.jp/watch/sm123"), "Niconico")
+
+    def test_vk(self):
+        self.assertEqual(self._name("https://vk.com/video12345"), "VK")
+
+    def test_bitchute(self):
+        self.assertEqual(self._name("https://www.bitchute.com/video/abc"), "BitChute")
+
+    def test_substack(self):
+        self.assertEqual(self._name("https://substack.com/p/post"), "Substack")
+
+    def test_bluesky(self):
+        self.assertEqual(self._name("https://bsky.app/profile/user/post/abc"), "Bluesky")
+
+    def test_floatplane(self):
+        self.assertEqual(self._name("https://www.floatplane.com/video/abc"), "Floatplane")
+
+    def test_dropout(self):
+        self.assertEqual(self._name("https://dropout.tv/show"), "Dropout")
+
+    def test_curiositystream(self):
+        self.assertEqual(self._name("https://curiositystream.com/video/123"), "CuriosityStream")
+
+    def test_nebula(self):
+        self.assertEqual(self._name("https://nebula.tv/video/abc"), "Nebula")
+
+    def test_pbs(self):
+        self.assertEqual(self._name("https://www.pbs.org/show/abc"), "PBS")
+
+    def test_npm_npr(self):
+        self.assertEqual(self._name("https://www.npr.org/podcasts/abc"), "NPR")
+
+    def test_khan_academy(self):
+        self.assertEqual(self._name("https://www.khanacademy.org/video/abc"), "Khan Academy")
+
+    def test_wikimedia_commons(self):
+        self.assertEqual(self._name("https://commons.wikimedia.org/wiki/File:abc.webm"), "Wikimedia Commons")
+
+    def test_bloomberg(self):
+        self.assertEqual(self._name("https://www.bloomberg.com/news/videos/abc"), "Bloomberg")
+
+    def test_iheart(self):
+        self.assertEqual(self._name("https://www.iheart.com/podcast/abc"), "iHeartRadio")
+
+    def test_spreaker(self):
+        self.assertEqual(self._name("https://www.spreaker.com/episode/abc"), "Spreaker")
+
+    def test_linkedin(self):
+        self.assertEqual(self._name("https://www.linkedin.com/learning/course"), "LinkedIn")
+
+    def test_zoom(self):
+        self.assertEqual(self._name("https://zoom.us/rec/share/abc"), "Zoom")

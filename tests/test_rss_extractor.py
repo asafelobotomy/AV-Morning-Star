@@ -70,6 +70,36 @@ class TestIsRssUrl(unittest.TestCase):
     def test_userinfo_url_is_not_rss(self):
         self.assertFalse(is_rss_url("https://user:pass@example.com/feed.rss"))
 
+    # --- New patterns added after audit ---
+
+    def test_anchor_fm_podcast_rss(self):
+        """Anchor/Spotify-style /podcast/rss path ending."""
+        self.assertTrue(is_rss_url("https://anchor.fm/my-show/podcast/rss"))
+
+    def test_libsyn_path_ending_rss(self):
+        """Libsyn-style path ending with /rss (no extension)."""
+        self.assertTrue(is_rss_url("https://traffic.libsyn.com/show/rss"))
+
+    def test_rss_subdomain_art19(self):
+        """Dedicated rss. subdomain (e.g. art19)."""
+        self.assertTrue(is_rss_url("https://rss.art19.com/my-show"))
+
+    def test_feeds_subdomain(self):
+        """Dedicated feeds. subdomain (e.g. feedburner)."""
+        self.assertTrue(is_rss_url("https://feeds.feedburner.com/my-podcast"))
+
+    def test_feed_subdomain(self):
+        """Dedicated feed. subdomain."""
+        self.assertTrue(is_rss_url("https://feed.podbean.com/showname/feed.xml"))
+
+    def test_rss_in_path_without_slash_suffix_is_not_false_positive(self):
+        """/rss-tips does NOT contain the /rss/ fragment so should return False."""
+        self.assertFalse(is_rss_url("https://example.com/rss-tips"))
+
+    def test_path_ending_feed_without_slash(self):
+        """WordPress /feed path without trailing slash."""
+        self.assertTrue(is_rss_url("https://example.com/feed"))
+
 
 class TestRSSExtractor(unittest.TestCase):
     """RSSExtractor is a GenericExtractor subclass with RSS-specific defaults."""

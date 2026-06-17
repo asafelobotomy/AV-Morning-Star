@@ -66,6 +66,18 @@ DRM_HOSTS: frozenset[str] = frozenset({
     'noovo.ca',
     'www.tsn.ca',
     'tsn.ca',
+    # Amazon Music (DRM — separate service from Prime Video)
+    'music.amazon.com',
+    'music.amazon.co.uk',
+    'music.amazon.de',
+    'music.amazon.co.jp',
+    'music.amazon.fr',
+    'music.amazon.it',
+    'music.amazon.es',
+    'music.amazon.ca',
+    'music.amazon.com.au',
+    # Apple Music (separate from Apple TV+; all tracks DRM)
+    'music.apple.com',
     # Other
     'www.nowtv.it',
     'nowtv.it',
@@ -113,10 +125,28 @@ _DRM_DISPLAY_NAMES: dict[str, str] = {
     'netflix.com': 'Netflix',
     'www.deezer.com': 'Deezer',
     'deezer.com': 'Deezer',
+    'music.amazon.com': 'Amazon Music',
+    'music.amazon.co.uk': 'Amazon Music',
+    'music.amazon.de': 'Amazon Music',
+    'music.amazon.co.jp': 'Amazon Music',
+    'music.amazon.fr': 'Amazon Music',
+    'music.amazon.it': 'Amazon Music',
+    'music.amazon.es': 'Amazon Music',
+    'music.amazon.ca': 'Amazon Music',
+    'music.amazon.com.au': 'Amazon Music',
+    'music.apple.com': 'Apple Music',
 }
 
 # Netflix isn't in KnownDRMIE (no extractor at all) but we should block it.
-DRM_HOSTS = DRM_HOSTS | {'www.netflix.com', 'netflix.com'}
+# Amazon Music and Apple Music are also not in yt-dlp's KnownDRMIE but all their
+# audio content is Widevine/FairPlay DRM-protected.
+DRM_HOSTS = DRM_HOSTS | {
+    'www.netflix.com', 'netflix.com',
+    'music.amazon.com', 'music.amazon.co.uk', 'music.amazon.de',
+    'music.amazon.co.jp', 'music.amazon.fr', 'music.amazon.it',
+    'music.amazon.es', 'music.amazon.ca', 'music.amazon.com.au',
+    'music.apple.com',
+}
 
 
 def is_drm_host(hostname: str) -> bool:

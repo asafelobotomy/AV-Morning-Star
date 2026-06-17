@@ -31,8 +31,12 @@ _PODCAST_HOSTS = {'fat-pie.com', 'www.fat-pie.com'}
 
 # Path suffixes and path fragments that indicate an RSS / Atom feed URL.
 _RSS_EXTENSIONS = ('.rss', '.xml', '.atom')
-_RSS_PATH_FRAGMENTS = ('/feed/', '/rss/', '/atom/', '/podcast/feed', '/podcasts/feed')
+_RSS_PATH_FRAGMENTS = ('/feed/', '/rss/', '/atom/', '/podcast/feed', '/podcasts/feed', '/podcast/rss')
+# Path *endings* that unambiguously denote a feed (e.g. Libsyn /show/rss, WordPress /feed)
+_RSS_PATH_ENDINGS = ('/rss', '/feed', '/atom')
 _RSS_QUERY_FRAGMENTS = ('format=rss', 'format=atom', 'format=feed', 'feed=rss')
+# Hostnames that indicate a dedicated feed CDN / delivery subdomain (e.g. rss.art19.com)
+_RSS_HOSTNAMES_PREFIXES = ('rss.', 'feeds.', 'feed.')
 
 
 def is_youtube_url(url: str) -> bool:
@@ -50,22 +54,29 @@ def is_rss_url(url: str) -> bool:
 
     Detection is heuristic and purely URL-based — no network request is made.
     Checked in order:
-      1. URL path ends with a known feed extension (.rss, .xml, .atom)
-      2. URL path contains a known feed path fragment (/feed/, /rss/, etc.)
-      3. URL query string contains a known feed format indicator
+      1. Hostname starts with a dedicated feed CDN prefix (rss., feeds., feed.)
+      2. URL path ends with a known feed extension (.rss, .xml, .atom)
+      3. URL path contains a known feed path fragment (/feed/, /rss/, etc.)
+      4. URL path ends with an unambiguous feed path segment (/rss, /feed, /atom)
+      5. URL query string contains a known feed format indicator
     """
     try:
         parsed = urlparse(url)
         if parsed.username or parsed.password:
             return False
+        hostname = (parsed.hostname or '').lower()
         path = (parsed.path or '').lower()
         query = (parsed.query or '').lower()
     except Exception:
         return False
 
+    if any(hostname.startswith(prefix) for prefix in _RSS_HOSTNAMES_PREFIXES):
+        return True
     if any(path.endswith(ext) for ext in _RSS_EXTENSIONS):
         return True
     if any(frag in path for frag in _RSS_PATH_FRAGMENTS):
+        return True
+    if any(path.endswith(ending) for ending in _RSS_PATH_ENDINGS):
         return True
     if any(frag in query for frag in _RSS_QUERY_FRAGMENTS):
         return True

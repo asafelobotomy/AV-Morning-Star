@@ -58,6 +58,30 @@ class TestIsDrmHost(unittest.TestCase):
         self.assertTrue(is_drm_host("WWW.NETFLIX.COM"))
         self.assertTrue(is_drm_host("Open.Spotify.Com"))
 
+    # --- New entries added after yt-dlp supported-sites review ---
+
+    def test_amazon_music_us_is_drm(self):
+        self.assertTrue(is_drm_host("music.amazon.com"))
+
+    def test_amazon_music_uk_is_drm(self):
+        self.assertTrue(is_drm_host("music.amazon.co.uk"))
+
+    def test_amazon_music_de_is_drm(self):
+        self.assertTrue(is_drm_host("music.amazon.de"))
+
+    def test_apple_music_is_drm(self):
+        self.assertTrue(is_drm_host("music.apple.com"))
+
+    def test_amazon_prime_video_is_not_amazon_music(self):
+        """primevideo.com is already blocked; music.amazon.* is a separate entry."""
+        self.assertTrue(is_drm_host("music.amazon.com"))
+        self.assertTrue(is_drm_host("www.primevideo.com"))
+
+    def test_regular_amazon_shopping_is_not_drm(self):
+        """amazon.com (shopping) is NOT in DRM_HOSTS."""
+        self.assertFalse(is_drm_host("amazon.com"))
+        self.assertFalse(is_drm_host("www.amazon.com"))
+
 
 class TestDrmDisplayName(unittest.TestCase):
     """drm_display_name returns friendly service names."""
@@ -73,6 +97,15 @@ class TestDrmDisplayName(unittest.TestCase):
 
     def test_unknown_host_returns_hostname(self):
         self.assertEqual(drm_display_name("some.unknown.host"), "some.unknown.host")
+
+    def test_amazon_music_display_name(self):
+        self.assertEqual(drm_display_name("music.amazon.com"), "Amazon Music")
+
+    def test_amazon_music_uk_display_name(self):
+        self.assertEqual(drm_display_name("music.amazon.co.uk"), "Amazon Music")
+
+    def test_apple_music_display_name(self):
+        self.assertEqual(drm_display_name("music.apple.com"), "Apple Music")
 
 
 class TestDrmHostsSet(unittest.TestCase):

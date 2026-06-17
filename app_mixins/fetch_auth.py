@@ -2,6 +2,7 @@
 
 from urllib.parse import urlparse
 
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMessageBox
 
 from browser_utils import detect_available_browsers, get_browsers_with_youtube_cookies
@@ -10,6 +11,22 @@ from extractors import is_youtube_url, platform_name_for_url
 from threads import URLScraperThread
 
 from .cookie_errors import parse_cookie_error
+
+
+def _critical_plain(parent, title, message):
+    """Show a QMessageBox.Critical with the message rendered as plain text.
+
+    Qt's static QMessageBox methods use AutoText which silently promotes to
+    RichText when the string contains HTML-like characters.  This helper
+    forces PlainText so that raw yt-dlp error strings (which can contain
+    angle brackets, ampersands, etc.) display verbatim.
+    """
+    box = QMessageBox(parent)
+    box.setWindowTitle(title)
+    box.setIcon(QMessageBox.Critical)
+    box.setTextFormat(Qt.PlainText)
+    box.setText(message)
+    box.exec_()
 
 
 class FetchAuthMixin:
@@ -148,7 +165,12 @@ class FetchAuthMixin:
             self.fetch_btn.setEnabled(True)
             self.status_label.setText("Authentication required")
             self.statusBar().showMessage("YouTube authentication required")
-            QMessageBox.warning(self, "Authentication Required", msg)
+            box = QMessageBox(self)
+            box.setWindowTitle("Authentication Required")
+            box.setIcon(QMessageBox.Warning)
+            box.setTextFormat(Qt.PlainText)
+            box.setText(msg)
+            box.exec_()
             return
 
         self._youtube_auth_handled = False
@@ -157,6 +179,6 @@ class FetchAuthMixin:
         self.statusBar().showMessage("Failed to fetch videos")
 
         if user_friendly_error:
-            QMessageBox.critical(self, "Error", user_friendly_error)
+            _critical_plain(self, "Error", user_friendly_error)
         else:
-            QMessageBox.critical(self, "Error", error)
+            _critical_plain(self, "Error", error)

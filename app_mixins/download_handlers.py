@@ -2,11 +2,26 @@
 
 import os
 
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMessageBox
 
 from threads import DownloadThread
 
 from .download_settings import collect_download_settings, resolve_output_path, validate_output_path
+
+
+def _plain_message(parent, icon, title, message):
+    """Show a QMessageBox with *message* forced to PlainText rendering.
+
+    Prevents Qt AutoText from silently promoting strings that contain angle
+    brackets (common in yt-dlp error output) to RichText.
+    """
+    box = QMessageBox(parent)
+    box.setWindowTitle(title)
+    box.setIcon(icon)
+    box.setTextFormat(Qt.PlainText)
+    box.setText(message)
+    box.exec_()
 
 
 class DownloadHandlersMixin:
@@ -74,7 +89,7 @@ class DownloadHandlersMixin:
         self.progress_bar.setValue(100)
         self.status_label.setText(message)
         self.statusBar().showMessage("All downloads completed!")
-        QMessageBox.information(self, "Success", message)
+        _plain_message(self, QMessageBox.Information, "Success", message)
 
     def on_download_error(self, error):
         self.download_btn.setEnabled(True)
@@ -82,4 +97,4 @@ class DownloadHandlersMixin:
         self.progress_bar.setValue(0)
         self.status_label.setText("Download failed")
         self.statusBar().showMessage("Download failed - check error message")
-        QMessageBox.critical(self, "Error", error)
+        _plain_message(self, QMessageBox.Critical, "Error", error)
