@@ -1,9 +1,12 @@
 """Video fetch workflow and YouTube auth retry handling."""
 
+from urllib.parse import urlparse
+
 from PyQt5.QtWidgets import QMessageBox
 
 from browser_utils import detect_available_browsers, get_browsers_with_youtube_cookies
-from extractors import is_youtube_url
+from constants import drm_display_name, is_drm_host
+from extractors import is_youtube_url, platform_name_for_url
 from threads import URLScraperThread
 
 from .cookie_errors import parse_cookie_error
@@ -22,6 +25,24 @@ class FetchAuthMixin:
             QMessageBox.warning(self, "Error", "Please enter a valid URL starting with http:// or https://")
             return
 
+        # DRM pre-flight: block known DRM hosts before hitting yt-dlp.
+        try:
+            hostname = (urlparse(url).hostname or '').lower()
+        except Exception:
+            hostname = ''
+        if hostname and is_drm_host(hostname):
+            service = drm_display_name(hostname)
+            QMessageBox.warning(
+                self,
+                "DRM-Protected Content",
+                f"{service} uses DRM (Digital Rights Management) copy protection.\n\n"
+                "DRM-protected content cannot be downloaded by this app.\n\n"
+                "Affected services include: Netflix, Disney+, Prime Video, Hulu, Spotify,\n"
+                "Apple TV+, HBO Max, Peacock, Crunchyroll, Rakuten TV, and others.\n\n"
+                "This is a platform restriction, not a bug."
+            )
+            return
+
         if hasattr(self, 'scraper_thread') and self.scraper_thread is not None and self.scraper_thread.isRunning():
             return
 
@@ -35,6 +56,8 @@ class FetchAuthMixin:
         if self.browser_preference not in ('auto', 'none'):
             resolved_browser = self.browser_preference
 
+        platform = platform_name_for_url(url)
+
         if is_youtube:
             if self.browser_preference not in ('auto', 'none') and resolved_browser:
                 cookies_from_browser = resolved_browser
@@ -43,8 +66,11 @@ class FetchAuthMixin:
                 self.status_label.setText("Fetching video information (no authentication)...")
         elif self.browser_preference not in ('auto', 'none') and resolved_browser:
             cookies_from_browser = resolved_browser
+            self.status_label.setText(f"Fetching from {platform} with {resolved_browser.title()} authentication...")
+        else:
+            self.status_label.setText(f"Fetching from {platform}...")
 
-        self.statusBar().showMessage("Connecting to URL...")
+        self.statusBar().showMessage(f"Connecting to {platform}...")
         self.fetch_btn.setEnabled(False)
         self.download_btn.setEnabled(False)
         self.clear_videos_list()

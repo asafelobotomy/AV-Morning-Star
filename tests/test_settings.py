@@ -4,7 +4,7 @@ import os
 import sys
 import types
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 
 def _fake_qt_class(name):
@@ -21,11 +21,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from settings import (
     load_browser_preference,
-    save_browser_preference,
-    load_theme,
-    save_theme,
     load_output_path,
+    load_theme,
+    save_browser_preference,
     save_output_path,
+    save_theme,
 )
 
 

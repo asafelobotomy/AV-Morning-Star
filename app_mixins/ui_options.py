@@ -1,8 +1,14 @@
 """Download options and progress UI for MediaDownloaderApp."""
 
 from PyQt5.QtWidgets import (
-    QComboBox, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
-    QProgressBar, QPushButton, QVBoxLayout,
+    QComboBox,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QProgressBar,
+    QPushButton,
+    QVBoxLayout,
 )
 
 from constants import (

@@ -1,6 +1,5 @@
 """Background worker threads for metadata fetching and downloads."""
 
-import os
 
 import yt_dlp
 from PyQt5.QtCore import QThread, pyqtSignal

@@ -3,8 +3,8 @@ Browser detection and cookie utilities
 """
 
 import glob
-import os
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 

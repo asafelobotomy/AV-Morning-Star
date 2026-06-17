@@ -1,23 +1,23 @@
 """Application dialog windows."""
 
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
+    QComboBox,
     QDialog,
-    QVBoxLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
-    QComboBox,
     QPushButton,
-    QGroupBox,
+    QVBoxLayout,
 )
-from PyQt5.QtGui import QFont
 
 from constants import (
-    PREFERENCES_WINDOW_TITLE,
-    PREFERENCES_WINDOW_MIN_WIDTH,
-    PREFERENCES_WINDOW_MIN_HEIGHT,
-    GROUP_AUTHENTICATION,
     BTN_CANCEL,
     BTN_SAVE,
+    GROUP_AUTHENTICATION,
+    PREFERENCES_WINDOW_MIN_HEIGHT,
+    PREFERENCES_WINDOW_MIN_WIDTH,
+    PREFERENCES_WINDOW_TITLE,
 )
 from settings import save_browser_preference
 

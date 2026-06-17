@@ -1,61 +1,7 @@
 """Mixin methods for MediaDownloaderApp."""
 
-import os
-import pathlib
 
-from PyQt5.QtWidgets import (
-    QApplication, QCheckBox, QComboBox, QFileDialog, QGridLayout, QGroupBox,
-    QHBoxLayout, QLabel, QLineEdit, QMessageBox, QProgressBar, QPushButton,
-    QScrollArea, QVBoxLayout, QWidget,
-)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QIcon, QPixmap
 
-from browser_utils import detect_available_browsers, get_browsers_with_youtube_cookies
-from constants import (
-    ABOUT_TEXT,
-    ABOUT_WINDOW_TITLE,
-    APP_NAME,
-    APP_SUBTITLE,
-    AUDIO_BITRATES,
-    AUDIO_CODECS,
-    BTN_BROWSE,
-    BTN_DOWNLOAD_SELECTED,
-    BTN_FETCH,
-    BTN_SELECT_ALL,
-    BTN_SELECT_NONE,
-    DEFAULT_FILENAME_TAGS,
-    GROUP_AVAILABLE_VIDEOS,
-    GROUP_DOWNLOAD_OPTIONS,
-    GROUP_ENTER_URL,
-    GROUP_FILENAME_TEMPLATE,
-    GROUP_PROGRESS,
-    HELP_GETTING_STARTED,
-    HELP_MORE_INFO,
-    HELP_SUPPORTED_SITES,
-    HELP_WINDOW_TITLE,
-    HELP_YOUTUBE_AUTH,
-    ICON_FILENAME,
-    MAIN_WINDOW_MIN_HEIGHT,
-    MAIN_WINDOW_MIN_WIDTH,
-    MAIN_WINDOW_TITLE,
-    MENU_ABOUT,
-    MENU_HELP,
-    MENU_PREFERENCES,
-    MENU_TOOLS,
-    MODE_BASIC,
-    PLACEHOLDER_URL,
-    SHORTCUT_HELP,
-    SHORTCUT_PREFERENCES,
-    STATUS_READY,
-    VIDEO_CONTAINERS,
-    VIDEO_QUALITIES,
-)
-from dialogs import PreferencesDialog
-from extractors import is_youtube_url
-from settings import load_output_path, save_output_path, save_theme
-from threads import DownloadThread, URLScraperThread
-from ui_widgets import FlowLayout, VideoCheckbox, make_circular_pixmap
 
 
 

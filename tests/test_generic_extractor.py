@@ -10,7 +10,6 @@ import os
 import sys
 import types
 import unittest
-from unittest.mock import patch, MagicMock
 
 # ---- Stub yt_dlp so extractor tests run without the downloader installed ----
 if 'yt_dlp' not in sys.modules:
@@ -25,19 +24,7 @@ if 'yt_dlp' not in sys.modules:
 # Ensure the workspace root is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from extractors.podcast_page import PodcastPageExtractor
-from extractors.base import (
-    BaseExtractor,
-    VIDEO_DENOISE_FILTER,
-    VIDEO_SHARPEN_FILTER,
-    AUDIO_DENOISE_FILTER,
-    AUDIO_LOUDNORM_FILTER,
-    AUDIO_DYNAUDNORM_FILTER,
-)
 from extractors.generic import GenericExtractor
-from extractors.youtube_ytdlp import YouTubeExtractor
-from extractors import get_extractor, is_youtube_url
-
 
 # ---------------------------------------------------------------------------
 # PodcastPageExtractor — _is_audio_url
@@ -71,3 +58,32 @@ class TestGenericExtractor(unittest.TestCase):
     def test_download_opts_has_outtmpl(self):
         opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
         self.assertIn("outtmpl", opts)
+
+    # --- Cookie passthrough ---
+
+    def test_no_cookies_by_default(self):
+        self.assertIsNone(self.extractor.cookies_from_browser)
+
+    def test_cookies_stored_when_provided(self):
+        ext = GenericExtractor("http://example.com/video", cookies_from_browser="firefox")
+        self.assertEqual(ext.cookies_from_browser, "firefox")
+
+    def test_cookies_in_fetch_opts_when_set(self):
+        ext = GenericExtractor("http://example.com/video", cookies_from_browser="brave")
+        opts = ext.get_fetch_opts()
+        self.assertIn("cookiesfrombrowser", opts)
+        self.assertEqual(opts["cookiesfrombrowser"], ("brave",))
+
+    def test_no_cookies_in_fetch_opts_when_not_set(self):
+        opts = self.extractor.get_fetch_opts()
+        self.assertNotIn("cookiesfrombrowser", opts)
+
+    def test_cookies_in_download_opts_when_set(self):
+        ext = GenericExtractor("http://example.com/video", cookies_from_browser="chrome")
+        opts = ext.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
+        self.assertIn("cookiesfrombrowser", opts)
+        self.assertEqual(opts["cookiesfrombrowser"], ("chrome",))
+
+    def test_no_cookies_in_download_opts_when_not_set(self):
+        opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
+        self.assertNotIn("cookiesfrombrowser", opts)

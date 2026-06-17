@@ -4,6 +4,7 @@ Simple script to create a basic icon for the application
 """
 from PIL import Image, ImageDraw, ImageFont
 
+
 def create_icon():
     # Create a 256x256 image with a gradient background
     size = 256
@@ -32,7 +33,6 @@ def create_icon():
     text = "AV ⭐"
     bbox = draw.textbbox((0, 0), text, font=font)
     text_width = bbox[2] - bbox[0]
-    text_height = bbox[3] - bbox[1]
     text_x = (size - text_width) // 2
     text_y = 20
 

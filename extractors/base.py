@@ -6,6 +6,7 @@ import os
 
 import yt_dlp
 
+from .extract_errors import format_extract_error
 from .ffmpeg_filters import (
     AUDIO_DENOISE_FILTER,
     AUDIO_DYNAUDNORM_FILTER,
@@ -14,7 +15,6 @@ from .ffmpeg_filters import (
     VIDEO_SHARPEN_FILTER,
     strip_ansi_codes,
 )
-from .extract_errors import format_extract_error
 from .ytdlp_format_opts import build_audio_opts, build_video_opts
 
 __all__ = [
@@ -31,18 +31,22 @@ __all__ = [
 class BaseExtractor:
     """Base class for platform-specific video extractors"""
 
-    def __init__(self, url):
+    def __init__(self, url, cookies_from_browser=None):
         self.url = url
         self.platform_name = "Generic"
+        self.cookies_from_browser = cookies_from_browser
 
     def get_base_ydl_opts(self):
-        return {
+        opts = {
             'quiet': True,
             'no_warnings': True,
             'retries': 3,
             'fragment_retries': 3,
             'socket_timeout': 30,
         }
+        if self.cookies_from_browser:
+            opts['cookiesfrombrowser'] = (self.cookies_from_browser,)
+        return opts
 
     def get_fetch_opts(self):
         opts = self.get_base_ydl_opts()

@@ -25,9 +25,9 @@ if os.path.exists(deno_path) and deno_path not in os.environ.get('PATH', ''):
     os.environ['PATH'] = f"{deno_path}:{os.environ.get('PATH', '')}"
     os.environ['DENO_INSTALL'] = os.path.expanduser('~/.deno')
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QSplashScreen  # noqa: E402
 from PyQt5.QtCore import Qt, QTimer  # noqa: E402
 from PyQt5.QtGui import QIcon, QPixmap  # noqa: E402
+from PyQt5.QtWidgets import QApplication, QMainWindow, QSplashScreen  # noqa: E402
 
 from app_mixins import (  # noqa: E402
     DownloadHandlersMixin,

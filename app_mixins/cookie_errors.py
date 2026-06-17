@@ -1,4 +1,4 @@
-"""User-friendly messages for yt-dlp cookie access errors."""
+"""User-friendly messages for yt-dlp cookie access and format errors."""
 
 from browser_utils import detect_available_browsers
 
@@ -34,6 +34,22 @@ def parse_cookie_error(error):
             "  - The browser is currently running (some browsers lock cookie files)\n"
             "  - Your user account doesn't have permission to read the cookie file\n\n"
             "Try closing the browser and running this app again."
+        )
+
+    # No downloadable formats found (common for login-walled or unsupported content)
+    if (
+        "no video formats found" in error_lower
+        or "keyerror: 'url'" in error_lower
+        or "no formats found" in error_lower
+    ):
+        return (
+            "❌ No downloadable formats found\n\n"
+            "The site returned no downloadable media for this URL.\n\n"
+            "💡 Common causes:\n"
+            "  - The content requires you to be logged in\n"
+            "  - The URL points to a page rather than a specific video\n"
+            "  - The video is region-locked or behind a paywall\n\n"
+            "If the site requires login, set your browser in Tools > Preferences."
         )
 
     return None

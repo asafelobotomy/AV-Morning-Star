@@ -1,6 +1,5 @@
 """Filename template tag selection UI."""
 
-from PyQt5.QtWidgets import QPushButton
 
 from .tag_buttons import create_tag_button
 

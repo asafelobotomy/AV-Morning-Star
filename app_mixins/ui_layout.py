@@ -2,12 +2,18 @@
 
 import os
 
-from PyQt5.QtWidgets import (
-    QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea,
-    QVBoxLayout, QWidget,
-)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QIcon, QPixmap
+from PyQt5.QtWidgets import (
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from constants import (
     APP_NAME,
@@ -31,7 +37,7 @@ from constants import (
     SHORTCUT_PREFERENCES,
     STATUS_READY,
 )
-from ui_widgets import FlowLayout, VideoCheckbox, make_circular_pixmap
+from ui_widgets import FlowLayout, make_circular_pixmap
 
 
 class UILayoutMixin:

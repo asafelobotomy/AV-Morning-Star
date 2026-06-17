@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from browser_utils import detect_available_browsers, _has_chromium_cookies, _has_firefox_cookies
+from browser_utils import _has_chromium_cookies, _has_firefox_cookies, detect_available_browsers
 
 
 class TestDetectAvailableBrowsers(unittest.TestCase):

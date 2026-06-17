@@ -10,7 +10,6 @@ import os
 import sys
 import types
 import unittest
-from unittest.mock import patch, MagicMock
 
 # ---- Stub yt_dlp so extractor tests run without the downloader installed ----
 if 'yt_dlp' not in sys.modules:
@@ -25,19 +24,10 @@ if 'yt_dlp' not in sys.modules:
 # Ensure the workspace root is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from extractors.podcast_page import PodcastPageExtractor
-from extractors.base import (
-    BaseExtractor,
-    VIDEO_DENOISE_FILTER,
-    VIDEO_SHARPEN_FILTER,
-    AUDIO_DENOISE_FILTER,
-    AUDIO_LOUDNORM_FILTER,
-    AUDIO_DYNAUDNORM_FILTER,
-)
-from extractors.generic import GenericExtractor
-from extractors.youtube_ytdlp import YouTubeExtractor
 from extractors import get_extractor, is_youtube_url
-
+from extractors.generic import GenericExtractor
+from extractors.podcast_page import PodcastPageExtractor
+from extractors.youtube_ytdlp import YouTubeExtractor
 
 # ---------------------------------------------------------------------------
 # PodcastPageExtractor — _is_audio_url
@@ -71,9 +61,34 @@ class TestGetExtractorFactory(unittest.TestCase):
         self.assertIsInstance(ext, YouTubeExtractor)
         self.assertEqual(ext.cookies_from_browser, "firefox")
 
-    def test_generic_extractor_has_no_cookies_attribute(self):
+    def test_generic_extractor_cookies_passed_through(self):
+        ext = get_extractor("https://vimeo.com/123456789", cookies_from_browser="brave")
+        self.assertIsInstance(ext, GenericExtractor)
+        self.assertEqual(ext.cookies_from_browser, "brave")
+
+    def test_generic_extractor_no_cookies_by_default(self):
         ext = get_extractor("https://vimeo.com/123456789")
         self.assertIsInstance(ext, GenericExtractor)
+        self.assertIsNone(ext.cookies_from_browser)
+
+    def test_rss_url_returns_rss_extractor(self):
+        from extractors.rss import RSSExtractor
+        ext = get_extractor("https://example.com/podcast.rss")
+        self.assertIsInstance(ext, RSSExtractor)
+
+    def test_xml_feed_returns_rss_extractor(self):
+        from extractors.rss import RSSExtractor
+        ext = get_extractor("https://example.com/feed.xml")
+        self.assertIsInstance(ext, RSSExtractor)
+
+    def test_rss_path_fragment_returns_rss_extractor(self):
+        from extractors.rss import RSSExtractor
+        ext = get_extractor("https://example.com/rss/feed")
+        self.assertIsInstance(ext, RSSExtractor)
+
+    def test_fat_pie_returns_podcast_page_extractor(self):
+        ext = get_extractor("https://www.fat-pie.com/episodes")
+        self.assertIsInstance(ext, PodcastPageExtractor)
 
 class TestIsYoutubeUrl(unittest.TestCase):
     """is_youtube_url must use parsed hostname, not substring matching."""

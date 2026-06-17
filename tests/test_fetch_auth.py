@@ -9,7 +9,7 @@ import os
 import sys
 import types
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 
 def _fake_qt_class(name):
@@ -55,8 +55,6 @@ sys.modules['yt_dlp.utils'] = _yt_dlp_utils
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import main as _main  # noqa: E402  (must come after stubs)
-import themes as _themes  # noqa: E402
-
 
 # ---------------------------------------------------------------------------
 # Helpers

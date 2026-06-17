@@ -10,7 +10,6 @@ import os
 import sys
 import types
 import unittest
-from unittest.mock import patch, MagicMock
 
 # ---- Stub yt_dlp so extractor tests run without the downloader installed ----
 if 'yt_dlp' not in sys.modules:
@@ -25,19 +24,10 @@ if 'yt_dlp' not in sys.modules:
 # Ensure the workspace root is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from extractors.podcast_page import PodcastPageExtractor
 from extractors.base import (
     BaseExtractor,
-    VIDEO_DENOISE_FILTER,
-    VIDEO_SHARPEN_FILTER,
-    AUDIO_DENOISE_FILTER,
-    AUDIO_LOUDNORM_FILTER,
-    AUDIO_DYNAUDNORM_FILTER,
 )
-from extractors.generic import GenericExtractor
 from extractors.youtube_ytdlp import YouTubeExtractor
-from extractors import get_extractor, is_youtube_url
-
 
 # ---------------------------------------------------------------------------
 # PodcastPageExtractor — _is_audio_url

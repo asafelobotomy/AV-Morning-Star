@@ -12,6 +12,7 @@ generation. yt-dlp handles this automatically.
 """
 
 import yt_dlp
+
 from .base import BaseExtractor
 
 
@@ -113,7 +114,11 @@ class YouTubeExtractor(BaseExtractor):
         """
         return {
             'title': entry.get('title', 'Unknown Title'),
-            'url': entry.get('webpage_url') or entry.get('url') or f"https://www.youtube.com/watch?v={entry.get('id', '')}",
+            'url': (
+                entry.get('webpage_url')
+                or entry.get('url')
+                or f"https://www.youtube.com/watch?v={entry.get('id', '')}"
+            ),
             'uploader': entry.get('uploader') or entry.get('channel') or 'Unknown',
             'duration': entry.get('duration', 0),  # Duration in seconds
             'thumbnail': entry.get('thumbnail'),

@@ -1,8 +1,8 @@
 """Reusable PyQt5 widgets and pixmap helpers."""
 
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QLabel
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QPainter, QPainterPath
+from PyQt5.QtGui import QPainter, QPainterPath, QPixmap
+from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 
 class FlowLayout(QVBoxLayout):

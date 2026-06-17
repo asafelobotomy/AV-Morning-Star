@@ -10,7 +10,6 @@ import os
 import sys
 import types
 import unittest
-from unittest.mock import patch, MagicMock
 
 # ---- Stub yt_dlp so extractor tests run without the downloader installed ----
 if 'yt_dlp' not in sys.modules:
@@ -25,17 +24,15 @@ if 'yt_dlp' not in sys.modules:
 # Ensure the workspace root is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from extractors.podcast_page import PodcastPageExtractor
 from extractors.base import (
-    BaseExtractor,
+    AUDIO_DENOISE_FILTER,
+    AUDIO_DYNAUDNORM_FILTER,
+    AUDIO_LOUDNORM_FILTER,
     VIDEO_DENOISE_FILTER,
     VIDEO_SHARPEN_FILTER,
-    AUDIO_DENOISE_FILTER,
-    AUDIO_LOUDNORM_FILTER,
-    AUDIO_DYNAUDNORM_FILTER,
+    BaseExtractor,
 )
 from extractors.ytdlp_format_opts import build_audio_opts, build_video_opts
-
 
 # ---------------------------------------------------------------------------
 # PodcastPageExtractor — _is_audio_url
@@ -46,6 +43,21 @@ class TestBaseExtractorOptions(unittest.TestCase):
 
     def setUp(self):
         self.extractor = BaseExtractor("http://example.com/video")
+
+    def test_cookies_absent_by_default(self):
+        opts = self.extractor.get_base_ydl_opts()
+        self.assertNotIn("cookiesfrombrowser", opts)
+
+    def test_cookies_injected_when_provided(self):
+        ext = BaseExtractor("http://example.com/video", cookies_from_browser="firefox")
+        opts = ext.get_base_ydl_opts()
+        self.assertIn("cookiesfrombrowser", opts)
+        self.assertEqual(opts["cookiesfrombrowser"], ("firefox",))
+
+    def test_cookies_none_does_not_inject(self):
+        ext = BaseExtractor("http://example.com/video", cookies_from_browser=None)
+        opts = ext.get_base_ydl_opts()
+        self.assertNotIn("cookiesfrombrowser", opts)
 
     def test_base_opts_include_socket_timeout(self):
         opts = self.extractor.get_base_ydl_opts()
