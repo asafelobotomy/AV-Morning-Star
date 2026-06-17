@@ -686,7 +686,7 @@ If distributing as AppImage/binary:
 
 **Auditor:** Project maintainers (post-audit remediation)  
 **Date:** June 16, 2026  
-**Version Reviewed:** 0.4.0 (main branch)  
+**Version Reviewed:** 0.4.1 (main branch)  
 **Scope:** Authentication, preferences, threading, dependencies, CI  
 **Method:** Code review, threat modeling, dependency analysis, unit tests (133 passing)  
 **Tools Used:** unittest, pip-audit (CI), static analysis  

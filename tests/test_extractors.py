@@ -35,7 +35,6 @@ from extractors.base import (
     AUDIO_DYNAUDNORM_FILTER,
 )
 from extractors.generic import GenericExtractor
-from extractors.odysee import OdyseeExtractor
 from extractors.youtube_ytdlp import YouTubeExtractor
 from extractors import get_extractor, is_youtube_url
 
@@ -407,36 +406,6 @@ class TestGenericExtractor(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# OdyseeExtractor — passthrough behaviour
-# ---------------------------------------------------------------------------
-
-class TestOdyseeExtractor(unittest.TestCase):
-    """OdyseeExtractor delegates fully to base without overriding options."""
-
-    def setUp(self):
-        self.extractor = OdyseeExtractor("https://odysee.com/@channel/video")
-
-    def test_platform_name_is_odysee(self):
-        self.assertEqual(self.extractor.platform_name, "Odysee")
-
-    def test_fetch_opts_returns_dict(self):
-        opts = self.extractor.get_fetch_opts()
-        self.assertIsInstance(opts, dict)
-
-    def test_fetch_opts_skip_download_set(self):
-        opts = self.extractor.get_fetch_opts()
-        self.assertTrue(opts.get("skip_download"))
-
-    def test_download_opts_returns_dict(self):
-        opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
-        self.assertIsInstance(opts, dict)
-
-    def test_download_opts_has_outtmpl(self):
-        opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "video")
-        self.assertIn("outtmpl", opts)
-
-
-# ---------------------------------------------------------------------------
 # YouTubeExtractor — download option construction
 # ---------------------------------------------------------------------------
 
@@ -523,13 +492,13 @@ class TestGetExtractorFactory(unittest.TestCase):
         ext = get_extractor("https://youtu.be/abc123")
         self.assertIsInstance(ext, YouTubeExtractor)
 
-    def test_odysee_url_returns_odysee_extractor(self):
+    def test_odysee_url_returns_generic_extractor(self):
         ext = get_extractor("https://odysee.com/@channel/video")
-        self.assertIsInstance(ext, OdyseeExtractor)
+        self.assertIsInstance(ext, GenericExtractor)
 
-    def test_lbry_tv_url_returns_odysee_extractor(self):
+    def test_lbry_tv_url_returns_generic_extractor(self):
         ext = get_extractor("https://lbry.tv/@channel/video")
-        self.assertIsInstance(ext, OdyseeExtractor)
+        self.assertIsInstance(ext, GenericExtractor)
 
     def test_generic_url_returns_generic_extractor(self):
         ext = get_extractor("https://vimeo.com/123456789")

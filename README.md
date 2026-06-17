@@ -9,7 +9,7 @@
 [![Release](https://img.shields.io/github/v/release/asafelobotomy/AV-Morning-Star?style=flat-square)](https://github.com/asafelobotomy/AV-Morning-Star/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-133%20passing-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/tests-124%20passing-brightgreen?style=flat-square)](#)
 [![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-lightgrey?style=flat-square)](#)
 
 [**⬇ Download AppImage**](https://github.com/asafelobotomy/AV-Morning-Star/releases/latest) · [Documentation](docs/README.md) · [Report a Bug](https://github.com/asafelobotomy/AV-Morning-Star/issues)
@@ -90,11 +90,11 @@ Click tags to compose the output filename. Supported tokens:
 
 ```bash
 # Download
-wget https://github.com/asafelobotomy/AV-Morning-Star/releases/download/v0.4.0/AV-Morning-Star-0.4.0-x86_64.AppImage
+wget https://github.com/asafelobotomy/AV-Morning-Star/releases/download/v0.4.1/AV-Morning-Star-0.4.1-x86_64.AppImage
 
 # Make executable and run
-chmod +x AV-Morning-Star-0.4.0-x86_64.AppImage
-./AV-Morning-Star-0.4.0-x86_64.AppImage
+chmod +x AV-Morning-Star-0.4.1-x86_64.AppImage
+./AV-Morning-Star-0.4.1-x86_64.AppImage
 ```
 
 The AppImage is self-contained (~63 MB). It requires:
@@ -147,7 +147,7 @@ Outputs `AV-Morning-Star-<version>-x86_64.AppImage` in the project root.
 ## Usage
 
 ```
-1. Launch             →  ./AV-Morning-Star-0.4.0-x86_64.AppImage
+1. Launch             →  ./AV-Morning-Star-0.4.1-x86_64.AppImage
 2. Set authentication →  Tools > Preferences  (leave on "Auto" by default)
 3. Paste a URL        →  YouTube playlist, Odysee channel, any supported site
 4. Click Fetch        →  Retrieves title, duration, and uploader for each item
@@ -173,6 +173,7 @@ AV-Morning-Star/
 ├── main.py                  # GUI application (PyQt5)
 ├── threads.py               # URLScraperThread and DownloadThread workers
 ├── dialogs.py               # Preferences and other dialogs
+├── ui_widgets.py            # FlowLayout, VideoCheckbox, pixmap helpers
 ├── settings.py              # Persistent user preferences (QSettings)
 ├── themes.py                # Dark + Light theme definitions (QSS)
 ├── constants.py             # Shared string constants
@@ -180,12 +181,11 @@ AV-Morning-Star/
 ├── extractors/
 │   ├── base.py              # BaseExtractor interface
 │   ├── youtube_ytdlp.py     # YouTube (PO token support)
-│   ├── odysee.py            # Odysee / LBRY
 │   ├── podcast_page.py      # Podcast RSS feeds
-│   └── generic.py           # Fallback (1000+ sites via yt-dlp)
+│   └── generic.py           # Fallback (Odysee + 1000+ yt-dlp sites)
 ├── scripts/
 │   └── build-appimage.sh    # Reproducible AppImage build
-├── tests/                   # 133 unit tests (unittest)
+├── tests/                   # 124 unit tests (unittest)
 └── packaging/               # .desktop and AppStream metadata
 ```
 
@@ -266,4 +266,4 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for t
 
 > **Disclaimer:** This tool is for personal, lawful use only. Respect copyright law, website terms of service, and creator permissions. The authors are not responsible for misuse.
 
-<div align="center"><sub>AV Morning Star v0.4.0 · Linux x86_64</sub></div>
+<div align="center"><sub>AV Morning Star v0.4.1 · Linux x86_64</sub></div>

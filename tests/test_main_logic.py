@@ -200,11 +200,11 @@ class TestParseCookieError(unittest.TestCase):
 class TestFetchVideosAuthPolicy(unittest.TestCase):
     """fetch_videos must pass cookies only when the mode or retry requires it."""
 
-    def _make_app(self, browser_pref='auto', cookieless_failed=False):
+    def _make_app(self, browser_pref='auto'):
         """Return a minimal MediaDownloaderApp-shaped stub."""
         app = _main.MediaDownloaderApp.__new__(_main.MediaDownloaderApp)
         app.browser_preference = browser_pref
-        app.cookieless_failed = cookieless_failed
+        app._youtube_auth_handled = False
         # Minimal UI stubs so the method can run without a real Qt window
         app.url_input = MagicMock()
         app.status_label = MagicMock()
@@ -231,7 +231,7 @@ class TestFetchVideosAuthPolicy(unittest.TestCase):
 
     # Auto mode — first attempt should be cookieless for YouTube
     def test_auto_mode_youtube_first_attempt_is_cookieless(self):
-        app = self._make_app(browser_pref='auto', cookieless_failed=False)
+        app = self._make_app(browser_pref='auto')
         captured = {}
         self._run_fetch(app, 'https://www.youtube.com/watch?v=abc', captured)
         self.assertIsNone(captured['cookies'])
@@ -240,21 +240,21 @@ class TestFetchVideosAuthPolicy(unittest.TestCase):
     # browser_preference to an explicit browser before calling fetch_videos().
     # That explicit override (not cookieless_failed) is what drives the retry.
     def test_explicit_override_during_retry_uses_cookies(self):
-        app = self._make_app(browser_pref='firefox', cookieless_failed=False)
+        app = self._make_app(browser_pref='firefox')
         captured = {}
         self._run_fetch(app, 'https://www.youtube.com/watch?v=abc', captured)
         self.assertEqual(captured['cookies'], 'firefox')
 
     # None mode — never uses cookies even for YouTube
     def test_none_mode_never_uses_cookies(self):
-        app = self._make_app(browser_pref='none', cookieless_failed=False)
+        app = self._make_app(browser_pref='none')
         captured = {}
         self._run_fetch(app, 'https://www.youtube.com/watch?v=abc', captured)
         self.assertIsNone(captured['cookies'])
 
     # Explicit browser — always uses that browser
     def test_explicit_browser_always_uses_cookies(self):
-        app = self._make_app(browser_pref='brave', cookieless_failed=False)
+        app = self._make_app(browser_pref='brave')
         captured = {}
         self._run_fetch(app, 'https://www.youtube.com/watch?v=abc', captured)
         self.assertEqual(captured['cookies'], 'brave')
@@ -262,7 +262,7 @@ class TestFetchVideosAuthPolicy(unittest.TestCase):
     # Hostile URL — userinfo-confusion must NOT trigger YouTube auth path
     def test_userinfo_confusion_url_is_not_youtube(self):
         """youtube.com@evil.example must not be classified as YouTube."""
-        app = self._make_app(browser_pref='auto', cookieless_failed=False)
+        app = self._make_app(browser_pref='auto')
         captured = {}
         app.url_input.text.return_value = 'https://youtube.com@evil.example/watch?v=abc'
 
@@ -287,7 +287,7 @@ class TestFetchVideosAuthPolicy(unittest.TestCase):
 
     def test_auto_mode_does_not_probe_cookie_stores(self):
         """Auto mode first fetch must not read browser cookie databases."""
-        app = self._make_app(browser_pref='auto', cookieless_failed=False)
+        app = self._make_app(browser_pref='auto')
         captured = {}
 
         with patch('main.get_browsers_with_youtube_cookies') as mock_yt_cookies:

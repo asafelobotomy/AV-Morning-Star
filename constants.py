@@ -7,7 +7,7 @@ Centralizes strings, paths, and configuration values for easy maintenance and fu
 APP_NAME = "AV Morning Star"
 APP_SUBTITLE = "Video & Audio Downloader"
 APP_FULL_TITLE = f"{APP_NAME} - {APP_SUBTITLE}"
-APP_VERSION = "0.4.0"
+APP_VERSION = "0.4.1"
 APP_COPYRIGHT = "© 2026 AV Morning Star Project"
 APP_DESCRIPTION = "A powerful video and audio downloader supporting 1000+ websites."
 APP_TAGLINE = "Built with PyQt5, yt-dlp, and smart browser authentication."

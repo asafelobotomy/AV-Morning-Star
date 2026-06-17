@@ -306,15 +306,7 @@ youtube_browsers = get_browsers_with_youtube_cookies()
 # ['brave']  # User is logged into YouTube in Brave
 ```
 
-#### `get_default_browser()`
-Returns the best browser when cookies are needed (e.g. after user confirms a bot-detection retry).
-
-**Priority:**
-1. Browser with YouTube cookies
-2. Any available browser
-3. `'none'` (cookieless)
-
-**Note:** This function reads cookie stores. Do not call it during cookieless-first fetches — `fetch_videos()` in Auto mode defers cookie reads until `on_fetch_error()` prompts the user.
+**Note:** This function reads cookie stores. Only call it from `on_fetch_error()` after the user has been prompted — never during cookieless-first fetches.
 
 ## Migration Guide
 

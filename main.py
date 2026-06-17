@@ -8,8 +8,48 @@ import sys
 import os
 import pathlib
 
-# Import application constants
-from constants import *
+# Application constants (explicit imports — no wildcard)
+from constants import (
+    ABOUT_TEXT,
+    ABOUT_WINDOW_TITLE,
+    APP_FULL_TITLE,
+    APP_NAME,
+    APP_SUBTITLE,
+    AUDIO_BITRATES,
+    AUDIO_CODECS,
+    BTN_BROWSE,
+    BTN_DOWNLOAD_SELECTED,
+    BTN_FETCH,
+    BTN_SELECT_ALL,
+    BTN_SELECT_NONE,
+    DEFAULT_FILENAME_TAGS,
+    GROUP_AVAILABLE_VIDEOS,
+    GROUP_DOWNLOAD_OPTIONS,
+    GROUP_ENTER_URL,
+    GROUP_FILENAME_TEMPLATE,
+    GROUP_PROGRESS,
+    HELP_GETTING_STARTED,
+    HELP_MORE_INFO,
+    HELP_SUPPORTED_SITES,
+    HELP_WINDOW_TITLE,
+    HELP_YOUTUBE_AUTH,
+    ICON_FILENAME,
+    ICON_SPLASH_SIZE,
+    MAIN_WINDOW_MIN_HEIGHT,
+    MAIN_WINDOW_MIN_WIDTH,
+    MAIN_WINDOW_TITLE,
+    MENU_ABOUT,
+    MENU_HELP,
+    MENU_PREFERENCES,
+    MENU_TOOLS,
+    MODE_BASIC,
+    PLACEHOLDER_URL,
+    SHORTCUT_HELP,
+    SHORTCUT_PREFERENCES,
+    STATUS_READY,
+    VIDEO_CONTAINERS,
+    VIDEO_QUALITIES,
+)
 from themes import THEMES
 
 # Suppress Qt Wayland warnings
@@ -27,7 +67,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QCheckBox, QScrollArea, QGroupBox, QMessageBox,
                              QFileDialog, QSplashScreen, QGridLayout)
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QIcon, QFont, QPixmap, QPainter, QPainterPath
+from PyQt5.QtGui import QIcon, QFont, QPixmap
 
 # Import our modular extractors
 from extractors import is_youtube_url
@@ -44,102 +84,7 @@ from settings import (
     save_output_path,
     save_theme,
 )
-
-
-class FlowLayout(QVBoxLayout):
-    """Custom layout that flows items left-to-right and wraps to new rows"""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setSpacing(10)
-        self.rows = []
-
-    def addWidget(self, widget):
-        # Find current row or create new one
-        if not self.rows or not hasattr(self, '_current_row'):
-            self._current_row = QHBoxLayout()
-            self._current_row.setSpacing(10)
-            self._current_row.setAlignment(Qt.AlignLeft)
-            super().addLayout(self._current_row)
-            self.rows.append(self._current_row)
-
-        self._current_row.addWidget(widget)
-
-    def newRow(self):
-        """Force a new row"""
-        self._current_row = QHBoxLayout()
-        self._current_row.setSpacing(10)
-        self._current_row.setAlignment(Qt.AlignLeft)
-        super().addLayout(self._current_row)
-        self.rows.append(self._current_row)
-
-    def clear(self):
-        """Clear all widgets"""
-        while self.count():
-            item = self.takeAt(0)
-            if item.layout():
-                while item.layout().count():
-                    widget_item = item.layout().takeAt(0)
-                    if widget_item.widget():
-                        widget_item.widget().deleteLater()
-                item.layout().deleteLater()
-        self.rows = []
-
-
-class VideoCheckbox(QWidget):
-    """Custom widget combining a checkbox with a word-wrapping label"""
-    def __init__(self, text, parent=None):
-        super().__init__(parent)
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 5, 0, 5)
-        layout.setSpacing(8)
-
-        # Checkbox (indicator only)
-        self.checkbox = QCheckBox()
-        self.checkbox.setChecked(True)
-        layout.addWidget(self.checkbox, 0, Qt.AlignTop)
-
-        # Label with word wrap
-        self.label = QLabel(text)
-        self.label.setWordWrap(True)
-        self.label.setCursor(Qt.PointingHandCursor)
-        self.label.mousePressEvent = self._on_label_click
-        layout.addWidget(self.label, 1)  # Stretch factor 1 to take remaining space
-
-    def _on_label_click(self, event):
-        """Toggle checkbox when label is clicked"""
-        self.checkbox.setChecked(not self.checkbox.isChecked())
-
-    def isChecked(self):
-        return self.checkbox.isChecked()
-
-    def setChecked(self, checked):
-        self.checkbox.setChecked(checked)
-
-
-def make_circular_pixmap(pixmap):
-    """Create a circular version of a pixmap"""
-    size = min(pixmap.width(), pixmap.height())
-    circular = QPixmap(size, size)
-    circular.fill(Qt.transparent)
-
-    painter = QPainter(circular)
-    painter.setRenderHint(QPainter.Antialiasing)
-    painter.setRenderHint(QPainter.SmoothPixmapTransform)
-
-    path = QPainterPath()
-    path.addEllipse(0, 0, size, size)
-    painter.setClipPath(path)
-
-    # Scale the pixmap to fill the circle completely
-    scaled = pixmap.scaled(size, size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
-
-    # Center the scaled image
-    x = (size - scaled.width()) // 2
-    y = (size - scaled.height()) // 2
-    painter.drawPixmap(x, y, scaled)
-    painter.end()
-
-    return circular
+from ui_widgets import FlowLayout, VideoCheckbox, make_circular_pixmap
 
 
 class MediaDownloaderApp(QMainWindow):
@@ -153,8 +98,8 @@ class MediaDownloaderApp(QMainWindow):
 
         self.browser_preference = load_browser_preference()
 
-        # Track if we've tried cookieless and it failed
-        self.cookieless_failed = False
+        # True after YouTube bot-detection handling has run for the current request.
+        self._youtube_auth_handled = False
 
         self.current_theme = load_theme()
 
@@ -894,8 +839,8 @@ class MediaDownloaderApp(QMainWindow):
                 "Select audio bitrate (higher = better quality, larger file)"
             )
 
-    def fetch_videos(self):
-        """Fetch videos from URL"""
+    def fetch_videos(self, *, _auth_retry=False):
+        """Fetch videos from URL."""
         url = self.url_input.text().strip()
         if not url:
             QMessageBox.warning(self, "Error", "Please enter a URL")
@@ -910,54 +855,28 @@ class MediaDownloaderApp(QMainWindow):
         if hasattr(self, 'scraper_thread') and self.scraper_thread is not None and self.scraper_thread.isRunning():
             return
 
-        # Reset per-request state so each new user-initiated fetch starts clean.
-        # on_fetch_error sets this True then immediately calls fetch_videos() for the
-        # bot-detection retry; that retry call relies on explicit_browser_chosen (not
-        # this flag), so resetting here is safe and prevents the flag from leaking
-        # across separate user requests.
-        self.cookieless_failed = False
-
-        # Smart cookie detection strategy:
-        # 1. For YouTube URLs: Try cookieless first (unless we know it failed before)
-        # 2. If cookieless fails with bot detection, auto-retry with best browser
-        # 3. For non-YouTube URLs: Use cookies if available
+        if not _auth_retry:
+            self._youtube_auth_handled = False
 
         cookies_from_browser = None
         is_youtube = is_youtube_url(url)
 
         # Resolve explicit browser preference only — never probe cookie stores here.
-        # Auto mode defers cookie reads until on_fetch_error prompts the user.
         resolved_browser = None
         if self.browser_preference not in ('auto', 'none'):
             resolved_browser = self.browser_preference
 
         if is_youtube:
-            # YouTube authentication strategy:
-            # - 'auto' mode: always try cookieless first; only use cookies after a
-            #   bot-detection failure for this request (see on_fetch_error).
-            # - explicit browser preference: use that browser immediately.
-            # - 'none': never use cookies.
             explicit_browser_chosen = self.browser_preference not in ('auto', 'none')
-            if self.cookieless_failed or explicit_browser_chosen:
-                # Either a prior bot-detection failure on this URL forced a retry,
-                # or the user explicitly selected a specific browser.
-                if resolved_browser:
-                    cookies_from_browser = resolved_browser
-                    browser_display = resolved_browser.title()
-                    if explicit_browser_chosen:
-                        self.status_label.setText(f"Fetching with {browser_display} authentication...")
-                    else:
-                        self.status_label.setText(f"Retrying with {browser_display} authentication...")
-                else:
-                    self.status_label.setText("Fetching (no authentication)...")
-            else:
-                # Auto or none mode on first attempt: go cookieless
-                self.status_label.setText("Fetching video information (no authentication)...")
-        else:
-            # Non-YouTube: only use cookies when the user explicitly chose a browser.
-            # Auto-forwarding cookies to arbitrary sites is an unnecessary privacy risk.
-            if self.browser_preference not in ('auto', 'none') and resolved_browser:
+            if explicit_browser_chosen and resolved_browser:
                 cookies_from_browser = resolved_browser
+                self.status_label.setText(
+                    f"Fetching with {resolved_browser.title()} authentication..."
+                )
+            else:
+                self.status_label.setText("Fetching video information (no authentication)...")
+        elif self.browser_preference not in ('auto', 'none') and resolved_browser:
+            cookies_from_browser = resolved_browser
 
         self.statusBar().showMessage("Connecting to URL...")
         self.fetch_btn.setEnabled(False)
@@ -996,6 +915,7 @@ class MediaDownloaderApp(QMainWindow):
 
     def on_videos_fetched(self, videos):
         """Handle fetched videos"""
+        self._youtube_auth_handled = False
         self.videos_list = videos
         self.fetch_btn.setEnabled(True)
 
@@ -1106,10 +1026,9 @@ class MediaDownloaderApp(QMainWindow):
         is_youtube = is_youtube_url(url)
 
         # If YouTube bot detection and we haven't tried cookies yet
-        if is_youtube and is_bot_error and not self.cookieless_failed:
-            self.cookieless_failed = True
+        if is_youtube and is_bot_error and not self._youtube_auth_handled:
+            self._youtube_auth_handled = True
 
-            # Try to find a browser with YouTube cookies
             browsers_with_youtube = get_browsers_with_youtube_cookies()
 
             if browsers_with_youtube:
@@ -1128,24 +1047,14 @@ class MediaDownloaderApp(QMainWindow):
                 )
 
                 if reply == QMessageBox.Yes:
-                    # Temporarily override resolved_browser for this single retry by
-                    # storing it in a per-request attribute; fetch_videos reads
-                    # cookieless_failed and will pick up resolved_browser from
-                    # browser_preference — so we set it only for the retry call and
-                    # immediately restore the original value.
                     original_preference = self.browser_preference
                     self.browser_preference = browser
                     self.status_label.setText(f"Retrying with {browser} authentication...")
-                    self.fetch_videos()  # Retry automatically
-                    # Re-assert the flag now that fetch_videos() has reset it.
-                    # This prevents on_fetch_error from re-prompting if the retry
-                    # itself also triggers a bot-detection failure.
-                    self.cookieless_failed = True
-                    self.browser_preference = original_preference  # Restore
+                    self.fetch_videos(_auth_retry=True)
+                    self.browser_preference = original_preference
                     return
                 else:
-                    # User declined, show error
-                    self.cookieless_failed = False  # Reset so next fetch starts clean
+                    self._youtube_auth_handled = False
                     self.fetch_btn.setEnabled(True)
                     self.status_label.setText("Authentication declined")
                     self.statusBar().showMessage("YouTube authentication required")
@@ -1182,7 +1091,7 @@ class MediaDownloaderApp(QMainWindow):
 
         # Not a bot error, or already tried cookies - show error.
         # Reset the retry flag so the next fresh user request starts cookieless again.
-        self.cookieless_failed = False
+        self._youtube_auth_handled = False
         self.fetch_btn.setEnabled(True)
         self.status_label.setText("Error fetching videos")
         self.statusBar().showMessage("Failed to fetch videos")

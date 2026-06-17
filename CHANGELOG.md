@@ -7,29 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-06-17
+
 ### Added
-- **GitHub Actions CI**: Runs unit tests and `pip-audit` on Python 3.10–3.12.
-- **Persistent preferences**: Auth mode, theme, and output directory saved via QSettings.
-- **SECURITY.md**: Responsible disclosure policy and user security summary.
-- **Module split**: `threads.py`, `dialogs.py`, and `settings.py` extracted from `main.py`.
-- **Test suite expanded to 133 tests**: Settings persistence and browser profile detection.
+- **GitHub Actions CI**: Unit tests, `pip-audit`, and `ruff` on Python 3.10–3.12.
+- **Dependabot**: Weekly pip and GitHub Actions update checks.
+- **Persistent preferences**: Auth mode, theme, and output directory via QSettings.
+- **SECURITY.md**: Responsible disclosure policy.
+- **Module split**: `threads.py`, `dialogs.py`, `settings.py`, and `ui_widgets.py`.
+- **124 unit tests** including settings and browser profile detection.
 
 ### Changed
-- **Privacy fix**: Auto mode no longer probes browser cookie stores on every fetch; cookies are read only after user consent on bot-detection retry (or when a specific browser is selected).
-- **Bot-error detection narrowed**: Removed `"requested format is not available"` from auth-retry triggers to avoid false authentication prompts.
-- **Browser detection improved**: Scans Firefox profiles for `cookies.sqlite` and Chromium `Profile *` directories.
-- **Node.js requirement aligned**: Documentation and `start.sh` now consistently require Node.js 22+ LTS.
-- **docs/SECURITY_AUDIT.md refreshed** to match current defaults and pinned dependencies.
-- **Workspace cleanup**: Removed `archive/`, stale meta-docs, and unused MCP dev dependencies.
+- **Privacy fix**: Auto mode no longer probes cookie stores on every fetch.
+- **Auth retry logic**: Replaced `cookieless_failed` with `_youtube_auth_handled` and `_auth_retry` flag.
+- **Browser detection**: Firefox profiles, Chromium `Profile *`, and Opera flat `Cookies` path.
+- **Odysee routing**: Uses `GenericExtractor` (removed no-op `OdyseeExtractor`).
+- **Explicit constants import** in `main.py` (no wildcard).
+- **Node.js requirement**: Aligned to 22+ LTS across docs and `start.sh`.
+- **Workspace cleanup**: Removed `archive/`, stale meta-docs, MCP dev deps.
 
 ### Fixed
-- **closeEvent handler**: Uses cooperative `requestInterruption()` (never `terminate()`).
-- **yt-dlp security**: Bumped to 2026.6.9 (CVE-2026-50019, CVE-2026-50023, CVE-2026-50574, GHSA-69qj-pvh9-c5wg).
+- **Opera detection regression** from profile-only Chromium scan.
+- **closeEvent**: Cooperative `requestInterruption()` (never `terminate()`).
+- **yt-dlp security**: Bumped to 2026.6.9 (CVE-2026-50019/50023/50574, GHSA-69qj-pvh9-c5wg).
 
 ### Removed
-- **`archive/`**: Deprecated InnerTube/OAuth code and historical dev reports (available in git history).
-- **Stale docs**: `ORGANIZATION_COMPLETE.md`, `REORGANIZATION.md`, `BUILD_SUMMARY.md`, `EXTRACTORS_COVERAGE_ANALYSIS.md`.
-- **`requirements-dev.txt`**: MCP CLI tooling no longer used by the project.
+- **`archive/`**, stale docs, `requirements-dev.txt`, dead `get_default_browser()`, `extractors/odysee.py`.
+
+## [0.4.0] - 2026-06-03
+
+### Added
+- Light and dark theme switching.
+- Theme consistency fixes across UI components.
 
 ## [0.3.0] - 2026-02-03
 

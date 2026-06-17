@@ -3,7 +3,7 @@ Tests for browser detection utilities.
 
 Covers:
 - detect_available_browsers: return type and valid browser names
-- get_default_browser: preference ordering (YouTube cookies > available > none)
+- Chromium profile detection including Opera flat cookie path
 """
 
 import os
@@ -12,10 +12,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-# Ensure the workspace root is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from browser_utils import detect_available_browsers, get_default_browser, _has_chromium_cookies, _has_firefox_cookies
+from browser_utils import detect_available_browsers, _has_chromium_cookies, _has_firefox_cookies
 
 
 class TestDetectAvailableBrowsers(unittest.TestCase):
@@ -43,6 +42,11 @@ class TestDetectAvailableBrowsers(unittest.TestCase):
             open(os.path.join(profile, 'Cookies'), 'w').close()
             self.assertTrue(_has_chromium_cookies(tmp))
 
+    def test_detects_opera_flat_cookie_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            open(os.path.join(tmp, 'Cookies'), 'w').close()
+            self.assertTrue(_has_chromium_cookies(tmp))
+
     def test_detects_firefox_profile_cookies(self):
         with tempfile.TemporaryDirectory() as tmp:
             profile = os.path.join(tmp, 'abc.default-release')
@@ -50,38 +54,6 @@ class TestDetectAvailableBrowsers(unittest.TestCase):
             open(os.path.join(profile, 'cookies.sqlite'), 'w').close()
             with patch('browser_utils._FIREFOX_ROOTS', [tmp]):
                 self.assertTrue(_has_firefox_cookies())
-
-
-class TestGetDefaultBrowser(unittest.TestCase):
-    """get_default_browser respects the preference order: YouTube cookies > available > 'none'."""
-
-    def test_returns_a_string(self):
-        result = get_default_browser()
-        self.assertIsInstance(result, str)
-
-    def test_returns_none_string_when_nothing_found(self):
-        with patch("browser_utils.get_browsers_with_youtube_cookies", return_value=[]):
-            with patch("browser_utils.detect_available_browsers", return_value=[]):
-                result = get_default_browser()
-        self.assertEqual(result, "none")
-
-    def test_prefers_youtube_authenticated_browser(self):
-        with patch("browser_utils.get_browsers_with_youtube_cookies", return_value=["firefox"]):
-            result = get_default_browser()
-        self.assertEqual(result, "firefox")
-
-    def test_falls_back_to_first_available_when_no_youtube_cookies(self):
-        with patch("browser_utils.get_browsers_with_youtube_cookies", return_value=[]):
-            with patch("browser_utils.detect_available_browsers", return_value=["brave", "chrome"]):
-                result = get_default_browser()
-        self.assertEqual(result, "brave")
-
-    def test_youtube_browser_takes_precedence_over_available(self):
-        """When two different browsers are found, the YouTube-authenticated one wins."""
-        with patch("browser_utils.get_browsers_with_youtube_cookies", return_value=["chrome"]):
-            with patch("browser_utils.detect_available_browsers", return_value=["brave", "chrome"]):
-                result = get_default_browser()
-        self.assertEqual(result, "chrome")
 
 
 if __name__ == "__main__":

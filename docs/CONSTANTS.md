@@ -1,6 +1,6 @@
 # Constants Library Documentation
 
-**Version**: 0.3.0  
+**Version**: 0.4.1  
 **Module**: `constants.py`
 
 ## Overview
@@ -17,11 +17,8 @@ The `constants.py` module centralizes most configuration values, codec lists, an
 ### Importing
 
 ```python
-# Import all constants
-from constants import *
-
-# Or import specific constants
-from constants import APP_NAME, APP_VERSION, MAIN_WINDOW_TITLE
+# Prefer explicit imports (used in main.py and other modules)
+from constants import APP_NAME, APP_VERSION, MAIN_WINDOW_TITLE, BTN_FETCH, STATUS_READY
 ```
 
 ### Examples
@@ -237,6 +234,7 @@ BTN_DOWNLOAD = get_localized_string('BTN_DOWNLOAD_SELECTED')
 
 ## Version History
 
+- **0.4.1** (2026-06-17): `main.py` uses explicit constant imports (no wildcard).
 - **0.3.0** (2026-02-03): Initial constants module created
   - Centralized all hardcoded strings
   - Added comprehensive documentation
@@ -246,7 +244,7 @@ BTN_DOWNLOAD = get_localized_string('BTN_DOWNLOAD_SELECTED')
 
 ### For Existing Code
 
-1. Import constants: `from constants import *`
+1. Import needed symbols explicitly, e.g. `from constants import APP_NAME, BTN_FETCH`
 2. Find hardcoded strings
 3. Replace with constants
 4. Test application
@@ -266,7 +264,13 @@ class MyDialog(QDialog):
 
 **After:**
 ```python
-from constants import *
+from constants import (
+    PREFERENCES_WINDOW_TITLE,
+    PREFERENCES_WINDOW_MIN_WIDTH,
+    PREFERENCES_WINDOW_MIN_HEIGHT,
+    MENU_PREFERENCES,
+    BTN_SAVE,
+)
 
 class MyDialog(QDialog):
     def __init__(self):
@@ -284,7 +288,7 @@ Run tests to verify constants work:
 
 ```bash
 # Test import
-python3 -c "from constants import *; print(APP_NAME)"
+python3 -c "from constants import APP_NAME; print(APP_NAME)"
 
 # Test application
 python3 main.py
@@ -299,4 +303,4 @@ python3 main.py
 ---
 
 **Last Updated**: February 3, 2026  
-**Module Version**: 0.3.0
+**Module Version**: 0.4.1

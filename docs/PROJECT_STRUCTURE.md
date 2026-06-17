@@ -1,16 +1,18 @@
 # AV Morning Star — Project Structure
 
-**Version:** 0.4.0
+**Version:** 0.4.1
 
 ```
 AV-Morning-Star/
 ├── main.py                 # PyQt5 GUI entry point
 ├── threads.py              # URLScraperThread, DownloadThread
 ├── dialogs.py              # PreferencesDialog
+├── ui_widgets.py           # FlowLayout, VideoCheckbox, pixmap helpers
 ├── settings.py             # QSettings persistence
 ├── browser_utils.py        # Browser detection and cookie helpers
 ├── constants.py            # Shared strings and defaults
 ├── themes.py               # Dark/light QSS themes
+├── pyproject.toml          # Ruff lint configuration
 ├── start.sh                # Dev launcher (venv + deps + run)
 ├── requirements.txt        # Runtime dependencies (pinned)
 ├── requirements-lock.txt   # Transitive runtime lockfile
@@ -23,11 +25,10 @@ AV-Morning-Star/
 │   ├── __init__.py         # get_extractor() factory
 │   ├── base.py             # BaseExtractor + FFmpeg filter options
 │   ├── youtube_ytdlp.py    # YouTube (cookies, PO tokens via yt-dlp)
-│   ├── odysee.py           # Odysee/LBRY
 │   ├── podcast_page.py     # Direct-download podcast pages
-│   └── generic.py          # Fallback for all other yt-dlp sites
+│   └── generic.py          # Odysee + all other yt-dlp sites
 │
-├── tests/                  # unittest suite (133 tests)
+├── tests/                  # unittest suite
 │   ├── test_extractors.py
 │   ├── test_main_logic.py
 │   ├── test_browser_utils.py
@@ -42,26 +43,10 @@ AV-Morning-Star/
 │   ├── com.github.asafelobotomy.avmorningstar.desktop
 │   └── com.github.asafelobotomy.avmorningstar.appdata.xml
 │
-├── docs/                   # Documentation (this folder)
-└── .github/workflows/      # CI (tests + pip-audit)
-    └── ci.yml
+├── docs/                   # Documentation
+└── .github/
+    ├── workflows/ci.yml    # Tests, ruff, pip-audit
+    └── dependabot.yml      # Weekly dependency updates
 ```
 
-## Module roles
-
-| Module | Purpose |
-|--------|---------|
-| `main.py` | UI, fetch/download orchestration, auth policy |
-| `threads.py` | Background metadata fetch and download workers |
-| `dialogs.py` | Preferences UI |
-| `settings.py` | Persist auth mode, theme, output directory |
-| `browser_utils.py` | Detect installed browsers; probe cookies only when consented |
-| `extractors/` | Map URLs → yt-dlp options per platform |
-
-## Build outputs (gitignored)
-
-- `build/`, `dist/`, `*.AppImage` — AppImage build artifacts
-- `.venv/` — local virtual environment
-- `appimagetool-x86_64.AppImage` — downloaded build tool
-
-Historical code and superseded docs were removed from the tree; use `git log` if you need prior implementations (InnerTube, OAuth, old reports).
+Historical code and superseded docs were removed; use `git log` for prior implementations.

@@ -42,10 +42,7 @@ class BaseExtractor:
 - Age-gate bypassing
 - DASH/HLS manifest support
 
-**Odysee Extractor** (`extractors/odysee.py`)
-- Basic Odysee/LBRY support
-- No special authentication needed
-- Inherits standard options from BaseExtractor
+**Odysee / LBRY** URLs route to `GenericExtractor` (same yt-dlp backend as other sites).
 
 **Podcast Page Extractor** (`extractors/podcast_page.py`)
 - Direct-download podcast/media pages
@@ -67,7 +64,7 @@ extractor = get_extractor("https://youtube.com/watch?v=...")
 # Returns YouTubeExtractor instance
 
 extractor = get_extractor("https://odysee.com/@channel/video")
-# Returns OdyseeExtractor instance
+# Returns GenericExtractor instance
 
 extractor = get_extractor("https://vimeo.com/12345")
 # Returns GenericExtractor instance
@@ -239,7 +236,6 @@ def _get_audio_opts(self, ...):
 Potential improvements to the extractor system:
 
 - **Platform Detection**: Auto-detect platform from URL and show platform-specific options
-- **Credential Storage**: Secure storage for API keys and passwords
 - **Rate Limiting**: Platform-specific download rate controls
 - **Quality Presets**: Platform-optimized quality profiles
 - **Batch Processing**: Download entire channels with platform-specific logic
@@ -301,6 +297,6 @@ Potential improvements to the extractor system:
 
 ---
 
-**Version**: 0.3.0
+**Version**: 0.4.1
 **Last Updated**: June 2, 2026
 **Maintainer**: AV Morning Star Team

@@ -48,6 +48,10 @@ def _has_chromium_cookies(config_root):
     if not os.path.isdir(root):
         return False
 
+    # Opera stores cookies at the config root (not under Default/).
+    if os.path.isfile(os.path.join(root, 'Cookies')):
+        return True
+
     profile_dirs = [os.path.join(root, 'Default')]
     profile_dirs.extend(glob.glob(os.path.join(root, 'Profile *')))
     profile_dirs.extend(glob.glob(os.path.join(root, '* Profile')))
@@ -126,26 +130,3 @@ def get_browsers_with_youtube_cookies():
             logger.debug("Skipping %s during YouTube cookie check: %s", browser, exc)
 
     return browsers_with_youtube
-
-
-def get_default_browser():
-    """
-    Get the best default browser to use when cookies are needed.
-
-    Priority:
-    1. Browser with YouTube cookies
-    2. First available browser
-    3. 'none' (cookieless)
-
-    Returns:
-        str: Browser name or 'none'
-    """
-    browsers_with_youtube = get_browsers_with_youtube_cookies()
-    if browsers_with_youtube:
-        return browsers_with_youtube[0]
-
-    available = detect_available_browsers()
-    if available:
-        return available[0]
-
-    return 'none'
