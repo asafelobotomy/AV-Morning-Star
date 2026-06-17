@@ -22,6 +22,14 @@ _LRC_LINE_RE = re.compile(r'^\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)')
 # Public helpers
 # ---------------------------------------------------------------------------
 
+def is_lrc_format(text: str) -> bool:
+    """Return True when *text* contains at least one LRC timestamp line."""
+    for line in text.splitlines()[:5]:
+        if line and _LRC_LINE_RE.match(line):
+            return True
+    return False
+
+
 def parse_lrc_timestamps(lrc_text: str) -> list[tuple[str, int]]:
     """Parse an LRC string into a list of ``(line_text, timestamp_ms)`` pairs.
 

@@ -117,7 +117,8 @@ def build_audio_options(app, options_layout):
         "  • FLAC / OGG / Opus → LYRICS Vorbis comment\n"
         "  • M4A / ALAC → iTunes ©lyr atom\n"
         "YouTube Music: lyrics are fetched directly from subtitle tracks.\n"
-        "Other sources: LRCLIB free API (no account required).\n"
+        "Other sources: LRCLIB free API, then syncedlyrics fallback\n"
+        "  (Musixmatch, NetEase, Megalobiz, Genius).\n"
         "Only applied when the download is detected as a music track."
     )
     lyrics_layout.addWidget(app.embed_lyrics_checkbox)

@@ -3,19 +3,21 @@ Tests for the lyrics package.
 
 Covers:
 - detector: is_music_track, is_youtube_music_url
-- fetcher: URL construction (no live HTTP calls)
-- embedder: parse_lrc_timestamps, strip_lrc_tags, save_lrc_file
+- fetcher: LRCLIB + syncedlyrics fallback (mocked, no live HTTP)
+- embedder: parse_lrc_timestamps, strip_lrc_tags, save_lrc_file, is_lrc_format
 """
 
 import os
 import sys
 import tempfile
 import unittest
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lyrics.detector import is_music_track, is_youtube_music_url
-from lyrics.embedder import parse_lrc_timestamps, save_lrc_file, strip_lrc_tags
+from lyrics.embedder import is_lrc_format, parse_lrc_timestamps, save_lrc_file, strip_lrc_tags
+from lyrics.fetcher import fetch_lyrics
 
 # ---------------------------------------------------------------------------
 # detector
@@ -70,6 +72,97 @@ class TestIsYoutubeMusicUrl(unittest.TestCase):
 
     def test_empty_string_is_false(self):
         self.assertFalse(is_youtube_music_url(''))
+
+
+class TestIsLrcFormat(unittest.TestCase):
+    def test_lrc_text_is_detected(self):
+        self.assertTrue(is_lrc_format('[00:01.00] Hello\n[00:05.00] World\n'))
+
+    def test_plain_text_is_not_lrc(self):
+        self.assertFalse(is_lrc_format('Just plain lyrics\nNo timestamps\n'))
+
+    def test_header_tags_only_is_not_lrc(self):
+        self.assertFalse(is_lrc_format('[ar:Artist]\n[ti:Title]\n'))
+
+
+# ---------------------------------------------------------------------------
+# fetcher — LRCLIB + syncedlyrics fallback (mocked)
+# ---------------------------------------------------------------------------
+
+class TestFetchLyrics(unittest.TestCase):
+    def test_lrclib_hit_skips_syncedlyrics(self):
+        with patch('lyrics.fetcher._fetch_lrclib', return_value=('[00:01.00] Hello\n', 'Hello')):
+            with patch('lyrics.fetcher._fetch_syncedlyrics') as mock_fallback:
+                synced, plain = fetch_lyrics('Hello', 'Artist')
+        self.assertEqual(synced, '[00:01.00] Hello\n')
+        self.assertEqual(plain, 'Hello')
+        mock_fallback.assert_not_called()
+
+    def test_lrclib_miss_falls_back_to_syncedlyrics(self):
+        with patch('lyrics.fetcher._fetch_lrclib', return_value=(None, None)):
+            with patch(
+                'lyrics.fetcher._fetch_syncedlyrics',
+                return_value=('[00:01.00] Fallback\n', 'Fallback'),
+            ) as mock_fallback:
+                synced, plain = fetch_lyrics('Track', 'Artist')
+        mock_fallback.assert_called_once_with('Track', 'Artist')
+        self.assertEqual(synced, '[00:01.00] Fallback\n')
+        self.assertEqual(plain, 'Fallback')
+
+    def test_empty_track_skips_all_providers(self):
+        with patch('lyrics.fetcher._fetch_lrclib') as mock_lrclib:
+            with patch('lyrics.fetcher._fetch_syncedlyrics') as mock_fallback:
+                synced, plain = fetch_lyrics('', 'Artist')
+        self.assertIsNone(synced)
+        self.assertIsNone(plain)
+        mock_lrclib.assert_not_called()
+        mock_fallback.assert_not_called()
+
+    @patch('lyrics.fetcher._fetch_lrclib', return_value=(None, None))
+    def test_syncedlyrics_plain_only(self, _mock_lrclib):
+        with patch('lyrics.fetcher._fetch_syncedlyrics', return_value=(None, 'Plain lyrics only')):
+            synced, plain = fetch_lyrics('Track', 'Artist')
+        self.assertIsNone(synced)
+        self.assertEqual(plain, 'Plain lyrics only')
+
+
+class TestFetchSyncedlyrics(unittest.TestCase):
+    def test_returns_lrc_and_plain_from_synced_result(self):
+        mock_module = MagicMock()
+        mock_module.search.return_value = '[00:01.00] Line one\n[00:05.00] Line two\n'
+        with patch.dict('sys.modules', {'syncedlyrics': mock_module}):
+            from lyrics.fetcher import _fetch_syncedlyrics
+            synced, plain = _fetch_syncedlyrics('Track', 'Artist')
+        mock_module.search.assert_called_once_with(
+            'Track - Artist',
+            providers=['Musixmatch', 'NetEase', 'Megalobiz', 'Genius'],
+        )
+        self.assertIn('[00:01.00]', synced)
+        self.assertIn('Line one', plain)
+
+    def test_returns_plain_when_no_timestamps(self):
+        mock_module = MagicMock()
+        mock_module.search.return_value = 'Plain lyrics without timestamps'
+        with patch.dict('sys.modules', {'syncedlyrics': mock_module}):
+            from lyrics.fetcher import _fetch_syncedlyrics
+            synced, plain = _fetch_syncedlyrics('Track', 'Artist')
+        self.assertIsNone(synced)
+        self.assertEqual(plain, 'Plain lyrics without timestamps')
+
+    def test_import_error_returns_none(self):
+        import builtins
+        real_import = builtins.__import__
+
+        def blocked_import(name, *args, **kwargs):
+            if name == 'syncedlyrics':
+                raise ImportError('no syncedlyrics')
+            return real_import(name, *args, **kwargs)
+
+        with patch('builtins.__import__', side_effect=blocked_import):
+            from lyrics.fetcher import _fetch_syncedlyrics
+            synced, plain = _fetch_syncedlyrics('Track', 'Artist')
+        self.assertIsNone(synced)
+        self.assertIsNone(plain)
 
 
 # ---------------------------------------------------------------------------
