@@ -1,0 +1,210 @@
+/* ── Global ── */
+QWidget {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    font-size: 10pt;
+}
+
+/* ── Main / Central widget ── */
+QMainWindow, QDialog {
+    background-color: #1e1e1e;
+}
+
+/* ── Menu bar ── */
+QMenuBar {
+    background-color: #2b2b2b;
+    color: #e0e0e0;
+    border-bottom: 1px solid #444;
+}
+QMenuBar::item:selected {
+    background-color: #3a3a3a;
+}
+QMenu {
+    background-color: #2b2b2b;
+    color: #e0e0e0;
+    border: 1px solid #555;
+}
+QMenu::item:selected {
+    background-color: #4a9eff;
+    color: #ffffff;
+}
+
+/* ── Group boxes ── */
+QGroupBox {
+    border: 1px solid #444;
+    border-radius: 6px;
+    margin-top: 10px;
+    padding-top: 6px;
+    color: #e0e0e0;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 4px;
+    color: #aaaaaa;
+}
+
+/* ── Buttons ── */
+QPushButton {
+    background-color: #3a3a3a;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 5px 14px;
+}
+QPushButton:hover {
+    background-color: #4a9eff;
+    color: #ffffff;
+    border-color: #4a9eff;
+}
+QPushButton:pressed {
+    background-color: #2a7acc;
+}
+QPushButton:disabled {
+    background-color: #2a2a2a;
+    color: #666;
+    border-color: #444;
+}
+
+/* ── Line edits ── */
+QLineEdit {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px 6px;
+    selection-background-color: #4a9eff;
+}
+QLineEdit:focus {
+    border-color: #4a9eff;
+}
+
+/* ── Combo boxes ── */
+QComboBox {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px 6px;
+    selection-background-color: #4a9eff;
+}
+QComboBox::drop-down {
+    border: none;
+    width: 20px;
+}
+QComboBox QAbstractItemView {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    selection-background-color: #4a9eff;
+    selection-color: #ffffff;
+    border: 1px solid #555;
+}
+
+/* ── Checkboxes ── */
+QCheckBox {
+    color: #e0e0e0;
+    spacing: 6px;
+}
+QCheckBox::indicator {
+    width: 14px;
+    height: 14px;
+    border: 1px solid #666;
+    border-radius: 3px;
+    background-color: #2d2d2d;
+}
+QCheckBox::indicator:checked {
+    background-color: #4a9eff;
+    border-color: #4a9eff;
+}
+
+/* ── Progress bar ── */
+QProgressBar {
+    background-color: #2d2d2d;
+    border: 1px solid #555;
+    border-radius: 4px;
+    text-align: center;
+    color: #e0e0e0;
+}
+QProgressBar::chunk {
+    background-color: #4a9eff;
+    border-radius: 3px;
+}
+
+/* ── Scroll areas / scroll bars ── */
+QScrollArea {
+    background-color: #1e1e1e;
+    border: 1px solid #444;
+}
+QScrollBar:vertical {
+    background: #2d2d2d;
+    width: 10px;
+    border-radius: 5px;
+}
+QScrollBar::handle:vertical {
+    background: #555;
+    border-radius: 5px;
+    min-height: 20px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+QScrollBar:horizontal {
+    background: #2d2d2d;
+    height: 10px;
+    border-radius: 5px;
+}
+QScrollBar::handle:horizontal {
+    background: #555;
+    border-radius: 5px;
+    min-width: 20px;
+}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
+
+/* ── Labels ── */
+QLabel {
+    color: #e0e0e0;
+    background-color: transparent;
+}
+
+/* ── Status bar ── */
+QStatusBar {
+    background-color: #2b2b2b;
+    color: #aaaaaa;
+    border-top: 1px solid #444;
+}
+
+/* ── Tool tips ── */
+QToolTip {
+    background-color: #2b2b2b;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    padding: 4px;
+}
+
+/* ── Scroll area viewport ── */
+QAbstractScrollArea {
+    background-color: #1e1e1e;
+}
+QAbstractScrollArea > QWidget {
+    background-color: #1e1e1e;
+}
+
+/* ── Menu separator ── */
+QMenu::separator {
+    height: 1px;
+    background-color: #444;
+    margin: 3px 6px;
+}
+
+/* ── Status bar items — suppress Fusion border ── */
+QStatusBar::item {
+    border: none;
+}
+
+/* ── Notice / callout label (PreferencesDialog auth_instructions) ── */
+QLabel#auth_instructions {
+    color: #ff8800;
+    background-color: #2a2a2a;
+    border: 1px solid #664400;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 9pt;
+}

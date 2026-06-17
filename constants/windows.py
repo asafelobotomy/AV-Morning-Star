@@ -1,0 +1,22 @@
+"""AV Morning Star constants."""
+
+from .identity import APP_NAME, APP_SUBTITLE
+
+# ===== WINDOW TITLES =====
+MAIN_WINDOW_TITLE = f"{APP_NAME} - {APP_SUBTITLE}"
+ABOUT_WINDOW_TITLE = f"About {APP_NAME}"
+HELP_WINDOW_TITLE = f"Help - {APP_NAME}"
+PREFERENCES_WINDOW_TITLE = f"Preferences - {APP_NAME}"
+ERROR_DIALOG_TITLE = "Error"
+SUCCESS_DIALOG_TITLE = "Success"
+CONFIRMATION_DIALOG_TITLE = "Confirmation"
+
+# ===== MENU ITEMS =====
+MENU_TOOLS = "Tools"
+MENU_PREFERENCES = "Preferences"
+MENU_ABOUT = "About"
+MENU_HELP = "Help"
+
+# ===== KEYBOARD SHORTCUTS =====
+SHORTCUT_PREFERENCES = "Ctrl+,"
+SHORTCUT_HELP = "F1"

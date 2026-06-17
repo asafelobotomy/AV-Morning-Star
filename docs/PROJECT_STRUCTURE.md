@@ -16,8 +16,11 @@ AV-Morning-Star/
 ├── ui_widgets.py           # FlowLayout, VideoCheckbox, pixmap helpers
 ├── settings.py             # QSettings persistence
 ├── browser_utils.py        # Browser detection and cookie helpers
-├── constants.py            # Shared strings and defaults
-├── themes/                 # Dark/light QSS themes (dark.py, light.py)
+├── constants/              # Shared strings and defaults (package)
+│   ├── identity.py
+│   ├── formats.py
+│   └── help_text.py
+├── themes/                 # Dark/light QSS themes (dark.qss, light.qss + tokens)
 ├── pyproject.toml          # Ruff lint configuration
 ├── start.sh                # Dev launcher (venv + deps + run)
 ├── requirements.txt        # Runtime dependencies (pinned)

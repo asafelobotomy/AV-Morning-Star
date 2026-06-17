@@ -79,7 +79,7 @@ class TestParseCookieError(unittest.TestCase):
 
     def _parse(self, error_text, available=None, yt_browsers=None):
         stub = MagicMock()
-        with patch('app_mixins.fetch_auth.detect_available_browsers', return_value=available or []):
+        with patch('app_mixins.cookie_errors.detect_available_browsers', return_value=available or []):
             with patch('app_mixins.fetch_auth.get_browsers_with_youtube_cookies',
                        return_value=yt_browsers or []):
                 return _main.MediaDownloaderApp.parse_cookie_error(stub, error_text)
