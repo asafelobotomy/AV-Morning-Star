@@ -1,5 +1,5 @@
 PyQt5==5.15.11
-yt-dlp==2026.6.9
-Pillow==12.2.0
+yt-dlp==2026.8.19
+Pillow==12.3.0
 mutagen==1.48.1
 syncedlyrics>=1.0.1
