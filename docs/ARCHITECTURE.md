@@ -297,6 +297,6 @@ Potential improvements to the extractor system:
 
 ---
 
-**Version**: 0.4.1
+**Version**: 0.4.2
 **Last Updated**: June 2, 2026
 **Maintainer**: AV Morning Star Team

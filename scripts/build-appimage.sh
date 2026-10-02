@@ -8,20 +8,20 @@ APP_VERSION=$(cat VERSION 2>/dev/null || echo "")
 BUILD_DIR="build"
 APPDIR="${BUILD_DIR}/${APP_NAME}.AppDir"
 
-# Validate that VERSION file and constants.py are in sync
+# Validate that VERSION file and constants/identity.py are in sync
 if [ -z "$APP_VERSION" ]; then
     echo "ERROR: Could not read version from VERSION file"
     exit 1
 fi
 CONSTANTS_VERSION=$(python3 -c \
-    "import re; m=re.search(r'APP_VERSION = \"([^\"]+)\"', open('constants.py').read()); print(m.group(1) if m else '')" \
+    "import re; m=re.search(r'APP_VERSION = \"([^\"]+)\"', open('constants/identity.py').read()); print(m.group(1) if m else '')" \
     2>/dev/null || echo "")
 if [ -z "$CONSTANTS_VERSION" ]; then
-    echo "ERROR: Could not read APP_VERSION from constants.py"
+    echo "ERROR: Could not read APP_VERSION from constants/identity.py"
     exit 1
 fi
 if [ "$APP_VERSION" != "$CONSTANTS_VERSION" ]; then
-    echo "ERROR: Version mismatch — VERSION file has '${APP_VERSION}' but constants.py has '${CONSTANTS_VERSION}'"
+    echo "ERROR: Version mismatch — VERSION file has '${APP_VERSION}' but constants/identity.py has '${CONSTANTS_VERSION}'"
     echo "Update both files to the same version before building."
     exit 1
 fi
@@ -54,6 +54,8 @@ pyinstaller --onefile \
     --windowed \
     --name "${APP_NAME}" \
     --add-data "packaging/com.github.asafelobotomy.avmorningstar.desktop:." \
+    --add-data "av-morning-star.png:." \
+    --add-data "themes/*.qss:themes" \
     --hidden-import=PyQt5 \
     --hidden-import=yt_dlp \
     --collect-all yt_dlp \

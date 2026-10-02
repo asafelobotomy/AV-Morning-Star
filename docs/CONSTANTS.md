@@ -1,6 +1,6 @@
 # Constants Library Documentation
 
-**Version**: 0.4.1  
+**Version**: 0.4.2  
 **Module**: `constants.py`
 
 ## Overview
@@ -303,4 +303,4 @@ python3 main.py
 ---
 
 **Last Updated**: February 3, 2026  
-**Module Version**: 0.4.1
+**Module Version**: 0.4.2

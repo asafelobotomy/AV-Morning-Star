@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-10-02
+
+### Added
+- **Lyrics**: Detect music tracks, fetch synced/plain lyrics from LRCLIB with a
+  syncedlyrics fallback (Musixmatch, NetEase, Megalobiz, Genius), embed them via
+  mutagen, and optionally save a `.lrc` sidecar. YouTube Music uses native subtitle tracks.
+- **Source coverage**: RSS/Atom podcast feed extractor, DRM pre-flight check for
+  known DRM services, and friendlier platform names in status messages.
+- **Regression tests** for every bug fixed in this release (317 tests total).
+
+### Fixed
+- **Crash on fetch**: The app aborted (SIGABRT) when yt-dlp reported a fractional
+  duration. Uncaught exceptions in Qt slots now show an error dialog instead of
+  killing the app.
+- **Non-YouTube downloads**: Every download from Odysee, RSS feeds and other
+  generic sites failed with a `TypeError` (`fetch_lyrics` keyword not accepted).
+- **Video enhancements** (denoise, stabilize, sharpen, audio normalize/denoise)
+  never ran: yt-dlp's video convertor skips files already in the target container.
+- **Audio filters** (normalize, dynamic normalization, denoise) failed the download
+  when the source already used the target codec, or were silently skipped.
+- **Subtitle embedding** never happened (`embedsubtitles` is a CLI-only flag).
+- **Dynamic Normalization** had no effect unless EBU R128 was also ticked.
+- **Lyrics embedding** always failed silently: `mutagen` was not installed.
+- **Privacy**: The YouTube sign-in retry read browser cookie stores before asking
+  for consent; it now asks first, as documented.
+- Lyrics errors no longer mark a finished download as failed; `.lrc` sidecar lookup
+  no longer matches other tracks sharing a filename prefix; LRC files with many
+  header tags are detected as synced.
+- Error classification: bare `429` and case-sensitive "Sign in" matching.
+- Status bar no longer reports success after a cancelled or partly failed run.
+- **AppImage build**: version check read the removed `constants.py`; theme
+  stylesheets and the app icon were not bundled (the app crashed on launch).
+
+### Security
+- Pillow 12.2.0 → 12.3.0 (13 advisories) and yt-dlp 2026.6.9 → 2026.8.19
+  (PYSEC-2026-3622).
+
 ## [0.4.1] - 2026-06-17
 
 ### Added
