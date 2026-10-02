@@ -159,6 +159,16 @@ class TestRSSExtractor(unittest.TestCase):
         result = self.extractor._parse_playlist(entries)
         self.assertEqual(len(result), 0)
 
+    def test_parse_playlist_skips_entry_with_only_an_id(self):
+        """An id is not a downloadable URL; listing it would only fail at download."""
+        entries = [{'title': 'Id only', 'id': 'episode-42'}]
+        self.assertEqual(self.extractor._parse_playlist(entries), [])
+
+    def test_parse_playlist_skips_non_http_url_and_uses_next_candidate(self):
+        entries = [{'url': 'episode-42', 'webpage_url': 'https://example.com/ep', 'title': 'Ep'}]
+        result = self.extractor._parse_playlist(entries)
+        self.assertEqual(result[0]['url'], 'https://example.com/ep')
+
     def test_parse_playlist_falls_back_to_webpage_url(self):
         entries = [{'webpage_url': 'https://example.com/ep', 'title': 'Ep via webpage_url'}]
         result = self.extractor._parse_playlist(entries)

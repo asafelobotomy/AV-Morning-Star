@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **UI freeze during YouTube sign-in**: The browser cookie check now runs on a
+  background thread instead of blocking the window (it can take seconds or wait
+  on a keyring prompt). Closing the app waits for it like other workers.
+- **RSS feeds**: Entries without an http(s) link are skipped instead of being
+  listed with their id as the URL, which could only fail at download time.
+
 ## [0.4.2] - 2026-10-02
 
 ### Added

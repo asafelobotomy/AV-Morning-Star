@@ -9,8 +9,13 @@ This thin subclass adds:
 Detection is URL-based and handled by _is_rss_url() in __init__.py.
 """
 
+from urllib.parse import urlparse
 
 from .generic import GenericExtractor
+
+
+def _is_http_url(value):
+    return isinstance(value, str) and urlparse(value).scheme in ('http', 'https')
 
 
 class RSSExtractor(GenericExtractor):
@@ -30,17 +35,24 @@ class RSSExtractor(GenericExtractor):
         """Build episode list from RSS feed entries.
 
         yt-dlp returns enclosure URLs as the 'url' field for each item.  We
-        fall back to the entry id/webpage_url when the direct enclosure URL is
-        absent (e.g. YouTube channel feeds).
+        fall back to webpage_url/original_url when the direct enclosure URL is
+        absent (e.g. YouTube channel feeds).  Entries with no http(s) link are
+        skipped: an id is not downloadable, so listing it would only fail later.
         """
         videos = []
         for entry in entries:
             if not entry:
                 continue
-            url = (
-                entry.get('url')
-                or entry.get('webpage_url')
-                or entry.get('id', '')
+            url = next(
+                (
+                    candidate for candidate in (
+                        entry.get('url'),
+                        entry.get('webpage_url'),
+                        entry.get('original_url'),
+                    )
+                    if _is_http_url(candidate)
+                ),
+                None,
             )
             if not url:
                 continue

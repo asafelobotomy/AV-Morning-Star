@@ -30,6 +30,8 @@ class WindowLifecycleMixin:
             threads.append(self.scraper_thread)
         if hasattr(self, 'download_thread') and self.download_thread is not None:
             threads.append(self.download_thread)
+        if getattr(self, 'cookie_scan_thread', None) is not None:
+            threads.append(self.cookie_scan_thread)
 
         running = [t for t in threads if t.isRunning()]
         if running:

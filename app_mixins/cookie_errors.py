@@ -78,3 +78,26 @@ def _browser_not_found_message(browser_display):
         f"Supported browsers: Firefox, Chrome, Brave, Edge, Chromium, Opera, Vivaldi\n\n"
         f"💡 Recommendation: Install a browser, sign into YouTube, then use 'Auto (Recommended)' mode."
     )
+
+
+def auth_help_message(error):
+    """Explain how to sign in when no browser holds a YouTube login."""
+    available_browsers = detect_available_browsers()
+    if available_browsers:
+        return (
+            f"YouTube requires authentication to download this video.\n\n"
+            f"I found these browsers on your system:\n"
+            f"  • {', '.join([b.title() for b in available_browsers])}\n\n"
+            f"To fix this:\n"
+            f"1. Sign into YouTube in one of these browsers\n"
+            f"2. Go to Tools > Preferences\n"
+            f"3. Select your browser\n"
+            f"4. Try fetching again\n\n"
+            f"Technical details: {error[:200]}"
+        )
+    return (
+        "YouTube requires authentication, but I couldn't find any supported browsers.\n\n"
+        "Supported browsers: Firefox, Chrome, Brave, Edge, Chromium, Opera, Vivaldi\n\n"
+        "Please install a browser and sign into YouTube, then try again.\n\n"
+        f"Technical details: {error[:200]}"
+    )

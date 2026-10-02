@@ -75,12 +75,10 @@ def _make_app_stub(tags, format_text='Video'):
 class TestParseCookieError(unittest.TestCase):
     """parse_cookie_error converts yt-dlp error messages to user-friendly text."""
 
-    def _parse(self, error_text, available=None, yt_browsers=None):
+    def _parse(self, error_text, available=None):
         stub = MagicMock()
         with patch('app_mixins.cookie_errors.detect_available_browsers', return_value=available or []):
-            with patch('app_mixins.fetch_auth.get_browsers_with_youtube_cookies',
-                       return_value=yt_browsers or []):
-                return _main.MediaDownloaderApp.parse_cookie_error(stub, error_text)
+            return _main.MediaDownloaderApp.parse_cookie_error(stub, error_text)
 
     def test_unrecognised_error_returns_none(self):
         self.assertIsNone(self._parse("some random yt-dlp error"))
@@ -104,7 +102,7 @@ class TestParseCookieError(unittest.TestCase):
 
     def test_yt_browsers_listed_in_recommendation(self):
         error = "could not find brave cookies database"
-        result = self._parse(error, available=['firefox'], yt_browsers=['firefox'])
+        result = self._parse(error, available=['firefox'])
         self.assertIn('Firefox', result)
 
     def test_corrupt_database_detected(self):

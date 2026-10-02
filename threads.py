@@ -6,6 +6,7 @@ from pathlib import Path
 import yt_dlp
 from PyQt5.QtCore import QThread, pyqtSignal
 
+from browser_utils import get_browsers_with_youtube_cookies
 from extractors import get_extractor
 from lyrics import embed_lyrics, fetch_lyrics, is_music_track, save_lrc_file
 
@@ -42,6 +43,25 @@ class URLScraperThread(QThread):
         except Exception as e:
             if not self.isInterruptionRequested():
                 self.error.emit(f"Error scraping URL: {str(e)}")
+
+
+class CookieScanThread(QThread):
+    """Thread that checks browser cookie stores for a YouTube login.
+
+    Decrypting cookie databases can take seconds (and may wait on a keyring
+    prompt), so it must not run on the UI thread.  Only start this after the
+    user has consented to cookie access.
+    """
+
+    finished = pyqtSignal(list)
+
+    def run(self):
+        try:
+            browsers = get_browsers_with_youtube_cookies()
+        except Exception:  # noqa: BLE001 — treat any failure as "none found"
+            browsers = []
+        if not self.isInterruptionRequested():
+            self.finished.emit(browsers)
 
 
 class DownloadThread(QThread):

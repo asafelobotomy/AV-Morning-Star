@@ -165,9 +165,9 @@ class TestFetchVideosAuthPolicy(unittest.TestCase):
         app = self._make_app(browser_pref='auto')
         captured = {}
 
-        with patch('app_mixins.fetch_auth.get_browsers_with_youtube_cookies') as mock_yt_cookies:
+        with patch('app_mixins.fetch_auth.CookieScanThread') as mock_scan:
             self._run_fetch(app, 'https://www.youtube.com/watch?v=abc', captured)
-            mock_yt_cookies.assert_not_called()
+            mock_scan.assert_not_called()
 
     # fetch stores the auth decision for start_download to mirror
     def test_fetch_stores_cookies_used_on_app(self):
@@ -175,3 +175,63 @@ class TestFetchVideosAuthPolicy(unittest.TestCase):
         captured = {}
         self._run_fetch(app, 'https://www.youtube.com/watch?v=abc', captured)
         self.assertEqual(app._fetch_cookies_used, captured['cookies'])
+
+
+class TestBotErrorCookieScan(unittest.TestCase):
+    """After a YouTube bot error: ask consent, scan off the UI thread, then retry."""
+
+    BOT_ERROR = "ERROR: Sign in to confirm you're not a bot"
+
+    def _make_app(self):
+        app = _main.MediaDownloaderApp.__new__(_main.MediaDownloaderApp)
+        app.browser_preference = 'auto'
+        app._youtube_auth_handled = False
+        app.url_input = MagicMock()
+        app.url_input.text.return_value = 'https://www.youtube.com/watch?v=abc'
+        app.status_label = MagicMock()
+        app.statusBar = MagicMock(return_value=MagicMock())
+        app.fetch_btn = MagicMock()
+        app.scraper_thread = None
+        return app
+
+    def _bot_error(self, app, consent):
+        box = MagicMock()
+        box.Yes, box.No = 1, 2
+        box.question.return_value = 1 if consent else 2
+        with patch('app_mixins.fetch_auth.QMessageBox', box), \
+                patch('app_mixins.fetch_auth.CookieScanThread') as scan:
+            app.on_fetch_error(self.BOT_ERROR)
+        return scan
+
+    def test_declined_consent_never_scans(self):
+        app = self._make_app()
+        scan = self._bot_error(app, consent=False)
+        scan.assert_not_called()
+        app.fetch_btn.setEnabled.assert_called_with(True)
+
+    def test_consent_starts_background_scan_without_blocking(self):
+        app = self._make_app()
+        scan = self._bot_error(app, consent=True)
+        scan.return_value.start.assert_called_once()
+        scan.return_value.finished.connect.assert_called_once_with(app._on_cookie_scan_done)
+        # Fetch stays disabled until the scan result arrives.
+        app.fetch_btn.setEnabled.assert_not_called()
+
+    def test_scan_result_retries_with_found_browser(self):
+        app = self._make_app()
+        app._auth_error = self.BOT_ERROR
+        seen = {}
+        app.fetch_videos = lambda **kw: seen.update(pref=app.browser_preference, **kw)
+        app._on_cookie_scan_done(['brave', 'firefox'])
+        self.assertEqual(seen, {'pref': 'brave', '_auth_retry': True})
+        self.assertEqual(app.browser_preference, 'auto')
+
+    def test_empty_scan_result_shows_help_and_reenables_fetch(self):
+        app = self._make_app()
+        app._auth_error = self.BOT_ERROR
+        with patch('app_mixins.fetch_auth.QMessageBox') as box, \
+                patch('app_mixins.cookie_errors.detect_available_browsers', return_value=['firefox']):
+            app._on_cookie_scan_done([])
+        app.fetch_btn.setEnabled.assert_called_with(True)
+        text = box.return_value.setText.call_args[0][0]
+        self.assertIn('Firefox', text)

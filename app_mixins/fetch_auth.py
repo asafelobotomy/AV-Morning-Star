@@ -3,14 +3,13 @@
 from urllib.parse import urlparse
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 
-from browser_utils import detect_available_browsers, get_browsers_with_youtube_cookies
 from constants import drm_display_name, is_drm_host
 from extractors import is_youtube_url, platform_name_for_url
-from threads import URLScraperThread
+from threads import CookieScanThread, URLScraperThread
 
-from .cookie_errors import parse_cookie_error
+from .cookie_errors import auth_help_message, parse_cookie_error
 
 
 def _critical_plain(parent, title, message):
@@ -133,56 +132,13 @@ class FetchAuthMixin:
                 self.statusBar().showMessage("YouTube authentication required")
                 return
 
+            # Scan cookie stores off the UI thread; the fetch button stays
+            # disabled until _on_cookie_scan_done() retries or gives up.
             self.status_label.setText("Checking browsers for a YouTube login...")
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            try:
-                browsers_with_youtube = get_browsers_with_youtube_cookies()
-            finally:
-                QApplication.restoreOverrideCursor()
-
-            if browsers_with_youtube:
-                browser = browsers_with_youtube[0]
-                # The failed thread has emitted its error but may not have
-                # returned from run() yet; fetch_videos() would silently bail.
-                if self.scraper_thread is not None:
-                    self.scraper_thread.wait()
-                original_preference = self.browser_preference
-                self.browser_preference = browser
-                self.status_label.setText(f"Retrying with {browser.title()} authentication...")
-                self.fetch_videos(_auth_retry=True)
-                self.browser_preference = original_preference
-                return
-
-            available_browsers = detect_available_browsers()
-            if available_browsers:
-                msg = (
-                    f"YouTube requires authentication to download this video.\n\n"
-                    f"I found these browsers on your system:\n"
-                    f"  • {', '.join([b.title() for b in available_browsers])}\n\n"
-                    f"To fix this:\n"
-                    f"1. Sign into YouTube in one of these browsers\n"
-                    f"2. Go to Tools > Preferences\n"
-                    f"3. Select your browser\n"
-                    f"4. Try fetching again\n\n"
-                    f"Technical details: {error[:200]}"
-                )
-            else:
-                msg = (
-                    "YouTube requires authentication, but I couldn't find any supported browsers.\n\n"
-                    "Supported browsers: Firefox, Chrome, Brave, Edge, Chromium, Opera, Vivaldi\n\n"
-                    "Please install a browser and sign into YouTube, then try again.\n\n"
-                    f"Technical details: {error[:200]}"
-                )
-
-            self.fetch_btn.setEnabled(True)
-            self.status_label.setText("Authentication required")
-            self.statusBar().showMessage("YouTube authentication required")
-            box = QMessageBox(self)
-            box.setWindowTitle("Authentication Required")
-            box.setIcon(QMessageBox.Warning)
-            box.setTextFormat(Qt.PlainText)
-            box.setText(msg)
-            box.exec_()
+            self._auth_error = error
+            self.cookie_scan_thread = CookieScanThread()
+            self.cookie_scan_thread.finished.connect(self._on_cookie_scan_done)
+            self.cookie_scan_thread.start()
             return
 
         self._youtube_auth_handled = False
@@ -194,3 +150,29 @@ class FetchAuthMixin:
             _critical_plain(self, "Error", user_friendly_error)
         else:
             _critical_plain(self, "Error", error)
+
+    def _on_cookie_scan_done(self, browsers_with_youtube):
+        """Retry with the first browser holding a YouTube login, or explain why not."""
+        if browsers_with_youtube:
+            browser = browsers_with_youtube[0]
+            # The failed thread has emitted its error but may not have
+            # returned from run() yet; fetch_videos() would silently bail.
+            if self.scraper_thread is not None:
+                self.scraper_thread.wait()
+            original_preference = self.browser_preference
+            self.browser_preference = browser
+            self.status_label.setText(f"Retrying with {browser.title()} authentication...")
+            self.fetch_videos(_auth_retry=True)
+            self.browser_preference = original_preference
+            return
+
+        self.fetch_btn.setEnabled(True)
+        self.status_label.setText("Authentication required")
+        self.statusBar().showMessage("YouTube authentication required")
+        box = QMessageBox(self)
+        box.setWindowTitle("Authentication Required")
+        box.setIcon(QMessageBox.Warning)
+        box.setTextFormat(Qt.PlainText)
+        box.setText(auth_help_message(self._auth_error))
+        box.exec_()
+
