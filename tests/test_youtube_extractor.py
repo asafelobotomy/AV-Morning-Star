@@ -69,30 +69,35 @@ class TestYouTubeExtractor(unittest.TestCase):
 
     # --- Subtitle embedding parity with BaseExtractor ---
 
-    def test_video_download_with_subs_sets_embedsubtitles(self):
+    @staticmethod
+    def _pp_keys(opts):
+        return [pp["key"] for pp in opts.get("postprocessors", [])]
+
+    def test_video_download_with_subs_adds_embed_postprocessor(self):
+        # 'embedsubtitles' is CLI-only; the API needs the postprocessor itself.
         opts = self.extractor.get_download_opts(
             "/tmp", "%(title)s.%(ext)s", "video", download_subs=True
         )
-        self.assertTrue(opts.get("embedsubtitles"), "embedsubtitles must be True for video+subs")
+        self.assertIn("FFmpegEmbedSubtitle", self._pp_keys(opts))
 
-    def test_audio_download_with_subs_does_not_set_embedsubtitles(self):
+    def test_audio_download_with_subs_does_not_embed(self):
         opts = self.extractor.get_download_opts(
             "/tmp", "%(title)s.%(ext)s", "audio", download_subs=True
         )
-        self.assertFalse(opts.get("embedsubtitles", False))
+        self.assertNotIn("FFmpegEmbedSubtitle", self._pp_keys(opts))
 
-    def test_video_download_without_subs_does_not_set_embedsubtitles(self):
+    def test_video_download_without_subs_does_not_embed(self):
         opts = self.extractor.get_download_opts(
             "/tmp", "%(title)s.%(ext)s", "video", download_subs=False
         )
-        self.assertFalse(opts.get("embedsubtitles", False))
+        self.assertNotIn("FFmpegEmbedSubtitle", self._pp_keys(opts))
 
     def test_subtitle_parity_with_base_extractor(self):
         """YouTubeExtractor subtitle options must match BaseExtractor for video+subs."""
         base = BaseExtractor("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
         base_opts = base.get_download_opts("/tmp", "%(title)s.%(ext)s", "video", download_subs=True)
         yt_opts = self.extractor.get_download_opts("/tmp", "%(title)s.%(ext)s", "video", download_subs=True)
-        for key in ("writesubtitles", "writeautomaticsub", "embedsubtitles"):
+        for key in ("writesubtitles", "writeautomaticsub", "postprocessors"):
             with self.subTest(key=key):
                 self.assertEqual(
                     yt_opts.get(key),

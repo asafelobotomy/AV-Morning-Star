@@ -39,14 +39,14 @@ class GenericExtractor(BaseExtractor):
                          dynamic_normalization=False, video_container='mp4',
                          denoise_video=False, stabilize_video=False,
                          sharpen_video=False, normalize_video_audio=False,
-                         denoise_video_audio=False):
+                         denoise_video_audio=False, fetch_lyrics=False):
         """Get generic download options"""
         opts = super().get_download_opts(
             output_path, filename_template, format_type, video_quality,
             audio_codec, audio_quality, download_subs, embed_thumbnail,
             normalize_audio, denoise_audio, dynamic_normalization, video_container,
             denoise_video, stabilize_video, sharpen_video, normalize_video_audio,
-            denoise_video_audio
+            denoise_video_audio, fetch_lyrics=fetch_lyrics,
         )
 
         # Generic tweaks for compatibility

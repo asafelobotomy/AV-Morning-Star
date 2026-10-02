@@ -8,8 +8,8 @@ Supported containers
 - M4A / ALAC / AAC  : iTunes ``©lyr`` MP4 atom.
 - WAV / other       : not supported; returns False without raising.
 
-mutagen is used for all containers.  It is a transitive dependency of yt-dlp
-(required by the EmbedThumbnail postprocessor), so it is always available.
+mutagen is used for all containers.  It is listed in requirements.txt (yt-dlp
+only uses it optionally, so it is not pulled in transitively).
 """
 
 import re
@@ -24,7 +24,9 @@ _LRC_LINE_RE = re.compile(r'^\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)')
 
 def is_lrc_format(text: str) -> bool:
     """Return True when *text* contains at least one LRC timestamp line."""
-    for line in text.splitlines()[:5]:
+    # Scan every line: LRC files often open with several [ar:]/[ti:]/[al:]/[by:]
+    # header tags before the first timestamp.
+    for line in text.splitlines():
         if line and _LRC_LINE_RE.match(line):
             return True
     return False

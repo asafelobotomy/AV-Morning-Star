@@ -152,7 +152,11 @@ class DownloadThread(QThread):
         parent = audio_path.parent
         try:
             for candidate in parent.iterdir():
-                if candidate.suffix == '.lrc' and candidate.stem.startswith(stem):
+                # Exact stem or stem + '.lang' — a bare prefix match would let
+                # "Song.mp3" pick up "Song 2.en.lrc".
+                if candidate.suffix == '.lrc' and (
+                    candidate.stem == stem or candidate.stem.startswith(stem + '.')
+                ):
                     return str(candidate)
         except OSError:
             pass
@@ -175,7 +179,7 @@ class DownloadThread(QThread):
                 synced = Path(lrc_path).read_text(encoding='utf-8')
                 if not self.save_lrc:
                     os.remove(lrc_path)
-            except OSError:
+            except (OSError, UnicodeDecodeError):
                 synced = None
 
         # Phase 2 — LRCLIB API for all other platforms (or as a fallback).
@@ -242,7 +246,12 @@ class DownloadThread(QThread):
                     filepath = self._get_filepath(info)
                     if filepath:
                         self.progress.emit('Fetching lyrics...', 100)
-                        self._handle_lyrics(url, info, filepath)
+                        try:
+                            self._handle_lyrics(url, info, filepath)
+                        except Exception:  # noqa: BLE001 — lyrics are best-effort
+                            # The audio file is already complete; a lyrics
+                            # failure must not count the download as failed.
+                            pass
 
                 successful += 1
 

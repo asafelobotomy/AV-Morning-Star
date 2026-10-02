@@ -96,7 +96,12 @@ class BaseExtractor:
             # whatever the site offers if SRT is unavailable.
             opts['subtitlesformat'] = 'srt/vtt/best'
             if format_type == 'video':
-                opts['embedsubtitles'] = True
+                # 'embedsubtitles' is a CLI-only flag; the Python API needs the
+                # postprocessor itself.  Runs after the merge, before filters.
+                opts['postprocessors'] = [{
+                    'key': 'FFmpegEmbedSubtitle',
+                    'already_have_subtitle': False,
+                }]
 
         # YouTube Music subtitle tracks are the song lyrics in LRC/ELRC format.
         # Requesting them here lets yt-dlp write the .lrc file alongside the
@@ -107,16 +112,22 @@ class BaseExtractor:
             opts['subtitleslangs'] = ['orig', 'en']
 
         if format_type == 'audio':
-            opts.update(build_audio_opts(
+            format_opts = build_audio_opts(
                 audio_codec, audio_quality, embed_thumbnail,
                 normalize_audio, denoise_audio, dynamic_normalization,
-            ))
+            )
         else:
-            opts.update(build_video_opts(
+            format_opts = build_video_opts(
                 video_quality, video_container,
                 denoise_video, stabilize_video, sharpen_video,
                 normalize_video_audio, denoise_video_audio,
-            ))
+            )
+
+        # Merge rather than overwrite so the subtitle embedder survives.
+        postprocessors = opts.pop('postprocessors', []) + format_opts.pop('postprocessors', [])
+        opts.update(format_opts)
+        if postprocessors:
+            opts['postprocessors'] = postprocessors
 
         return opts
 

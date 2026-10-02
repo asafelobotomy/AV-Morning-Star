@@ -88,10 +88,11 @@ def build_video_opts(
     else:
         audio_codec_args = ['-c:a', 'copy']
 
-    opts['postprocessors'].append({
-        'key': 'FFmpegVideoConvertor',
-        'preferedformat': video_container.lower(),
-    })
+    # FFmpegVideoConvertor skips files already in the target container (which is
+    # always the case after merge_output_format), so the filters would never run.
+    # FFmpegCopyStream always re-runs ffmpeg in place; our per-stream codec args
+    # come after its "-c copy" and therefore override it where needed.
+    opts['postprocessors'].append({'key': 'FFmpegCopyStream'})
 
     ffmpeg_args = []
     if video_filters:
@@ -101,8 +102,31 @@ def build_video_opts(
     ffmpeg_args.extend(video_codec_args)
     ffmpeg_args.extend(audio_codec_args)
 
-    opts['postprocessor_args'] = {'videoconvertor': ffmpeg_args}
+    opts['postprocessor_args'] = {'copystream': ffmpeg_args}
     return opts
+
+
+_AUDIO_ENCODERS = {
+    'mp3': 'libmp3lame',
+    'aac': 'aac',
+    'm4a': 'aac',
+    'opus': 'libopus',
+    'vorbis': 'libvorbis',
+    'flac': 'flac',
+    'alac': 'alac',
+    'wav': 'pcm_s16le',
+}
+_LOSSLESS_CODECS = {'flac', 'alac', 'wav'}
+
+
+def _audio_encode_args(codec, quality):
+    """ffmpeg args to re-encode the audio stream in its existing codec."""
+    args = ['-c:a', _AUDIO_ENCODERS.get(codec, codec)]
+    if codec in _LOSSLESS_CODECS:
+        return args
+    # '0' means "best" in the UI (Lossless entry); use a high fixed bitrate.
+    bitrate = quality if str(quality).isdigit() and int(quality) > 10 else '320'
+    return [*args, '-b:a', f'{bitrate}k']
 
 
 def build_audio_opts(
@@ -126,15 +150,23 @@ def build_audio_opts(
     audio_filters = []
     if denoise_audio:
         audio_filters.append(AUDIO_DENOISE_FILTER)
-    if normalize_audio:
-        if dynamic_normalization:
-            audio_filters.append(AUDIO_DYNAUDNORM_FILTER)
-        else:
-            audio_filters.append(AUDIO_LOUDNORM_FILTER)
+    # The UI exposes these as independent checkboxes; dynamic normalization is
+    # the alternative to EBU R128, so it wins if both are ticked.
+    if dynamic_normalization:
+        audio_filters.append(AUDIO_DYNAUDNORM_FILTER)
+    elif normalize_audio:
+        audio_filters.append(AUDIO_LOUDNORM_FILTER)
 
     if audio_filters:
+        # Filters can't ride on FFmpegExtractAudio: when the source already uses
+        # the target codec it stream-copies (ffmpeg rejects -af with -c copy) or
+        # skips the file entirely.  Apply them in a dedicated in-place pass.
+        opts['postprocessors'].append({'key': 'FFmpegCopyStream'})
         opts['postprocessor_args'] = {
-            'extractaudio+ffmpeg_o': ['-af', ','.join(audio_filters)],
+            'copystream': [
+                '-af', ','.join(audio_filters),
+                *_audio_encode_args(audio_codec.lower(), audio_quality),
+            ],
         }
 
     # Metadata must be written before the thumbnail is embedded so that tag

@@ -90,7 +90,8 @@ class DownloadHandlersMixin:
         self.fetch_btn.setEnabled(True)
         self.progress_bar.setValue(100)
         self.status_label.setText(message)
-        self.statusBar().showMessage("All downloads completed!")
+        # finished also fires for cancelled and mixed-result runs.
+        self.statusBar().showMessage(message.splitlines()[0])
         _plain_message(self, QMessageBox.Information, "Success", message)
 
     def on_download_error(self, error):

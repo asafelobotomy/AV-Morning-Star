@@ -76,7 +76,7 @@ class TestBaseExtractorOptions(unittest.TestCase):
 
     def _get_video_postprocessor_args(self, **kwargs):
         opts = build_video_opts("1080p", **kwargs)
-        return opts.get("postprocessor_args", {}).get("videoconvertor", [])
+        return opts.get("postprocessor_args", {}).get("copystream", [])
 
     def test_video_denoise_filter_in_vf_chain(self):
         args = self._get_video_postprocessor_args(denoise_video=True)
@@ -101,11 +101,26 @@ class TestBaseExtractorOptions(unittest.TestCase):
         opts = build_video_opts("1080p")
         self.assertNotIn("postprocessor_args", opts)
 
+    def test_filters_use_copystream_not_videoconvertor(self):
+        """FFmpegVideoConvertor skips same-container files, so filters would never run."""
+        opts = build_video_opts("1080p", denoise_video=True)
+        keys = [pp["key"] for pp in opts["postprocessors"]]
+        self.assertIn("FFmpegCopyStream", keys)
+        self.assertNotIn("FFmpegVideoConvertor", keys)
+
+    def test_subtitle_embed_survives_video_filters(self):
+        """Subtitle embedding and filter postprocessors must both be present."""
+        opts = self.extractor.get_download_opts(
+            "/tmp", "%(title)s.%(ext)s", "video", download_subs=True, denoise_video=True,
+        )
+        keys = [pp["key"] for pp in opts["postprocessors"]]
+        self.assertEqual(keys, ["FFmpegEmbedSubtitle", "FFmpegCopyStream"])
+
     # --- Codec stream copy when only one stream has a filter ---
 
     def _get_video_convertor_args(self, **kwargs):
         opts = build_video_opts("1080p", **kwargs)
-        return opts.get("postprocessor_args", {}).get("videoconvertor", [])
+        return opts.get("postprocessor_args", {}).get("copystream", [])
 
     def test_video_only_filter_copies_audio_stream(self):
         """When only a video filter is active the audio stream must be copied."""
@@ -163,7 +178,7 @@ class TestBaseExtractorOptions(unittest.TestCase):
 
     def _get_audio_postprocessor_args(self, normalize=False, denoise=False, dynamic=False):
         opts = build_audio_opts("mp3", "192", False, normalize, denoise, dynamic)
-        return opts.get("postprocessor_args", {}).get("extractaudio+ffmpeg_o", [])
+        return opts.get("postprocessor_args", {}).get("copystream", [])
 
     def test_audio_denoise_filter_in_af_chain(self):
         args = self._get_audio_postprocessor_args(denoise=True)
@@ -182,6 +197,31 @@ class TestBaseExtractorOptions(unittest.TestCase):
         self.assertIn("-af", args)
         af_value = args[args.index("-af") + 1]
         self.assertIn(AUDIO_DYNAUDNORM_FILTER, af_value)
+
+    def test_dynamic_normalization_works_without_ebu_checkbox(self):
+        """The UI exposes Dynamic Normalization as its own checkbox."""
+        args = self._get_audio_postprocessor_args(normalize=False, dynamic=True)
+        self.assertIn("-af", args)
+        af_value = args[args.index("-af") + 1]
+        self.assertIn(AUDIO_DYNAUDNORM_FILTER, af_value)
+        self.assertNotIn(AUDIO_LOUDNORM_FILTER, af_value)
+
+    def test_audio_filters_run_after_extract_before_metadata(self):
+        """Filters need their own pass: ExtractAudio stream-copies same-codec sources."""
+        opts = build_audio_opts("opus", "192", True, True, False, False)
+        keys = [pp["key"] for pp in opts["postprocessors"]]
+        self.assertEqual(
+            keys, ["FFmpegExtractAudio", "FFmpegCopyStream", "FFmpegMetadata", "EmbedThumbnail"],
+        )
+        args = opts["postprocessor_args"]["copystream"]
+        self.assertEqual(args[args.index("-c:a") + 1], "libopus")
+        self.assertEqual(args[args.index("-b:a") + 1], "192k")
+
+    def test_lossless_audio_filter_pass_has_no_bitrate(self):
+        opts = build_audio_opts("flac", "0", False, True, False, False)
+        args = opts["postprocessor_args"]["copystream"]
+        self.assertEqual(args[args.index("-c:a") + 1], "flac")
+        self.assertNotIn("-b:a", args)
 
     def test_no_audio_filters_no_postprocessor_args(self):
         opts = build_audio_opts("mp3", "192", False, False, False, False)

@@ -55,7 +55,7 @@ def format_extract_error(error_msg):
     if (
         'rate' in lower and 'limit' in lower
         or 'too many requests' in lower
-        or '429' in lower
+        or 'http error 429' in lower
     ):
         return Exception(
             "Rate limited — the site is temporarily blocking requests.\n\n"
@@ -117,7 +117,7 @@ def format_extract_error(error_msg):
         )
 
     # YouTube sign-in required
-    if 'sign in' in error_msg or 'not a bot' in lower:
+    if 'sign in' in lower or 'not a bot' in lower:
         return Exception(
             "YouTube authentication required.\n\n"
             "Please:\n"

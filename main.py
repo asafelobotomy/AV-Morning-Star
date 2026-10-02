@@ -6,6 +6,7 @@ A PyQt5 application for downloading videos and audio from URLs
 
 import os
 import sys
+import traceback
 
 from constants import (
     APP_FULL_TITLE,
@@ -68,8 +69,28 @@ class MediaDownloaderApp(
         self.apply_theme(self.current_theme)
 
 
+def _excepthook(exc_type, exc_value, exc_tb):
+    """Log uncaught exceptions instead of letting PyQt5 abort the process.
+
+    Without a custom hook, PyQt5 calls qFatal() on any exception raised in a
+    slot, killing the whole app (and every in-flight download) with SIGABRT.
+    """
+    traceback.print_exception(exc_type, exc_value, exc_tb)
+    app = QApplication.instance()
+    if app is None:
+        return
+    from PyQt5.QtWidgets import QMessageBox
+    box = QMessageBox(app.activeWindow())
+    box.setWindowTitle("Unexpected Error")
+    box.setIcon(QMessageBox.Critical)
+    box.setTextFormat(Qt.PlainText)
+    box.setText(f"An unexpected error occurred:\n\n{exc_type.__name__}: {exc_value}")
+    box.exec_()
+
+
 def main():
     os.environ['RESOURCE_NAME'] = 'av-morning-star'
+    sys.excepthook = _excepthook
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")

@@ -3,7 +3,7 @@
 from urllib.parse import urlparse
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from browser_utils import detect_available_browsers, get_browsers_with_youtube_cookies
 from constants import drm_display_name, is_drm_host
@@ -113,32 +113,44 @@ class FetchAuthMixin:
 
         if is_youtube and is_bot_error and not self._youtube_auth_handled:
             self._youtube_auth_handled = True
-            browsers_with_youtube = get_browsers_with_youtube_cookies()
 
-            if browsers_with_youtube:
-                browser = browsers_with_youtube[0]
-                reply = QMessageBox.question(
-                    self,
-                    "YouTube Authentication Required",
-                    f"YouTube is requesting authentication to prevent bot access.\n\n"
-                    f"Good news! I detected you're logged into YouTube in {browser.title()}.\n\n"
-                    f"Would you like to retry using your {browser.title()} login?",
-                    QMessageBox.Yes | QMessageBox.No,
-                    QMessageBox.Yes,
-                )
-
-                if reply == QMessageBox.Yes:
-                    original_preference = self.browser_preference
-                    self.browser_preference = browser
-                    self.status_label.setText(f"Retrying with {browser} authentication...")
-                    self.fetch_videos(_auth_retry=True)
-                    self.browser_preference = original_preference
-                    return
-
+            # Ask *before* touching any browser cookie store — the documented
+            # privacy model is that cookies are never read without consent.
+            reply = QMessageBox.question(
+                self,
+                "YouTube Authentication Required",
+                "YouTube is requesting authentication to prevent bot access.\n\n"
+                "May AV Morning Star check your installed browsers for a YouTube "
+                "login and retry with it?\n\n"
+                "Cookies are read locally by yt-dlp and are never saved by this app.",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes,
+            )
+            if reply != QMessageBox.Yes:
                 self._youtube_auth_handled = False
                 self.fetch_btn.setEnabled(True)
                 self.status_label.setText("Authentication declined")
                 self.statusBar().showMessage("YouTube authentication required")
+                return
+
+            self.status_label.setText("Checking browsers for a YouTube login...")
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                browsers_with_youtube = get_browsers_with_youtube_cookies()
+            finally:
+                QApplication.restoreOverrideCursor()
+
+            if browsers_with_youtube:
+                browser = browsers_with_youtube[0]
+                # The failed thread has emitted its error but may not have
+                # returned from run() yet; fetch_videos() would silently bail.
+                if self.scraper_thread is not None:
+                    self.scraper_thread.wait()
+                original_preference = self.browser_preference
+                self.browser_preference = browser
+                self.status_label.setText(f"Retrying with {browser.title()} authentication...")
+                self.fetch_videos(_auth_retry=True)
+                self.browser_preference = original_preference
                 return
 
             available_browsers = detect_available_browsers()

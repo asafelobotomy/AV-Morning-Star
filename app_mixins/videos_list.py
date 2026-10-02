@@ -9,6 +9,20 @@ from settings import save_output_path
 from ui_widgets import VideoCheckbox
 
 
+def format_duration(raw):
+    """Return HH:MM:SS for a yt-dlp duration (int, float or None), else 'N/A'."""
+    # yt-dlp reports duration as int, float or None depending on the site.
+    try:
+        duration = int(raw or 0)
+    except (TypeError, ValueError):
+        return "N/A"
+    if duration <= 0:
+        return "N/A"
+    hours, rem = divmod(duration, 3600)
+    minutes, seconds = divmod(rem, 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
 class VideosListMixin:
     """Behaviour mixed into MediaDownloaderApp."""
 
@@ -41,15 +55,7 @@ class VideosListMixin:
 
         # Create checkboxes for each video
         for video in videos:
-            duration = video.get('duration', 0)
-            if duration:
-                hours = duration // 3600
-                minutes = (duration % 3600) // 60
-                seconds = duration % 60
-                duration_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-            else:
-                duration_str = "N/A"
-
+            duration_str = format_duration(video.get('duration'))
             checkbox_text = f"{video['title']}\nUploader: {video.get('uploader', 'Unknown')} | Duration: {duration_str}"
             checkbox = VideoCheckbox(checkbox_text)
             checkbox.setChecked(True)
