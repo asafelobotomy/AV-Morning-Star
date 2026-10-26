@@ -18,4 +18,4 @@ soupsieve==2.10
 syncedlyrics==1.0.1
 typing_extensions==4.16.0
 urllib3==2.8.0
-yt-dlp==2026.8.19
+yt-dlp==2026.10.21
