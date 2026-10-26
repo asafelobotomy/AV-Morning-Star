@@ -14,7 +14,7 @@ PyQt5-Qt5==5.15.19
 PyQt5_sip==12.20.0
 RapidFuzz==3.14.6
 requests==2.34.2
-soupsieve==2.10
+soupsieve==3.0.4
 syncedlyrics==1.0.1
 typing_extensions==4.16.0
 urllib3==2.8.0
