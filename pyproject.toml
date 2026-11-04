@@ -1,6 +1,11 @@
+[project]
+name = "av-morning-star"
+version = "0.4.2"
+requires-python = ">=3.11"
+
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

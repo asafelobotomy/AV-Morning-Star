@@ -8,7 +8,7 @@
 
 [![Release](https://img.shields.io/github/v/release/asafelobotomy/AV-Morning-Star?style=flat-square)](https://github.com/asafelobotomy/AV-Morning-Star/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue?style=flat-square)](https://www.python.org/downloads/)
 [![Tests](https://img.shields.io/badge/tests-317%20passing-brightgreen?style=flat-square)](#)
 [![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-lightgrey?style=flat-square)](#)
 
@@ -133,7 +133,7 @@ pip install -r requirements.txt
 python3 main.py
 ```
 
-**Requirements:** Python 3.10+, FFmpeg, and optionally a JS runtime for YouTube.
+**Requirements:** Python 3.11+, FFmpeg, and optionally a JS runtime for YouTube.
 
 ### Build AppImage from Source
 

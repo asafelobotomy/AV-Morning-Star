@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Pillow 12.3.0 → 13.0.0 (critical advisories; fixes require 13.0.0). Pillow 13
+  requires Python 3.11+, so 3.10 is dropped from CI and the project requirement.
+  See #15.
+- certifi 2026.7.22 → 2026.10.18 (critical advisory GHSA-6q48-6c7w-9gw2).
+
 ### Fixed
 - **UI freeze during YouTube sign-in**: The browser cookie check now runs on a
   background thread instead of blocking the window (it can take seconds or wait
