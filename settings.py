@@ -11,7 +11,7 @@ APPLICATION = "AV-Morning-Star"
 _VALID_BROWSERS = {
     'auto', 'none', 'firefox', 'chrome', 'brave', 'edge', 'chromium', 'opera', 'vivaldi',
 }
-_VALID_THEMES = {'dark', 'light'}
+_VALID_THEMES = {'uq', 'dark', 'light'}
 
 
 def _settings():

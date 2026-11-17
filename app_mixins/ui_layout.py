@@ -54,10 +54,17 @@ class UILayoutMixin:
         menubar = self.menuBar()
 
         view_menu = menubar.addMenu("View")
-        self.dark_mode_action = view_menu.addAction("Dark Mode")
-        self.dark_mode_action.setCheckable(True)
-        self.dark_mode_action.setChecked(self.current_theme == "dark")
-        self.dark_mode_action.triggered.connect(self._on_theme_toggle)
+        theme_menu = view_menu.addMenu("Theme")
+        self.theme_actions = {}
+        from PyQt5.QtWidgets import QActionGroup
+        theme_group = QActionGroup(self)
+        for key, label in (("uq", "uQ (follow system)"), ("dark", "Dark"), ("light", "Light")):
+            action = theme_menu.addAction(label)
+            action.setCheckable(True)
+            action.setChecked(self.current_theme == key)
+            theme_group.addAction(action)
+            action.triggered.connect(lambda _checked, k=key: self.apply_theme(k))
+            self.theme_actions[key] = action
 
         tools_menu = menubar.addMenu(MENU_TOOLS)
 

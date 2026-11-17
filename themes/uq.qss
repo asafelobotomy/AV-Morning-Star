@@ -1,0 +1,210 @@
+/* ── Global ── */
+QWidget {
+    background-color: @bg@;
+    color: @text@;
+    font-size: 10pt;
+}
+
+/* ── Main / Central widget ── */
+QMainWindow, QDialog {
+    background-color: @bg@;
+}
+
+/* ── Menu bar ── */
+QMenuBar {
+    background-color: @surface@;
+    color: @text@;
+    border-bottom: 1px solid @border@;
+}
+QMenuBar::item:selected {
+    background-color: @surface_alt@;
+}
+QMenu {
+    background-color: @surface@;
+    color: @text@;
+    border: 1px solid @border@;
+}
+QMenu::item:selected {
+    background-color: @accent@;
+    color: @accent_text@;
+}
+
+/* ── Group boxes ── */
+QGroupBox {
+    border: 1px solid @border@;
+    border-radius: 6px;
+    margin-top: 10px;
+    padding-top: 6px;
+    color: @text@;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 4px;
+    color: @text_muted@;
+}
+
+/* ── Buttons ── */
+QPushButton {
+    background-color: @surface_alt@;
+    color: @text@;
+    border: 1px solid @border@;
+    border-radius: 4px;
+    padding: 5px 14px;
+}
+QPushButton:hover {
+    background-color: @accent@;
+    color: @accent_text@;
+    border-color: @accent@;
+}
+QPushButton:pressed {
+    background-color: @accent_hover@;
+}
+QPushButton:disabled {
+    background-color: @surface@;
+    color: @text_muted@;
+    border-color: @border@;
+}
+
+/* ── Line edits ── */
+QLineEdit {
+    background-color: @surface@;
+    color: @text@;
+    border: 1px solid @border@;
+    border-radius: 4px;
+    padding: 4px 6px;
+    selection-background-color: @accent@;
+}
+QLineEdit:focus {
+    border-color: @accent@;
+}
+
+/* ── Combo boxes ── */
+QComboBox {
+    background-color: @surface@;
+    color: @text@;
+    border: 1px solid @border@;
+    border-radius: 4px;
+    padding: 4px 6px;
+    selection-background-color: @accent@;
+}
+QComboBox::drop-down {
+    border: none;
+    width: 20px;
+}
+QComboBox QAbstractItemView {
+    background-color: @surface@;
+    color: @text@;
+    selection-background-color: @accent@;
+    selection-color: @accent_text@;
+    border: 1px solid @border@;
+}
+
+/* ── Checkboxes ── */
+QCheckBox {
+    color: @text@;
+    spacing: 6px;
+}
+QCheckBox::indicator {
+    width: 14px;
+    height: 14px;
+    border: 1px solid @overlay@;
+    border-radius: 3px;
+    background-color: @surface@;
+}
+QCheckBox::indicator:checked {
+    background-color: @accent@;
+    border-color: @accent@;
+}
+
+/* ── Progress bar ── */
+QProgressBar {
+    background-color: @surface@;
+    border: 1px solid @border@;
+    border-radius: 4px;
+    text-align: center;
+    color: @text@;
+}
+QProgressBar::chunk {
+    background-color: @accent@;
+    border-radius: 3px;
+}
+
+/* ── Scroll areas / scroll bars ── */
+QScrollArea {
+    background-color: @bg@;
+    border: 1px solid @border@;
+}
+QScrollBar:vertical {
+    background: @surface@;
+    width: 10px;
+    border-radius: 5px;
+}
+QScrollBar::handle:vertical {
+    background: @border@;
+    border-radius: 5px;
+    min-height: 20px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+QScrollBar:horizontal {
+    background: @surface@;
+    height: 10px;
+    border-radius: 5px;
+}
+QScrollBar::handle:horizontal {
+    background: @border@;
+    border-radius: 5px;
+    min-width: 20px;
+}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
+
+/* ── Labels ── */
+QLabel {
+    color: @text@;
+    background-color: transparent;
+}
+
+/* ── Status bar ── */
+QStatusBar {
+    background-color: @surface@;
+    color: @text_muted@;
+    border-top: 1px solid @border@;
+}
+
+/* ── Tool tips ── */
+QToolTip {
+    background-color: @surface@;
+    color: @text@;
+    border: 1px solid @border@;
+    padding: 4px;
+}
+
+/* ── Scroll area viewport ── */
+QAbstractScrollArea {
+    background-color: @bg@;
+}
+QAbstractScrollArea > QWidget {
+    background-color: @bg@;
+}
+
+/* ── Menu separator ── */
+QMenu::separator {
+    height: 1px;
+    background-color: @border@;
+    margin: 3px 6px;
+}
+
+/* ── Status bar items — suppress Fusion border ── */
+QStatusBar::item {
+    border: none;
+}
+
+/* ── Notice / callout label (PreferencesDialog auth_instructions) ── */
+QLabel#auth_instructions {
+    color: @warning@;
+    background-color: @surface@;
+    border: 1px solid @warning@;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 9pt;
+}

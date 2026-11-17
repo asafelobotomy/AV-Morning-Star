@@ -58,7 +58,7 @@ class TestSettings(unittest.TestCase):
 
     def test_load_theme_default(self):
         self.mock_settings.value.return_value = None
-        self.assertEqual(load_theme(), 'dark')
+        self.assertEqual(load_theme(), 'uq')
 
     def test_save_theme(self):
         save_theme('light')

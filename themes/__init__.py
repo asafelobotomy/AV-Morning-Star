@@ -9,8 +9,16 @@ Each theme is a dict with two keys:
 
 from .dark import DARK
 from .light import LIGHT
+from .uq import tokens_path, uq_theme
 
 THEMES = {"dark": DARK, "light": LIGHT}
-DEFAULT_THEME = "dark"
+DEFAULT_THEME = "uq"
 
-__all__ = ["DARK", "LIGHT", "THEMES", "DEFAULT_THEME"]
+
+def resolve_theme(name):
+    """Theme dict for *name*. "uq" follows uQ and falls back to dark without it."""
+    if name == "uq":
+        return uq_theme() or DARK
+    return THEMES.get(name, DARK)
+
+__all__ = ["DARK", "LIGHT", "THEMES", "DEFAULT_THEME", "resolve_theme", "tokens_path"]

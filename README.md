@@ -79,7 +79,7 @@ Click tags to compose the output filename. Supported tokens:
 | Extension | `mp4` |
 
 ### Interface
-- **Dark / Light theme** — toggle any time via View menu
+- **uQ theme (default), Dark, Light** — pick via View > Theme; the uQ theme follows your uQ colours live
 - **Basic mode** — one-click download, auto-detects best quality
 - **Advanced mode** — full control over codecs, bitrates, and post-processing
 - **Real-time progress** — live filename, percentage, and status updates
