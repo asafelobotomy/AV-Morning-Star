@@ -1,6 +1,6 @@
 # AV Morning Star — Project Structure
 
-**Version:** 0.4.2
+**Version:** 0.4.3
 
 ```
 AV-Morning-Star/
