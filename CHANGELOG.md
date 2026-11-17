@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-11-17
+
 ### Added
 - **uQ theme**: the app now reads uQ's `tokens.json` (colours and UI font) and
   follows it live when the uQ theme changes. It is the new default; View > Theme
