@@ -88,25 +88,26 @@ class WindowLifecycleMixin:
         msg.setIcon(QMessageBox.Information)
         msg.exec_()
 
-    def _on_theme_toggle(self, checked):
-        """Called when the View > Dark Mode menu item is toggled."""
-        self.apply_theme("dark" if checked else "light")
-
     def apply_theme(self, theme_name):
-        """Apply *theme_name* ('dark' or 'light') to the whole application."""
-        from themes import THEMES
-        theme = THEMES.get(theme_name, THEMES["dark"])
+        """Apply *theme_name* ('uq', 'dark' or 'light') to the whole application."""
+        from themes import resolve_theme
+        theme = resolve_theme(theme_name)
         self.current_theme = theme_name
+        self._active_theme = theme
         save_theme(theme_name)
 
-        # Apply global QSS
-        QApplication.instance().setStyleSheet(theme["stylesheet"])
+        app = QApplication.instance()
+        app.setStyleSheet(theme["stylesheet"])
+        if theme.get("font_family"):
+            font = app.font()
+            font.setFamily(theme["font_family"])
+            if theme.get("font_size"):
+                font.setPointSize(int(theme["font_size"]))
+            app.setFont(font)
 
-        # Sync the menu checkbox without re-triggering the signal
-        if hasattr(self, "dark_mode_action"):
-            self.dark_mode_action.blockSignals(True)
-            self.dark_mode_action.setChecked(theme_name == "dark")
-            self.dark_mode_action.blockSignals(False)
+        if hasattr(self, "theme_actions") and theme_name in self.theme_actions:
+            self.theme_actions[theme_name].setChecked(True)
+        self._watch_uq_theme()
 
         # Update dynamically-styled widgets that QSS can't reach cleanly
         v = theme["vars"]
@@ -130,3 +131,31 @@ class WindowLifecycleMixin:
         # Rebuild tag buttons so they pick up the new colours
         if hasattr(self, "refresh_tag_buttons"):
             self.refresh_tag_buttons()
+
+    def _watch_uq_theme(self):
+        """Re-apply the theme when uQ rewrites tokens.json (only while on "uq")."""
+        from PyQt5.QtCore import QFileSystemWatcher, QTimer
+        from themes import tokens_path
+        if not hasattr(self, "_theme_watcher"):
+            self._theme_watcher = QFileSystemWatcher(self)
+            self._theme_debounce = QTimer(self)
+            self._theme_debounce.setSingleShot(True)
+            self._theme_debounce.setInterval(150)
+            self._theme_debounce.timeout.connect(self._on_uq_theme_changed)
+            self._theme_watcher.fileChanged.connect(lambda _p: self._theme_debounce.start())
+            self._theme_watcher.directoryChanged.connect(lambda _p: self._theme_debounce.start())
+        watcher = self._theme_watcher
+        stale = watcher.files() + watcher.directories()
+        if stale:
+            watcher.removePaths(stale)
+        if self.current_theme != "uq":
+            return
+        path = tokens_path()
+        # uqd replaces the file atomically, so watch the directory too and re-add the file.
+        for target in (path.parent.parent, path.parent, path):
+            if target.exists():
+                watcher.addPath(str(target))
+
+    def _on_uq_theme_changed(self):
+        if self.current_theme == "uq":
+            self.apply_theme("uq")

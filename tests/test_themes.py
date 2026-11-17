@@ -117,4 +117,48 @@ class TestThemes(unittest.TestCase):
                 )
 
     def test_default_theme_is_valid(self):
-        self.assertIn(_themes.DEFAULT_THEME, _themes.THEMES)
+        self.assertIn(_themes.DEFAULT_THEME, {*_themes.THEMES, "uq"})
+
+
+class TestUqTheme(unittest.TestCase):
+    """The uQ theme is generated from tokens.json and must fail safe."""
+
+    TOKENS = {
+        "variant": "dark",
+        "colors": {
+            "bg": "#282828", "surface": "#343330", "surface_alt": "#3d3c37",
+            "overlay": "#4f4c44", "text": "#ebdbb2", "text_muted": "#b0a589",
+            "accent": "#d79921", "accent_text": "#282828", "border": "#625e51",
+            "success": "#98971a", "warning": "#d79921", "error": "#cc241d",
+        },
+    }
+
+    def test_default_is_uq(self):
+        self.assertEqual(_themes.DEFAULT_THEME, "uq")
+
+    def test_build_theme_fills_every_placeholder(self):
+        from themes.uq import build_theme
+        theme = build_theme(self.TOKENS)
+        self.assertNotIn("@", theme["stylesheet"])
+        self.assertIn("#d79921", theme["stylesheet"])
+        self.assertEqual(theme["vars"].keys(), _themes.DARK["vars"].keys())
+
+    def test_invalid_tokens_rejected(self):
+        from themes.uq import build_theme
+        self.assertIsNone(build_theme({}))
+        bad = {"colors": dict(self.TOKENS["colors"], bg="red")}
+        self.assertIsNone(build_theme(bad))
+
+    def test_resolve_falls_back_to_dark_without_uq(self):
+        import os
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            old = os.environ.get("XDG_STATE_HOME")
+            os.environ["XDG_STATE_HOME"] = d
+            try:
+                self.assertIs(_themes.resolve_theme("uq"), _themes.DARK)
+            finally:
+                if old is None:
+                    del os.environ["XDG_STATE_HOME"]
+                else:
+                    os.environ["XDG_STATE_HOME"] = old

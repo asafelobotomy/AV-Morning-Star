@@ -3,13 +3,13 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QPushButton
 
-from themes import THEMES
+from themes import DARK
 
 
 def create_tag_button(app, tag, *, is_selected=False):
     """Create a visual tag button (pill/chip) for filename templates."""
     display_text = app.all_tags.get(tag, tag)
-    v = THEMES[app.current_theme]["vars"]
+    v = getattr(app, "_active_theme", DARK)["vars"]
 
     btn = QPushButton(display_text)
     btn.setFixedHeight(26)

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **uQ theme**: the app now reads uQ's `tokens.json` (colours and UI font) and
+  follows it live when the uQ theme changes. It is the new default; View > Theme
+  also offers Dark and Light, and falls back to Dark when uQ is not installed.
+
 ### Security
 - Pillow 12.3.0 → 13.0.0 (critical advisories; fixes require 13.0.0). Pillow 13
   requires Python 3.11+, so 3.10 is dropped from CI and the project requirement.
