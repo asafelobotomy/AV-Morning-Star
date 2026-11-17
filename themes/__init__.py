@@ -9,7 +9,7 @@ Each theme is a dict with two keys:
 
 from .dark import DARK
 from .light import LIGHT
-from .uq import uq_theme, tokens_path
+from .uq import tokens_path, uq_theme
 
 THEMES = {"dark": DARK, "light": LIGHT}
 DEFAULT_THEME = "uq"

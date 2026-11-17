@@ -135,6 +135,7 @@ class WindowLifecycleMixin:
     def _watch_uq_theme(self):
         """Re-apply the theme when uQ rewrites tokens.json (only while on "uq")."""
         from PyQt5.QtCore import QFileSystemWatcher, QTimer
+
         from themes import tokens_path
         if not hasattr(self, "_theme_watcher"):
             self._theme_watcher = QFileSystemWatcher(self)
