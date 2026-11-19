@@ -3,4 +3,4 @@ yt-dlp==2026.8.19
 Pillow==13.0.0
 mutagen==1.48.1
 syncedlyrics>=1.0.1
-certifi==2026.10.18
+certifi==2026.10.23
