@@ -30,6 +30,7 @@ from PyQt5.QtCore import Qt, QTimer  # noqa: E402
 from PyQt5.QtGui import QIcon, QPixmap  # noqa: E402
 from PyQt5.QtWidgets import QApplication, QMainWindow, QSplashScreen  # noqa: E402
 
+import single_instance  # noqa: E402
 from app_mixins import (  # noqa: E402
     DownloadHandlersMixin,
     FetchAuthMixin,
@@ -98,6 +99,11 @@ def main():
     app.setApplicationDisplayName(APP_FULL_TITLE)
     app.setDesktopFileName("com.github.asafelobotomy.avmorningstar.desktop")
 
+    # A second start brings the open window forward instead of opening another.
+    windows = []
+    if single_instance.claim(app, lambda: windows[0] if windows else None):
+        return
+
     icon_path = os.path.join(os.path.dirname(__file__), ICON_FILENAME)
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
@@ -112,10 +118,12 @@ def main():
         app.processEvents()
 
         window = MediaDownloaderApp()
+        windows.append(window)
         QTimer.singleShot(1500, splash.close)
         QTimer.singleShot(1500, window.show)
     else:
         window = MediaDownloaderApp()
+        windows.append(window)
         window.show()
 
     sys.exit(app.exec_())

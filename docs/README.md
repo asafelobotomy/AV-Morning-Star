@@ -1,6 +1,6 @@
 # AV Morning Star Documentation
 
-**Version 0.4.4**
+**Version 0.4.5**
 
 ## Index
 

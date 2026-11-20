@@ -1,6 +1,6 @@
 # AV Morning Star — Project Structure
 
-**Version:** 0.4.4
+**Version:** 0.4.5
 
 ```
 AV-Morning-Star/
@@ -13,6 +13,7 @@ AV-Morning-Star/
 │   └── ...
 ├── threads.py              # URLScraperThread, DownloadThread
 ├── dialogs.py              # PreferencesDialog
+├── single_instance.py      # one window per session (local socket)
 ├── ui_widgets.py           # FlowLayout, VideoCheckbox, pixmap helpers
 ├── settings.py             # QSettings persistence
 ├── browser_utils.py        # Browser detection and cookie helpers
