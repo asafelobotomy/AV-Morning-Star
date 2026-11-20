@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-11-20
+
+### Changed
+- Updates yt-dlp to 2026.10.26 (newer site extractors), and certifi, pyqt5-sip and soupsieve.
+
 ## [0.4.3] - 2026-11-17
 
 ### Added

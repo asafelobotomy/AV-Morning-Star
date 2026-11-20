@@ -17,6 +17,11 @@
   <url type="bugtracker">https://github.com/asafelobotomy/AV-Morning-Star/issues</url>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.4.4" date="2026-11-20">
+      <description>
+        <p>Updates yt-dlp to 2026.10.26 for newer site extractors, plus certifi, pyqt5-sip and soupsieve.</p>
+      </description>
+    </release>
     <release version="0.4.3" date="2026-11-17">
       <description>
         <p>Follows the uQ desktop theme (colours and font, live reload) and updates Pillow and certifi for security advisories.</p>
