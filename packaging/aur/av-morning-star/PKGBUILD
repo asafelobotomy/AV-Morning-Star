@@ -32,7 +32,7 @@ check() {
 package() {
   cd "$_reponame-$pkgver"
   local f
-  for f in main.py browser_utils.py dialogs.py settings.py threads.py ui_widgets.py av-morning-star.png; do
+  for f in main.py browser_utils.py dialogs.py settings.py single_instance.py threads.py ui_widgets.py av-morning-star.png; do
     install -Dm644 "$f" "$pkgdir$_appdir/$f"
   done
   for f in app_mixins/*.py constants/*.py extractors/*.py lyrics/*.py themes/*.py themes/*.qss; do

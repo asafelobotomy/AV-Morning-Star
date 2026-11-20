@@ -286,4 +286,4 @@ Full audit report: `SECURITY_AUDIT.md`
 ---
 
 **Last Updated:** June 2, 2026  
-**Version:** 0.4.4
+**Version:** 0.4.5

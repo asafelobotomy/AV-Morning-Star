@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-11-20
+
+### Changed
+- **One window per session.** Opening AV Morning Star while it is already open
+  brings the open window forward instead of starting a second copy (a local
+  socket in `$XDG_RUNTIME_DIR`; a socket left by a crash is taken over).
+
 ## [0.4.4] - 2026-11-20
 
 ### Changed
