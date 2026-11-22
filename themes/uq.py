@@ -2,20 +2,23 @@
 
 uqd writes ``tokens.json`` under ``$XDG_STATE_HOME/uq/theme/`` whenever the
 theme changes. ``uq_theme()`` turns it into the same ``{"vars", "stylesheet"}``
-shape as the built-in themes, or returns None when uQ is not installed.
+shape as the built-in themes, or returns None when uQ is not installed. Finding,
+size-checking and validating the file is uQ's shared uq-theme module
+(``uq_theme.py``, vendored unchanged), so it is read exactly as uQ's other apps do.
 """
 
-import json
-import os
 import re
 from pathlib import Path
 
+from . import uq_theme as _kit
 from .load import load_qss
 
 
 def tokens_path() -> Path:
-    state = os.environ.get("XDG_STATE_HOME") or str(Path.home() / ".local" / "state")
-    return Path(state) / "uq" / "theme" / "tokens.json"
+    """``$XDG_STATE_HOME/uq/theme/tokens.json`` (an absolute one only, as uQ), else under
+    ``~/.local/state``."""
+    path = _kit.tokens_path()
+    return Path(path) if path is not None else Path.home() / ".local/state/uq/theme/tokens.json"
 
 
 _HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
@@ -68,7 +71,8 @@ def build_theme(tokens: dict):
 
 def uq_theme():
     """Current uQ theme, or None when tokens.json is missing or invalid."""
-    try:
-        return build_theme(json.loads(tokens_path().read_text(encoding="utf-8")))
-    except (OSError, ValueError):
+    t = _kit.load(tokens_path())
+    if not t.get("present"):
         return None
+    fonts = {"ui": t["fontUi"] or None, "size": t["fontSize"] or None}
+    return build_theme({"colors": t["colors"], "variant": t["variant"], "fonts": fonts})

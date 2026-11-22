@@ -1,11 +1,13 @@
 [project]
 name = "av-morning-star"
-version = "0.4.5"
+version = "0.4.6"
 requires-python = ">=3.11"
 
 [tool.ruff]
 line-length = 120
 target-version = "py311"
+# uQ's uq-theme, vendored unchanged (uq/native.toml; scripts/check-uq-native.sh)
+extend-exclude = ["themes/uq_theme.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

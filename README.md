@@ -92,11 +92,11 @@ Click tags to compose the output filename. Supported tokens:
 
 ```bash
 # Download
-wget https://github.com/asafelobotomy/AV-Morning-Star/releases/download/v0.4.5/AV-Morning-Star-0.4.5-x86_64.AppImage
+wget https://github.com/asafelobotomy/AV-Morning-Star/releases/download/v0.4.6/AV-Morning-Star-0.4.6-x86_64.AppImage
 
 # Make executable and run
-chmod +x AV-Morning-Star-0.4.5-x86_64.AppImage
-./AV-Morning-Star-0.4.5-x86_64.AppImage
+chmod +x AV-Morning-Star-0.4.6-x86_64.AppImage
+./AV-Morning-Star-0.4.6-x86_64.AppImage
 ```
 
 The AppImage is self-contained (~63 MB). It requires:
@@ -149,7 +149,7 @@ Outputs `AV-Morning-Star-<version>-x86_64.AppImage` in the project root.
 ## Usage
 
 ```
-1. Launch             →  ./AV-Morning-Star-0.4.5-x86_64.AppImage
+1. Launch             →  ./AV-Morning-Star-0.4.6-x86_64.AppImage
 2. Set authentication →  Tools > Preferences  (leave on "Auto" by default)
 3. Paste a URL        →  YouTube playlist, Odysee channel, any supported site
 4. Click Fetch        →  Retrieves title, duration, and uploader for each item
@@ -269,4 +269,4 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for t
 
 > **Disclaimer:** This tool is for personal, lawful use only. Respect copyright law, website terms of service, and creator permissions. The authors are not responsible for misuse.
 
-<div align="center"><sub>AV Morning Star v0.4.5 · Linux x86_64</sub></div>
+<div align="center"><sub>AV Morning Star v0.4.6 · Linux x86_64</sub></div>

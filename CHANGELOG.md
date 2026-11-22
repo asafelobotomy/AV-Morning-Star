@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-11-22
+
+### Changed
+
+- The uQ theme is found, size-checked and validated by uQ's shared uq-theme 1.1.0 module (`themes/uq_theme.py`, vendored unchanged and pinned in `uq/native.toml`), so it is read exactly as uQ's other apps do; like uQ, a relative `XDG_STATE_HOME` is ignored. CI checks the vendored copy with uQ's `scripts/check-uq-native.sh`.
+
 ## [0.4.5] - 2026-11-20
 
 ### Changed
