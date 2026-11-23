@@ -17,6 +17,11 @@
   <url type="bugtracker">https://github.com/asafelobotomy/AV-Morning-Star/issues</url>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.4.6" date="2026-11-22">
+      <description>
+        <p>The uQ theme is read with uQ's shared theme code.</p>
+      </description>
+    </release>
     <release version="0.4.5" date="2026-11-20">
       <description>
         <p>Opening the app while it is already open brings the open window forward instead of starting a second copy.</p>
