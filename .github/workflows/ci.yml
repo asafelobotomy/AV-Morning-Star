@@ -38,6 +38,8 @@ jobs:
 
       - name: uQ's kits (uq/native.toml) are the pinned releases
         run: scripts/check-uq-native.sh
+      - name: Every source file is within 400 lines of code (uQ's uq-loc)
+        run: scripts/check-loc.sh
 
       - name: Run unit tests
         run: python -m unittest discover -s tests -p "test_*.py" -v
