@@ -22,6 +22,8 @@ sha256sums=('3b8f70b29567830dc4b974781c54e250f772c0546ee373818240337d1203886a')
 
 _appdir=/usr/share/av-morning-star
 
+conflicts+=('uq<0.3.41')  # uq-compat: from uQ's compat/family.toml
+
 check() {
   cd "$_reponame-$pkgver"
   [ "$(cat VERSION)" = "$pkgver" ]
